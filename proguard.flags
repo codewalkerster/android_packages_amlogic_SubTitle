@@ -1,0 +1,3 @@
+-keep class com.subtitleparser.SubtitleFile {
+  public void appendSubtitle(int, int, int, byte[], java.lang.String);
+}
