@@ -14,7 +14,7 @@ import android.graphics.Canvas;
 
 public class SubtitleView extends TextView {
 	private static final String LOG_TAG = SubtitleView.class.getSimpleName();
-	private SubtitleFile subFile = null;
+	private SubtitleApi subapi = null;
 	private boolean needSubTitleShow= true;
 	private Subtitle.SUBTYPE type=Subtitle.SUBTYPE.SUB_INVALID;
 	private boolean InsubStatus=false;
@@ -22,16 +22,16 @@ public class SubtitleView extends TextView {
 	private Subtitle subtitle=null;
 	private int timeoffset=1000;
 	
-	public void setInsubStatus(boolean flag)
-	{
-		InsubStatus=flag;
-		
-		if(InsubStatus)
-		{
-			setText("");
-			subFile = null;
-		}
-	}
+//	public void setInsubStatus(boolean flag)
+//	{
+//		InsubStatus=flag;
+//		
+//		if(InsubStatus)
+//		{
+//			setText("");
+//			subapi = null;
+//		}
+//	}
 	
 
 	public SubtitleView(Context context) {
@@ -53,9 +53,11 @@ public class SubtitleView extends TextView {
 		needSubTitleShow=flag;
 		if(flag==false)
 		{
-			setText("");
-			setCompoundDrawablesWithIntrinsicBounds(null, null, null,null); 
-
+			setVisibility( INVISIBLE); 
+		}
+		else
+		{
+			setVisibility( VISIBLE); 
 		}
 	}
 	public void tick(int millisec) {
@@ -63,43 +65,34 @@ public class SubtitleView extends TextView {
 		if (needSubTitleShow==false) {
 			return;
 		}
-		if(InsubStatus==true)
+		if (subapi == null)
 		{
-			if(Subtitle.subtitle_delay > 0 && (millisec*90)>=Subtitle.subtitle_delay){
-				setText("");
-				Subtitle.subtitle_delay = 0;
-			}				
-			inter_bitmap=Subtitle.getBitmap(millisec);
-			Log.i(LOG_TAG,
-			"return bitmap is " + inter_bitmap);
+			Log.i(LOG_TAG,	"subapi!!!!!!!!!!!!!!!  null"  );
+			return;
+		}
+			
+		SubData data = subapi.getdata(millisec+1000);
+		if(data.gettype()==1)
+		{
+			Log.i(LOG_TAG,"start gettype()==1 bitmap");		
+			inter_bitmap=data.getSubBitmap();
 			if(inter_bitmap!=null)
 			{
-				invalidate(); 
+				Log.i(LOG_TAG,	"window" +this.getWidth()+"X"+this.getHeight() );
+				Log.i(LOG_TAG,	"invalidate " +inter_bitmap.getWidth()+"X"+inter_bitmap.getHeight() );
+		        this.setMinimumWidth(inter_bitmap.getWidth());
+		        this.setMinimumHeight(inter_bitmap.getHeight());
+				Log.i(LOG_TAG,	"window" +this.getWidth()+"X"+this.getHeight() );
+		        invalidate(); 
 			}
 			return;
-		}
-		
-		if (subFile == null)
-			return;
-		SubtitleLine cur = subFile.curSubtitle();
-		try {
-			int modifytime = millisec+timeoffset;
-			if (modifytime >= cur.getBegin().getMilValue()
-					&& modifytime <= cur.getEnd().getMilValue()) {
-				setText(subFile.curSubtitle().getText());
-			} else {
-				subFile.matchSubtitle(modifytime);
-				cur = subFile.curSubtitle();
-				if (modifytime > cur.getEnd().getMilValue()) {
-					subFile.toNextSubtitle();
-				}
-				setText("");
-			}
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		}else
+		{
+				
+		setText(subapi.getdata(millisec).getSubString());
+	    }
 	}
+	
 	public void setDelay(int milsec) 
 	{
 		timeoffset=milsec;
@@ -108,7 +101,6 @@ public class SubtitleView extends TextView {
 	@Override
 	public void onDraw(Canvas canvas) 
 	{
-		 super.onDraw(canvas); 
 		 /*
 		 if(mbmpTest!=null)
 		 {
@@ -118,81 +110,78 @@ public class SubtitleView extends TextView {
 		 }
 		*/
 		
-		Log.i(LOG_TAG,
-				"start draw bitmap");
 		 if(inter_bitmap!=null)
 		 {
 		   Matrix matrix = new Matrix();
            matrix.postScale(1.0f, 1.0f);
            //matrix.setRotate(90,120,120);
+           Log.i("SubView", "----"+inter_bitmap.getWidth()+inter_bitmap.getHeight() );
+
            canvas.drawBitmap(inter_bitmap, 0, 0, null);
            Log.i(LOG_TAG,
 			"end draw bitmap ");
            inter_bitmap.recycle();
            inter_bitmap = null;
-		 } 				 
+		 } 	
+		 super.onDraw(canvas); 
+
     }
 
 	public Subtitle.SUBTYPE setFile(String file, String enc) throws Exception {
-		subFile = null;
+		subapi = null;
 		InsubStatus=false;
 		// load Input File
 		try {
-		    Log.i("SubView", "------------parseSubtitleFile-----------" );
+		    Log.i("SubView", "------------setFile-----------" +file);
 			subtitle.setSubname(file);
 		    type=subtitle.getSubType();
-		    if(type==Subtitle.SUBTYPE.SUB_IDXSUB)
+		    if (type==Subtitle.SUBTYPE.SUB_INVALID) 
 		    {
-		    
-		    }
-		    else if (type==Subtitle.SUBTYPE.SUB_INVALID) 
-		    {
-		    	subFile =null;
+		    	subapi =null;
 		    }
 		    else
 		    {
 		    	
-		    	subFile =subtitle.parse();
+		    	subapi =subtitle.parse();
 	    	}
+		Log.i("SubView", "--subapi=----------------" +subapi);
 		} catch (Exception e) {
 		    Log.i("SubView", "------------err-----------" );
 			throw e;
 		}
 
-		Log.i(LOG_TAG,
-				"Parsed: " + file + " total subtitle lins:" + subFile.size());
 		return type;
 	}
 
-	public SubtitleFile getSubtitleFile() {
-		return subFile;
+	public SubtitleApi getSubtitleFile() {
+		return subapi;
 	}
 
-	public void reSet() {
-		setText("");
-		setCompoundDrawablesWithIntrinsicBounds(null, null, null,null); 
-		if (subFile != null) {
-			subFile.setCurSubtitleIndex(0);
-		}
-	}
-
-	public void showPrevSubtitle() {
-		if (subFile == null||InsubStatus==false) {
-			return;
-		}
-
-		subFile.toPrevSubtitle();
-
-		setText(subFile.curSubtitle().getText());
-	}
-
-	public void showNextSubtitle() {
-		if (subFile == null||InsubStatus==false) {
-			return;
-		}
-
-		subFile.toNextSubtitle();
-
-		setText(subFile.curSubtitle().getText());
-	}
+//	public void reSet() {
+//		setText("");
+//		setCompoundDrawablesWithIntrinsicBounds(null, null, null,null); 
+//		if (subapi != null) {
+//			subapi.setCurSubtitleIndex(0);
+//		}
+//	}
+//
+//	public void showPrevSubtitle() {
+//		if (subFile == null||InsubStatus==false) {
+//			return;
+//		}
+//
+//		subFile.toPrevSubtitle();
+//
+//		setText(subFile.curSubtitle().getText());
+//	}
+//
+//	public void showNextSubtitle() {
+//		if (subFile == null||InsubStatus==false) {
+//			return;
+//		}
+//
+//		subFile.toNextSubtitle();
+//
+//		setText(subFile.curSubtitle().getText());
+//	}
 }

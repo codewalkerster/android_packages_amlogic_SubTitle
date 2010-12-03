@@ -28,8 +28,8 @@ LOCAL_PROGUARD_FLAGS := -include $(LOCAL_PATH)/proguard.flags
 # Generate a checksum that will be used in the app to determine whether the
 # firmware in /system/etc/firmware needs to be updated.
 
-include $(BUILD_JAVA_LIBRARY)
-
+#include $(BUILD_JAVA_LIBRARY)
+include $(BUILD_STATIC_JAVA_LIBRARY)
 
 #MAKE_XML
 include $(CLEAR_VARS)

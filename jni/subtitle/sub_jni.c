@@ -102,12 +102,76 @@ err2:
 
       return NULL;
   }
+JNIEXPORT jint JNICALL getInSubtitleTotal
+  (JNIEnv *env, jclass cl)  
+{
+    LOGE("jni getInSubtitleTotal!");
+	return 0;
+}
 
+JNIEXPORT jint JNICALL setInSubtitleNumber
+  (JNIEnv *env, jclass cl, jint index )  
+{
+    LOGE("jni setInSubtitleNumber!");
+	return 0;
+}
+
+JNIEXPORT jint JNICALL getCurrentInSubtitleIndex
+  (JNIEnv *env, jclass cl )  
+{
+    LOGE("jni getCurrentInSubtitleIndex!");
+	return 0;
+}
+
+
+
+JNIEXPORT jobject JNICALL getrawdata
+	  (JNIEnv *env, jclass cl, jint msec )  
+{
+    LOGE("jni getdata!,eed return a java object:RawData");
+	jclass cls = (*env)->FindClass(env, "com/subtitleparser/subtypes/RawData");
+	if(!cls){
+		LOGE("com/subtitleparser/subtypes/RawData: failed to get RawData class reference");
+		return NULL;
+	}
+	
+	jmethodID constr = (*env)->GetMethodID(env, cls, "<init>", "([IIIILjava/lang/String;)V");
+	if(!constr){
+		LOGE("com/subtitleparser/subtypes/RawData: failed to get  constructor method's ID");
+		return NULL;
+	}   
+    
+    
+	return NULL;
+
+}
+
+//JNIEXPORT jobject JNICALL getdata
+//	  (JNIEnv *env, jclass cl, jint msec )  
+//{
+//    LOGE("jni getdata!,eed return a java object:SubData");
+//	return NULL;
+//
+//}
 static JNINativeMethod gMethods[] = {
     /* name, signature, funcPtr */
     { "parseSubtitleFileByJni", "(Ljava/lang/String;Ljava/lang/String;)Lcom/subtitleparser/SubtitleFile;",
             (void*) parseSubtitleFile},
     };
+
+static JNINativeMethod insubMethods[] = {
+    /* name, signature, funcPtr */
+    	{ "getInSubtitleTotalByJni", "()I",                                 (void*)getInSubtitleTotal},
+		{ "setInSubtitleNumberByJni", "(I)I",                               (void*)setInSubtitleNumber},
+		{ "getCurrentInSubtitleIndexByJni", "()I",                          (void*)getCurrentInSubtitleIndex },
+    };
+    
+static JNINativeMethod insubdataMethods[] = {
+    /* name, signature, funcPtr */
+    	{ "getrawdata", "(I)Lcom/subtitleparser/subtypes/RawData;", (void*)getrawdata},
+//    	{ "getdataByJni", "(I)Lcom/subtitleparser/subtypes/InSubApi;", (void*)getdata},
+
+    };    
 
 static int registerNativeMethods(JNIEnv* env, const char* className,
                                  const JNINativeMethod* methods, int numMethods)
@@ -143,5 +207,13 @@ JNI_OnLoad(JavaVM* vm, void* reserved)
         LOGE("registerNativeMethods failed!");
         return -1;
     }
+	if (registerNativeMethods(env, "com/subtitleparser/SubtitleUtils",insubMethods, NELEM(insubMethods)) < 0){
+		LOGE("registerNativeMethods failed!");
+		return -1;
+    }
+	if (registerNativeMethods(env, "com/subtitleparser/subtypes/InSubApi",insubdataMethods, NELEM(insubdataMethods)) < 0){
+		LOGE("registerNativeMethods failed!");
+		return -1;
+    }    
     return JNI_VERSION_1_4;
 }

@@ -6,6 +6,11 @@ import java.util.List;
 import android.util.Log;
 
 public class SubtitleUtils {
+	public native int getInSubtitleTotalByJni();
+	
+	public native int setInSubtitleNumberByJni(int  ms);
+	public native int getCurrentInSubtitleIndexByJni();
+	
 	private String filename=null;
 	private File subfile =null;
 	private List<String> strlist = new ArrayList<String>();
@@ -45,6 +50,10 @@ public class SubtitleUtils {
     	return exSubtotle+accountInSubtitleNumber();
     }
    
+	public int getInSubTotal()
+    {
+    	return accountInSubtitleNumber();
+    }
     public String getSubPath(int index)
     {
     	if(subfile==null)
@@ -88,11 +97,12 @@ public class SubtitleUtils {
     //wait to finish.
     private  int  accountInSubtitleNumber()
     {
-    	return 0;
+    	return 1;
     }
     //wait to finish.
     private  void setInSubtitleNumber(int index)
     {
+    	setInSubtitleNumberByJni(index-exSubtotle);
     	return;
     }   
 }

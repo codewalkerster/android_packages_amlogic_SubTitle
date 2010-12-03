@@ -3,9 +3,48 @@ package com.subtitleparser.subtypes;
 import android.util.Log;
 
 import com.subtitleparser.MalformedSubException;
+import com.subtitleparser.SubData;
+import com.subtitleparser.SubtitleApi;
 import com.subtitleparser.SubtitleFile;
+import com.subtitleparser.SubtitleLine;
 import com.subtitleparser.SubtitleParser;
 import com.subtitleparser.Subtitle;
+
+
+class TextSubApi extends SubtitleApi
+{
+	 private SubtitleFile SubFile =null;
+	 private SubtitleLine cur=null;
+	 private String st=null;
+	 public TextSubApi(SubtitleFile sf){
+		 SubFile=sf;
+	 }
+	 public SubData getdata(int millisec )
+	 {
+		 try {
+			 cur = SubFile.curSubtitle();
+			 if (millisec >= cur.getBegin().getMilValue()
+						&& millisec <= cur.getEnd().getMilValue()) {
+					st=SubFile.curSubtitle().getText();
+			} else {
+				SubFile.matchSubtitle(millisec);
+				cur = SubFile.curSubtitle();
+				if (millisec > cur.getEnd().getMilValue()) {
+					SubFile.toNextSubtitle();
+				}
+				st="";
+			}
+			return new SubData(st,cur.getBegin().getMilValue(),cur.getEnd().getMilValue());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	 }
+
+}
+
+
 
 
 /**
@@ -15,7 +54,7 @@ import com.subtitleparser.Subtitle;
 */
 public class TextSubParser implements SubtitleParser {
 
-	public SubtitleFile parse(String filename,String encode) throws MalformedSubException{
+	public SubtitleApi parse(String filename,String encode) throws MalformedSubException{
 
 		SubtitleFile file=Subtitle.parseSubtitleFileByJni(filename, encode);
 		if(file==null)
@@ -25,10 +64,11 @@ public class TextSubParser implements SubtitleParser {
 			throw new MalformedSubException("text sub parser return NULL!");
 		}else
 		{	
-			return file;
+			return new TextSubApi(file);
+
 		}
 	};
-	public SubtitleFile parse(String inputstring) throws MalformedSubException{
+	public SubtitleApi parse(String inputstring) throws MalformedSubException{
 		return null;
 };
 

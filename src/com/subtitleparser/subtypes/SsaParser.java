@@ -6,10 +6,46 @@ import java.util.regex.Pattern;
 import android.util.Log;
 
 import com.subtitleparser.MalformedSubException;
+import com.subtitleparser.SubData;
 import com.subtitleparser.SubtitleFile;
 import com.subtitleparser.SubtitleLine;
 import com.subtitleparser.SubtitleParser;
 import com.subtitleparser.SubtitleTime;
+import com.subtitleparser.SubtitleApi;
+
+
+class SsaApi extends SubtitleApi
+{
+	private SubtitleFile SubFile =null;
+	 private SubtitleLine cur=null;
+	 private String st=null;
+	 public SsaApi(SubtitleFile sf){
+		 SubFile=sf;
+	 }
+	 public SubData getdata(int millisec )
+	 {
+		 try {
+			 cur = SubFile.curSubtitle();
+			 if (millisec >= cur.getBegin().getMilValue()
+						&& millisec <= cur.getEnd().getMilValue()) {
+					st=SubFile.curSubtitle().getText();
+			} else {
+				SubFile.matchSubtitle(millisec);
+				cur = SubFile.curSubtitle();
+				if (millisec > cur.getEnd().getMilValue()) {
+					SubFile.toNextSubtitle();
+				}
+				st="";
+			}
+			return new SubData(st,cur.getBegin().getMilValue(),cur.getEnd().getMilValue());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	 }
+
+}
 
 /**
 * a .SUB subtitle parser.
@@ -18,7 +54,7 @@ import com.subtitleparser.SubtitleTime;
 */
 public class SsaParser implements SubtitleParser{
 	
-	public SubtitleFile parse(String inputString) throws MalformedSubException{
+	public SubtitleApi parse(String inputString) throws MalformedSubException{
 		try{
 			String n="\\"+System.getProperty("line.separator");
 			String tmpText="";
@@ -39,6 +75,8 @@ public class SsaParser implements SubtitleParser{
 			while(m.find()){
 
 				occ++;
+//				String tmp=m.group(9).replaceAll("\\{.*?\\}", "");
+
 				sl=new SubtitleLine(occ,
 						new SubtitleTime(Integer.parseInt(m.group(1)), //start time
 								Integer.parseInt(m.group(2)),
@@ -48,20 +86,20 @@ public class SsaParser implements SubtitleParser{
 								Integer.parseInt(m.group(6)),
 								Integer.parseInt(m.group(7)),
 								Integer.parseInt(m.group(8))),
-				m.group(9) //text
+								m.group(9) //text
 				);
 				tmpText="";
 				sf.add(sl);
 			}
 			Log.i("SsaParser", "find"+sf.size());
-			return sf;
+			return new SsaApi(sf);
 		}catch(Exception e)
 		{
 			Log.i("SsaParser", "------------!!!!!!!parse file err!!!!!!!!");
 		    throw new MalformedSubException(e.toString());
 		}
 	};
-	public SubtitleFile parse(String inputString,String st2) throws MalformedSubException{
+	public SubtitleApi parse(String inputString,String st2) throws MalformedSubException{
 		return null;
 	};
 	
