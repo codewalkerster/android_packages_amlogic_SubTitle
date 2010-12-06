@@ -4,6 +4,8 @@
 
 #include <jni.h>
 #include <android/log.h>
+#include <pthread.h>
+#include "sub_set_sys.h"
 
 #define  LOG_TAG    "sub_jni"
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
@@ -105,7 +107,10 @@ err2:
 JNIEXPORT jint JNICALL getInSubtitleTotal
   (JNIEnv *env, jclass cl)  
 {
+	int subtitle_num = get_subtitle_num();
     LOGE("jni getInSubtitleTotal!");
+    if(subtitle_num > 0)
+    	return subtitle_num;
 	return 0;
 }
 
@@ -119,8 +124,11 @@ JNIEXPORT jint JNICALL setInSubtitleNumber
 JNIEXPORT jint JNICALL getCurrentInSubtitleIndex
   (JNIEnv *env, jclass cl )  
 {
+	int subtitle_curr = get_subtitle_curr();
     LOGE("jni getCurrentInSubtitleIndex!");
-	return 0;
+	if(subtitle_curr >= 0)
+    	return subtitle_curr;
+	return -1;
 }
 
 
@@ -138,10 +146,31 @@ JNIEXPORT jobject JNICALL getrawdata
 	jmethodID constr = (*env)->GetMethodID(env, cls, "<init>", "([IIIILjava/lang/String;)V");
 	if(!constr){
 		LOGE("com/subtitleparser/subtypes/RawData: failed to get  constructor method's ID");
+	  return NULL;
+	}
+	#if 0
+	LOGE("start get new object\n\n");
+	jobject obj =  (*env)->NewObject(env, cls, constr);
+	if(!obj){
+	  LOGE("parseSubtitleFile: failed to create an object");
+	  return NULL;
+	}
+	LOGE("start get packet\n\n");
+	int sub_pkt = get_inter_spu_packet(msec*90);
+	if(sub_pkt < 0){
+		LOGE("sub pkt fail\n\n");
 		return NULL;
-	}   
-    
-    
+	}
+	
+	int sub_size = get_inter_spu_size();
+	LOGE("start get new array\n\n");
+	jintArray array= (*env)->NewIntArray(env,sub_size);
+ 
+	parser_inter_spu((char *)array);
+	(*env)->CallVoidMethod(env, obj, constr, array, 1, get_inter_spu_width(),
+		get_inter_spu_height(),0);
+	#endif
+    LOGE("jni getdata!,eed return a java object:RawData");
 	return NULL;
 
 }
@@ -153,6 +182,26 @@ JNIEXPORT jobject JNICALL getrawdata
 //	return NULL;
 //
 //}
+void *inter_subtitle_parser()
+{
+	do{
+		if(get_subtitle_enable()&&get_subtitle_num()){
+			get_inter_spu();
+		}
+	}while(1);
+}
+int subtitle_thread_create()
+{
+	pthread_t thread;
+    int rc;
+    LOGI("[subtitle_thread:%d]starting controler thread!!\n", __LINE__);
+    rc = pthread_create(&thread, NULL, inter_subtitle_parser, NULL);
+    if (rc) {
+        LOGE("[subtitle_thread:%d]ERROR; start failed rc=%d\n", __LINE__,rc);
+    }
+	return rc;
+}
+
 static JNINativeMethod gMethods[] = {
     /* name, signature, funcPtr */
     { "parseSubtitleFileByJni", "(Ljava/lang/String;Ljava/lang/String;)Lcom/subtitleparser/SubtitleFile;",
@@ -215,5 +264,6 @@ JNI_OnLoad(JavaVM* vm, void* reserved)
 		LOGE("registerNativeMethods failed!");
 		return -1;
     }    
+	//subtitle_thread_create();
     return JNI_VERSION_1_4;
 }
