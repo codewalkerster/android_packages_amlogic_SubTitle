@@ -97,7 +97,7 @@ public class SubtitleUtils {
     //wait to finish.
     private  int  accountInSubtitleNumber()
     {
-    	return 1;
+    	return 0;
     }
     //wait to finish.
     private  void setInSubtitleNumber(int index)
