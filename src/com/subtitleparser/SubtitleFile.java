@@ -185,48 +185,44 @@ public class SubtitleFile extends LinkedList {
 		int i;
 
 		p = (SubtitleLine) get(curIndex);
-		n = (SubtitleLine) get(curIndex + 1);
 		try {
-			if (p != null && n != null
-					&& millisec >= p.getBegin().getMilValue()
-					&& millisec < n.getBegin().getMilValue()) {
-				return curIndex;
-			}
-			if (p != null && millisec >= p.getBegin().getMilValue()
-					&& millisec <= p.getEnd().getMilValue()) {
-				return curIndex;
-			}
-
-		} catch (Exception e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-
-		for (i = 0; i < size() - 1; i++) {
-			p = (SubtitleLine) get(i);
-			n = (SubtitleLine) get(i + 1);
-			try {
-				if (millisec >= p.getBegin().getMilValue()
-						&& millisec < n.getBegin().getMilValue()) {
-					ret = i;
-					break;
+			if( millisec >= p.getBegin().getMilValue() )
+			{
+				while( curIndex < size()-1 )
+				{
+					n = (SubtitleLine) get(curIndex + 1);
+					if(millisec >=n.getBegin().getMilValue())
+					{
+						curIndex+=1;
+					}
+					else
+					{
+						ret=curIndex;
+						break;
+					}
 				}
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
+			}else
+			{
+				while( curIndex >0 )
+				{
+					n = (SubtitleLine) get(curIndex - 1);
+					if(millisec >=n.getBegin().getMilValue())
+					{
+						ret=curIndex-1;
+						break;
 
-		try {
-			if (i == size() - 1 && millisec >= n.getBegin().getMilValue()
-					&& millisec <= n.getEnd().getMilValue()) {
-				ret = i;
+					}
+					else
+					{
+						curIndex-=1;
+					}	
+				}
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
+		
 		return ret;
 	}
 

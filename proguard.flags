@@ -2,7 +2,7 @@
   public void appendSubtitle(int, int, int, byte[], java.lang.String);
 }
 -keep class com.subtitleparser.subtypes.RawData {
-  public  RawData(int[] ,int ,int ,int ,int ,String )
+  public  RawData(int[] ,int ,int ,int ,int ,java.lang.String );
 }
 
 -keep class com.subtitleparser.SubtitleUtils {

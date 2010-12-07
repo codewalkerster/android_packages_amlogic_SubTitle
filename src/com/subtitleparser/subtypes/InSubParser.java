@@ -42,39 +42,42 @@ class InSubApi extends SubtitleApi
 	 private Bitmap bitmap=null;
 	 InSubApi()
 	 {
-		 getrawdata(10);
+//		 getrawdata(10);
 	 };
 
 	 public SubData getdata(int millisec )
 	 {
 		 //add  value to bitmap
 		 //add  value to begingtime,endtime
-		 //inter_data = getrawdata(millisec);
+		 inter_data = getrawdata(millisec);
 		 if(inter_data != null){
 		 	bf_show = Bitmap.createBitmap(inter_data.rawdata, inter_data.width,
 				inter_data.height, Config.ARGB_8888);
 			 return new SubData( bf_show, millisec,inter_data.sub_delay);
-		 }
-	    if(millisec%8000>4000)
-	    {
-		    Log.i("InSubApi", "------------getdata1-----------" );
-
-			int[] data = new int[100000];
-			Arrays.fill(data, 0x55555500);
-			bitmap= Bitmap.createBitmap( data,  50,  250, Config.ARGB_8888  ) ;
-
-	    }else
-	    {
-		    Log.i("InSubApi", "------------getdata2-----------" );
-
-			int[] data = new int[100000];
-			Arrays.fill(data, 0x99999900);    	
-			bitmap= Bitmap.createBitmap( data,  150,  180, Config.ARGB_8888  ) ;
-
-	    }
+		 }else
+		 {
+		 	return null;
+		}
+//	    if(millisec%8000>4000)
+//	    {
+//		    Log.i("InSubApi", "------------getdata1-----------" );
+//
+//			int[] data = new int[100000];
+//			Arrays.fill(data, 0x55555500);
+//			bitmap= Bitmap.createBitmap( data,  50,  250, Config.ARGB_8888  ) ;
+//
+//	    }else
+//	    {
+//		    Log.i("InSubApi", "------------getdata2-----------" );
+//
+//			int[] data = new int[100000];
+//			Arrays.fill(data, 0x99999900);    	
+//			bitmap= Bitmap.createBitmap( data,  150,  180, Config.ARGB_8888  ) ;
+//
+//	    }
 	    	
 
-		return new SubData( bitmap, millisec,millisec+3);
+//		return new SubData( bitmap, millisec,millisec+3);
 		
 	 };
 	 

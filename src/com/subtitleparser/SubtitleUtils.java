@@ -97,7 +97,7 @@ public class SubtitleUtils {
     //wait to finish.
     private  int  accountInSubtitleNumber()
     {
-    	return 0;
+    	return getInSubtitleTotalByJni();
     }
     //wait to finish.
     private  void setInSubtitleNumber(int index)
