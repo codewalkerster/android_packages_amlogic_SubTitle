@@ -2,13 +2,14 @@ package com.subtitleparser.subtypes;
 
 public class RawData
 {
-	RawData(int[] data,int t,int w,int h,String st)// ([BILjava/lang/String;)V
+	RawData(int[] data,int t,int w,int h,int delay,String st)// ([BILjava/lang/String;)V
 	{
-		rawdata=data;type=t;width=w;height=h;codec=st;
+		rawdata=data;type=t;width=w;height=h;sub_delay=delay;codec=st;
 	}
 	int[] rawdata;
 	int type;
 	int width;
 	int height;
+	int sub_delay;
 	String codec;
 }

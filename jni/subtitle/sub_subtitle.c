@@ -35,7 +35,7 @@
 #define SUBTITLE_FILE "/tmp/subtitle.db"
 #define VOB_SUBTITLE_FRAMW_SIZE   (4+1+4+4+2+2+2+2+2+4+VOB_SUB_SIZE)
 #define MAX_SUBTITLE_PACKET_WRITE	50
-#define ADD_SUBTITLE_POSITION(x) (((x+1)<MAX_SUBTITLE_PACKET_WRITE)?(x+1):0)
+#define ADD_SUBTITLE_POSITION(x)  (((x+1)<MAX_SUBTITLE_PACKET_WRITE)?(x+1):0)
 static off_t file_position=0;
 static off_t read_position=0;
 static int  aml_sub_handle = -1;
@@ -368,7 +368,8 @@ int write_subtitle_file(AML_SPUVAR *spu)
 	inter_subtitle_data[file_position].subtitle_pts = spu->pts;
 	inter_subtitle_data[file_position].subtitle_delay_pts = spu->m_delay;
 	inter_subtitle_data[file_position].sub_alpha = spu->spu_alpha;
-
+	inter_subtitle_data[file_position].subtitle_width = spu->spu_width;
+	inter_subtitle_data[file_position].subtitle_height = spu->spu_height;
 #elif 0
 
 
@@ -467,6 +468,7 @@ int get_inter_spu_packet(int pts)
 	}
 	#endif
 	LOGI("read_position is %d\n",read_position);
+	LOGI("file_position is %d\n",file_position);
 	return read_position;
 }
 
@@ -492,7 +494,20 @@ int get_inter_spu_height()
 	return inter_subtitle_data[read_position].subtitle_height;
 }
 
-int parser_inter_spu(char *buffer)
+
+int get_inter_spu_delay()
+{
+	return inter_subtitle_data[read_position].subtitle_delay_pts;
+}
+
+int add_read_position()
+{
+	read_position = ADD_SUBTITLE_POSITION(read_position);
+	LOGI("read_position is %d\n\n",read_position);
+	return 0;
+}
+
+int parser_inter_spu(int *buffer)
 {
 	LOGI("enter parser_inter_sup \n\n");
 	
@@ -500,29 +515,34 @@ int parser_inter_spu(char *buffer)
 	unsigned char *data = NULL, *data2 = NULL;
 	unsigned char color = 0;
 	unsigned *result_buf = (unsigned *)buffer;
-	for(i=0; i<10; i++)
-		result_buf[i] = i;
-    unsigned index = 0, index1 = 0,n = 0;
-    unsigned data_byte = (((inter_subtitle_data[read_position].subtitle_width*2)+15)>>4)<<1;
-	int buffer_width = (inter_subtitle_data[read_position].subtitle_width+63)&0xffffffc0;
+    unsigned index = 0, index1 = 0;
+	unsigned char n = 0;
+	unsigned short buffer_width, buffer_height;
+	buffer_width = inter_subtitle_data[read_position].subtitle_width;
+	buffer_height = inter_subtitle_data[read_position].subtitle_height;
+    unsigned data_byte = (((buffer_width*2)+15)>>4)<<1;
+	LOGI("data_byte is %d\n\n",data_byte);
+	int buffer_width_size = (buffer_width+63)&0xffffffc0;
+	LOGI("buffer_width is %d\n\n",buffer_width_size);
 	unsigned short subtitle_alpha = inter_subtitle_data[read_position].sub_alpha;
+	LOGI("subtitle_alpha is %x\n\n",subtitle_alpha);
 	unsigned int RGBA_Pal[4];
 	RGBA_Pal[0] = RGBA_Pal[1] = RGBA_Pal[2] = RGBA_Pal[3] = 0;
-	if((subtitle_alpha&0xff0)!=0)
+	if((subtitle_alpha==0xff0))
     {
         RGBA_Pal[2] = 0xffffffff;
 		RGBA_Pal[1] = 0xff; 
     }
-    else if((subtitle_alpha&0xfff0)!=0){
-        RGBA_Pal[1] = 0xff;
+    else if((subtitle_alpha==0xfff0)){
+        RGBA_Pal[1] = 0xff000000;
 		RGBA_Pal[2] = 0xffffffff; 
-		RGBA_Pal[3] = 0xff;
+		RGBA_Pal[3] = 0xffffffff;
     }
-    else if((subtitle_alpha&0xf0f0)!=0){
+    else if((subtitle_alpha==0xf0f0)){
         RGBA_Pal[1] = 0xffffffff;
 		RGBA_Pal[3] = 0xff;
     }
-    else if((subtitle_alpha&0xff00)!=0){
+    else if((subtitle_alpha==0xff00)){
 		RGBA_Pal[2] = 0xffffffff; 
 		RGBA_Pal[3] = 0xff;
     }
@@ -530,26 +550,26 @@ int parser_inter_spu(char *buffer)
 		RGBA_Pal[1] = 0xffffffff;
 		RGBA_Pal[3] = 0xff;
 	}
-    for (i=0;i<inter_subtitle_data[read_position].subtitle_height;i++){
+    for (i=0;i<buffer_height;i++){
 		if(i&1)
 			data = inter_subtitle_data[read_position].data+(i>>1)*data_byte + (720*576/8);
 		else
 			data = inter_subtitle_data[read_position].data+(i>>1)*data_byte;
 		index=0;
-		for (j=0;j<inter_subtitle_data[read_position].subtitle_width;j++){
+		for (j=0;j<buffer_width;j++){
 			index1 = index%2?index-1:index+1;
 			n = data[index1];
 			index++;
-            result_buf[i*(buffer_width)+j] = RGBA_Pal[(n>>4)&0x3];
-            if(++j >= inter_subtitle_data[read_position].subtitle_width)    break;
-            result_buf[i*(buffer_width)+j] = RGBA_Pal[n>>6];
-            if(++j >= inter_subtitle_data[read_position].subtitle_width)    break;
-            result_buf[i*(buffer_width)+j] = RGBA_Pal[n&0x3];
-            if(++j >= inter_subtitle_data[read_position].subtitle_width)    break;
-            result_buf[i*(buffer_width)+j] = RGBA_Pal[(n>>2)&0x3];
+            result_buf[i*(buffer_width_size)+j] = RGBA_Pal[(n>>4)&0x3];
+            if(++j >= buffer_width)    break;
+            result_buf[i*(buffer_width_size)+j] = RGBA_Pal[(n>>6)&0x3];
+            if(++j >= buffer_width)    break;
+            result_buf[i*(buffer_width_size)+j] = RGBA_Pal[n&0x3];
+            if(++j >= buffer_width)    break;
+            result_buf[i*(buffer_width_size)+j] = RGBA_Pal[(n>>2)&0x3];
 		}
 	}
-
+	//ADD_SUBTITLE_POSITION(read_position);
 	return 0;
 }
 
@@ -564,9 +584,11 @@ int get_inter_spu()
 	if(ret < 0)
 		return -1;
 
+
 	write_subtitle_file(&spu);
 	read_subtitle_file();
-	ADD_SUBTITLE_POSITION(file_position);
+	file_position = ADD_SUBTITLE_POSITION(file_position);
+	LOGI("file_position is %d\n\n",file_position);
 
 	LOGI("end parser subtitle success\n");
 

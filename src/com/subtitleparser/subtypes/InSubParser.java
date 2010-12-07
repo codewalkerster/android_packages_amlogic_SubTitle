@@ -34,6 +34,7 @@ class InSubApi extends SubtitleApi
 	private static int subtitle_pts = 0;
 	public  static int subtitle_delay = 0;
 	private static Bitmap bf_show = null;
+	private static RawData inter_data = null;
 	
 	
 
@@ -48,6 +49,12 @@ class InSubApi extends SubtitleApi
 	 {
 		 //add  value to bitmap
 		 //add  value to begingtime,endtime
+		 //inter_data = getrawdata(millisec);
+		 if(inter_data != null){
+		 	bf_show = Bitmap.createBitmap(inter_data.rawdata, inter_data.width,
+				inter_data.height, Config.ARGB_8888);
+			 return new SubData( bf_show, millisec,inter_data.sub_delay);
+		 }
 	    if(millisec%8000>4000)
 	    {
 		    Log.i("InSubApi", "------------getdata1-----------" );

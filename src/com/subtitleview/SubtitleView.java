@@ -120,7 +120,7 @@ public class SubtitleView extends TextView {
            canvas.drawBitmap(inter_bitmap, 0, 0, null);
            Log.i(LOG_TAG,
 			"end draw bitmap ");
-           inter_bitmap.recycle();
+           //inter_bitmap.recycle();
            inter_bitmap = null;
 		 } 	
 		 super.onDraw(canvas); 

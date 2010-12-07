@@ -4,7 +4,11 @@
 
 #include <jni.h>
 #include <android/log.h>
-#include <pthread.h>
+#include <sys/types.h>
+#include <signal.h>
+#include <unistd.h>
+
+
 #include "sub_set_sys.h"
 
 #define  LOG_TAG    "sub_jni"
@@ -143,18 +147,13 @@ JNIEXPORT jobject JNICALL getrawdata
 		return NULL;
 	}
 	
-	jmethodID constr = (*env)->GetMethodID(env, cls, "<init>", "([IIIILjava/lang/String;)V");
+	jmethodID constr = (*env)->GetMethodID(env, cls, "<init>", "([IIIIILjava/lang/String;)V");
 	if(!constr){
 		LOGE("com/subtitleparser/subtypes/RawData: failed to get  constructor method's ID");
 	  return NULL;
 	}
-	#if 0
-	LOGE("start get new object\n\n");
-	jobject obj =  (*env)->NewObject(env, cls, constr);
-	if(!obj){
-	  LOGE("parseSubtitleFile: failed to create an object");
-	  return NULL;
-	}
+	
+	
 	LOGE("start get packet\n\n");
 	int sub_pkt = get_inter_spu_packet(msec*90);
 	if(sub_pkt < 0){
@@ -163,15 +162,42 @@ JNIEXPORT jobject JNICALL getrawdata
 	}
 	
 	int sub_size = get_inter_spu_size();
+	if(sub_size <= 0){
+		LOGE("sub_size invalid \n\n");
+		return NULL;
+	}	
+	LOGE("sub_size is %d\n\n",sub_size);
+	int *inter_sub_data = NULL;
+	inter_sub_data = malloc(sub_size*4);
+	if(inter_sub_data == NULL){
+		LOGE("malloc sub_size fail \n\n");
+		return NULL;
+	}
+	memset(inter_sub_data, 0x0, sub_size*4);
 	LOGE("start get new array\n\n");
 	jintArray array= (*env)->NewIntArray(env,sub_size);
+	if(!array){
+		LOGE("new int array fail \n\n");
+		return NULL;
+	}
  
-	parser_inter_spu((char *)array);
-	(*env)->CallVoidMethod(env, obj, constr, array, 1, get_inter_spu_width(),
-		get_inter_spu_height(),0);
-	#endif
+	parser_inter_spu(inter_sub_data);
+	LOGE("end parser_inter_spu\n\n");
+	(*env)->SetIntArrayRegion(env,array,0,sub_size, inter_sub_data);	 
+	LOGE("start get new object\n\n");
+	free(inter_sub_data);
+	jobject obj =  (*env)->NewObject(env, cls, constr,array,1,get_inter_spu_width(),
+		get_inter_spu_height(),get_inter_spu_delay(),0);
+	add_read_position();
+	if(!obj){
+	  LOGE("parseSubtitleFile: failed to create an object");
+	  return NULL;
+	}
+	//(*env)->CallVoidMethod(env, obj, constr, array, 1, get_inter_spu_width(),
+		//get_inter_spu_height(),0);
+	
     LOGE("jni getdata!,eed return a java object:RawData");
-	return NULL;
+	return obj;
 
 }
 
@@ -182,16 +208,16 @@ JNIEXPORT jobject JNICALL getrawdata
 //	return NULL;
 //
 //}
-void *inter_subtitle_parser()
+void inter_subtitle_parser()
 {
-	do{
-		if(get_subtitle_enable()&&get_subtitle_num()){
-			get_inter_spu();
-		}
-	}while(1);
+	if(get_subtitle_enable()&&get_subtitle_num())
+		get_inter_spu();
 }
+
+
 int subtitle_thread_create()
 {
+#if 0
 	pthread_t thread;
     int rc;
     LOGI("[subtitle_thread:%d]starting controler thread!!\n", __LINE__);
@@ -200,6 +226,40 @@ int subtitle_thread_create()
         LOGE("[subtitle_thread:%d]ERROR; start failed rc=%d\n", __LINE__,rc);
     }
 	return rc;
+
+	struct sigaction act; 
+    union sigval tsval; 
+
+    act.sa_handler = inter_subtitle_parser; 
+    act.sa_flags = 0; 
+    sigemptyset(&act.sa_mask); 
+    sigaction(50, &act, NULL); 
+
+    while(1)
+    { 
+        usleep(300); 
+        sigqueue(getpid(), 50, tsval); 
+    } 
+    return 0; 
+#else
+
+    struct sigaction tact; 
+    
+    tact.sa_handler = inter_subtitle_parser; 
+    tact.sa_flags = 0; 
+    sigemptyset(&tact.sa_mask); 
+    sigaction(SIGALRM, &tact, NULL); 
+
+	struct itimerval value; 
+    
+    value.it_value.tv_sec = 1; 
+    value.it_value.tv_usec = 0;//500000; 
+    value.it_interval = value.it_value; 
+    setitimer(ITIMER_REAL, &value, NULL);
+    //while(1);
+	return 0;
+#endif
+
 }
 
 static JNINativeMethod gMethods[] = {
@@ -264,6 +324,6 @@ JNI_OnLoad(JavaVM* vm, void* reserved)
 		LOGE("registerNativeMethods failed!");
 		return -1;
     }    
-	//subtitle_thread_create();
+//	subtitle_thread_create();
     return JNI_VERSION_1_4;
 }
