@@ -531,24 +531,24 @@ int parser_inter_spu(int *buffer)
 	if((subtitle_alpha==0xff0))
     {
         RGBA_Pal[2] = 0xffffffff;
-		RGBA_Pal[1] = 0xff; 
+		RGBA_Pal[1] = 0xff0000ff; 
     }
     else if((subtitle_alpha==0xfff0)){
-        RGBA_Pal[1] = 0xff000000;
+        RGBA_Pal[1] = 0xffffffff;
 		RGBA_Pal[2] = 0xffffffff; 
-		RGBA_Pal[3] = 0xffffffff;
+		//RGBA_Pal[3] = 0xffffffff;
     }
     else if((subtitle_alpha==0xf0f0)){
         RGBA_Pal[1] = 0xffffffff;
-		RGBA_Pal[3] = 0xff;
+		RGBA_Pal[3] = 0xff0000ff;
     }
     else if((subtitle_alpha==0xff00)){
 		RGBA_Pal[2] = 0xffffffff; 
-		RGBA_Pal[3] = 0xff;
+		RGBA_Pal[3] = 0xff0000ff;
     }
 	else{
 		RGBA_Pal[1] = 0xffffffff;
-		RGBA_Pal[3] = 0xff;
+		RGBA_Pal[3] = 0xff0000ff;
 	}
     for (i=0;i<buffer_height;i++){
 		if(i&1)
@@ -560,13 +560,13 @@ int parser_inter_spu(int *buffer)
 			index1 = index%2?index-1:index+1;
 			n = data[index1];
 			index++;
-            result_buf[i*(buffer_width_size)+j] = RGBA_Pal[(n>>4)&0x3];
-            if(++j >= buffer_width)    break;
             result_buf[i*(buffer_width_size)+j] = RGBA_Pal[(n>>6)&0x3];
             if(++j >= buffer_width)    break;
-            result_buf[i*(buffer_width_size)+j] = RGBA_Pal[n&0x3];
+            result_buf[i*(buffer_width_size)+j] = RGBA_Pal[(n>>4)&0x3];
             if(++j >= buffer_width)    break;
             result_buf[i*(buffer_width_size)+j] = RGBA_Pal[(n>>2)&0x3];
+            if(++j >= buffer_width)    break;
+            result_buf[i*(buffer_width_size)+j] = RGBA_Pal[n&0x3];
 		}
 	}
 	//ADD_SUBTITLE_POSITION(read_position);

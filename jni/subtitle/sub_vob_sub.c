@@ -271,10 +271,15 @@ int get_vob_spu(char *spu_buf, unsigned length, AML_SPUVAR *spu)
 		spu_fill_pixel(ptrPXDRead, pixDataEven, spu); 
 
 		memset(spu->spu_data, 0, VOB_SUB_SIZE);
+		#if 0
 		for (i=0; i<VOB_SUB_SIZE; i+=spu->spu_width/2){
 			memcpy(spu->spu_data+i, pixDataOdd+i/2, spu->spu_width/4);
 			memcpy(spu->spu_data+i+spu->spu_width/4, pixDataEven+i/2, spu->spu_width/4);
 		}
+		#else
+		memcpy(spu->spu_data, pixDataOdd, VOB_SUB_SIZE/2);
+		memcpy(spu->spu_data+VOB_SUB_SIZE/2, pixDataEven, VOB_SUB_SIZE/2);
+		#endif
 		ret = 0;
 	}
 
