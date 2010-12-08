@@ -122,6 +122,8 @@ public class Subtitle {
 	{
 		if(filename!=null)
 		{
+			if(filename.compareTo("INSUB")==0)
+				return SUBTYPE.INSUB;
 			if(charset==null)
 			{
 				getCharset();

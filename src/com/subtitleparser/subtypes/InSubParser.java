@@ -1,5 +1,6 @@
 package com.subtitleparser.subtypes;
 
+import java.io.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -9,6 +10,7 @@ import java.nio.channels.FileChannel;
 import java.util.Arrays;
 
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.*;
 import android.graphics.Bitmap.Config;
 import android.util.Log;
 
