@@ -24,8 +24,8 @@ public class SubtitleUtils {
         "rt",
         "ssa",
         "ass",
-        "sub",
         "idx",
+        "sub",
        /* "may be need add new types--------------" */};	
 	public  SubtitleUtils() {
 	}
@@ -82,7 +82,7 @@ public class SubtitleUtils {
 	    		if(file.startsWith(prefix))
 	    		{
 	    	        for (String ext : extensions) {
-	    	            if (file.endsWith(ext))
+	    	            if (file.toLowerCase().endsWith(ext))
 	    	            {
 	    	            	strlist.add(DirFile.getAbsolutePath()+"/"+file);
 	    	            	break;

@@ -72,25 +72,31 @@ public class SubtitleView extends TextView {
 		}
 			
 		SubData data = subapi.getdata(millisec+1000);
-		if(data.gettype()==1)
+		if(data == null)
 		{
-			Log.i(LOG_TAG,"start gettype()==1 bitmap");		
-			inter_bitmap=data.getSubBitmap();
-			if(inter_bitmap!=null)
+			Log.i(LOG_TAG,	"SubData return  null"  );
+		}
+		else
+		{
+			if(data.gettype()==1)
 			{
-				Log.i(LOG_TAG,	"window" +this.getWidth()+"X"+this.getHeight() );
-				Log.i(LOG_TAG,	"invalidate " +inter_bitmap.getWidth()+"X"+inter_bitmap.getHeight() );
-		        this.setMinimumWidth(inter_bitmap.getWidth());
-		        this.setMinimumHeight(inter_bitmap.getHeight());
-				Log.i(LOG_TAG,	"window" +this.getWidth()+"X"+this.getHeight() );
-		        invalidate(); 
-			}
-			return;
-		}else
-		{
-				
-		setText(subapi.getdata(millisec).getSubString());
-	    }
+				Log.i(LOG_TAG,"start gettype()==1 bitmap");		
+				inter_bitmap=data.getSubBitmap();
+				if(inter_bitmap!=null)
+				{
+					Log.i(LOG_TAG,	"window" +this.getWidth()+"X"+this.getHeight() );
+					Log.i(LOG_TAG,	"invalidate " +inter_bitmap.getWidth()+"X"+inter_bitmap.getHeight() );
+			        this.setMinimumWidth(inter_bitmap.getWidth());
+			        this.setMinimumHeight(inter_bitmap.getHeight());
+					Log.i(LOG_TAG,	"window" +this.getWidth()+"X"+this.getHeight() );
+			        invalidate(); 
+				}
+				return;
+			}else
+			{
+				setText(data.getSubString());
+		    }
+		}
 	}
 	
 	public void setDelay(int milsec) 
