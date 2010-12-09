@@ -5,6 +5,12 @@
 int get_subtitle_enable();
 int get_subtitle_num();
 int get_subtitle_curr();
+int set_subtitle_curr(int num);
+int set_subtitle_enable(int num);
+int set_subtitle_size(int num);
+int get_subtitle_size();
+int set_subtitle_data(int data);
+int get_subtitle_data();
 
 #endif
 

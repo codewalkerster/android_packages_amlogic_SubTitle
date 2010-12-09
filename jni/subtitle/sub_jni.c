@@ -120,7 +120,16 @@ JNIEXPORT jint JNICALL getInSubtitleTotal
 
 JNIEXPORT jint JNICALL setInSubtitleNumber
   (JNIEnv *env, jclass cl, jint index )  
-{
+{	
+	if(index == 0xff){
+		set_subtitle_enable(0);
+		close_subtitle();
+	}
+	else if(index < get_subtitle_num()){
+		close_subtitle();
+		set_subtitle_enable(1);
+		set_subtitle_curr(index);
+	}
     LOGE("jni setInSubtitleNumber!");
 	return 0;
 }
@@ -324,6 +333,6 @@ JNI_OnLoad(JavaVM* vm, void* reserved)
 		LOGE("registerNativeMethods failed!");
 		return -1;
     }    
-//	subtitle_thread_create();
+	subtitle_thread_create();
     return JNI_VERSION_1_4;
 }

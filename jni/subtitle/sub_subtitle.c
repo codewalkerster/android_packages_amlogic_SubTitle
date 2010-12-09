@@ -535,20 +535,20 @@ int parser_inter_spu(int *buffer)
     }
     else if((subtitle_alpha==0xfff0)){
         RGBA_Pal[1] = 0xffffffff;
-		RGBA_Pal[2] = 0xffffffff; 
-		//RGBA_Pal[3] = 0xffffffff;
+		RGBA_Pal[2] = 0xff000000; 
+		RGBA_Pal[3] = 0xff000000;
     }
     else if((subtitle_alpha==0xf0f0)){
         RGBA_Pal[1] = 0xffffffff;
-		RGBA_Pal[3] = 0xff0000ff;
+		RGBA_Pal[3] = 0xff000000;
     }
     else if((subtitle_alpha==0xff00)){
 		RGBA_Pal[2] = 0xffffffff; 
-		RGBA_Pal[3] = 0xff0000ff;
+		RGBA_Pal[3] = 0xff000000;
     }
 	else{
 		RGBA_Pal[1] = 0xffffffff;
-		RGBA_Pal[3] = 0xff0000ff;
+		RGBA_Pal[3] = 0xff000000;
 	}
     for (i=0;i<buffer_height;i++){
 		if(i&1)
@@ -602,6 +602,7 @@ int close_subtitle()
 		if(inter_subtitle_data[i].data)
 			free(inter_subtitle_data[i].data);
 		inter_subtitle_data[i].data = NULL;
+		memset(&(inter_subtitle_data[i]), 0x0, sizeof(subtitle_data_t));
 	}
 	file_position = 0;
 	read_position = 0;
