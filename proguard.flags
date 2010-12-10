@@ -9,4 +9,5 @@
 	public native int getInSubtitleTotalByJni();
 	public native int setInSubtitleNumberByJni(int  );
 	public native int getCurrentInSubtitleIndexByJni();
+	public native void FileChangedByJni(java.lang.String);
 }
