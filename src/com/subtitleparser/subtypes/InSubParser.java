@@ -35,16 +35,14 @@ class InSubApi extends SubtitleApi
 	private static int subtitle_alpha = 0;
 	private static int subtitle_pts = 0;
 	public  static int subtitle_delay = 0;
-	private static Bitmap bf_show = null;
 	private static RawData inter_data = null;
-	
+	private static Bitmap bf_show=null;
 	
 
 	
 	 private Bitmap bitmap=null;
 	 InSubApi()
 	 {
-//		 getrawdata(10);
 	 };
 
 	 public SubData getdata(int millisec )
@@ -55,10 +53,16 @@ class InSubApi extends SubtitleApi
 		 if(inter_data != null){
 		 	bf_show = Bitmap.createBitmap(inter_data.rawdata, inter_data.width,
 				inter_data.height, Config.ARGB_8888);
-			 return new SubData( bf_show, millisec,inter_data.sub_delay);
+			
+			Log.i("SubData",	"time b: " + millisec+"  e:"+inter_data.sub_delay);
+			return new SubData( bf_show, millisec,inter_data.sub_delay);
 		 }else
 		 {
-		 	return null;
+			Log.i("SubData",	"get return null");
+			int[] data = new int[1];
+			Arrays.fill(data, 0x55555500);
+			bitmap= Bitmap.createBitmap( data,  1,  1, Config.ARGB_8888  ) ;	
+	 		return new SubData( bitmap, millisec, millisec+300);
 		}
 //	    if(millisec%8000>4000)
 //	    {

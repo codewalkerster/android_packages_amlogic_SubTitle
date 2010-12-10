@@ -10,7 +10,8 @@ public class SubtitleUtils {
 	
 	public native int setInSubtitleNumberByJni(int  ms);
 	public native int getCurrentInSubtitleIndexByJni();
-	
+	public native void FileChangedByJni(String name);
+
 	private String filename=null;
 	private File subfile =null;
 	private List<String> strlist = new ArrayList<String>();
@@ -39,6 +40,7 @@ public class SubtitleUtils {
 		{
 			strlist.clear();
 			filename = name;
+			FileChangedByJni(name);
 			subfile= new File(filename);
 			accountExSubtitleNumber();
 
@@ -102,7 +104,7 @@ public class SubtitleUtils {
     //wait to finish.
     private  void setInSubtitleNumber(int index)
     {
-    	setInSubtitleNumberByJni(index-exSubtotle);
+    	setInSubtitleNumberByJni(index);
     	return;
     }   
 }

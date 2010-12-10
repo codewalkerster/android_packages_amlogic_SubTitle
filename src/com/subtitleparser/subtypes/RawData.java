@@ -10,6 +10,6 @@ public class RawData
 	int type;
 	int width;
 	int height;
-	int sub_delay;
+	int sub_delay;    //ms
 	String codec;
 }

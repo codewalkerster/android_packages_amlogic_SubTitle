@@ -10,6 +10,7 @@
 
 
 #include "sub_set_sys.h"
+#include "vob_sub.h"
 
 #define  LOG_TAG    "sub_jni"
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
@@ -108,6 +109,16 @@ err2:
 
       return NULL;
   }
+  
+JNIEXPORT void JNICALL playfileChanged
+  (JNIEnv *env, jclass cl,jstring filename )  
+{
+    LOGE("playfileChanged!");
+	
+}
+  
+  
+  
 JNIEXPORT jint JNICALL getInSubtitleTotal
   (JNIEnv *env, jclass cl)  
 {
@@ -120,16 +131,7 @@ JNIEXPORT jint JNICALL getInSubtitleTotal
 
 JNIEXPORT jint JNICALL setInSubtitleNumber
   (JNIEnv *env, jclass cl, jint index )  
-{	
-	if(index == 0xff){
-		set_subtitle_enable(0);
-		close_subtitle();
-	}
-	else if(index < get_subtitle_num()){
-		close_subtitle();
-		set_subtitle_enable(1);
-		set_subtitle_curr(index);
-	}
+{
     LOGE("jni setInSubtitleNumber!");
 	return 0;
 }
@@ -149,7 +151,7 @@ JNIEXPORT jint JNICALL getCurrentInSubtitleIndex
 JNIEXPORT jobject JNICALL getrawdata
 	  (JNIEnv *env, jclass cl, jint msec )  
 {
-    LOGE("jni getdata!,eed return a java object:RawData");
+    LOGE("jni getdata! return a java object:RawData         begin....");
 	jclass cls = (*env)->FindClass(env, "com/subtitleparser/subtypes/RawData");
 	if(!cls){
 		LOGE("com/subtitleparser/subtypes/RawData: failed to get RawData class reference");
@@ -196,7 +198,7 @@ JNIEXPORT jobject JNICALL getrawdata
 	LOGE("start get new object\n\n");
 	free(inter_sub_data);
 	jobject obj =  (*env)->NewObject(env, cls, constr,array,1,get_inter_spu_width(),
-		get_inter_spu_height(),get_inter_spu_delay(),0);
+		get_inter_spu_height(),get_inter_spu_delay()/90,0);
 	add_read_position();
 	if(!obj){
 	  LOGE("parseSubtitleFile: failed to create an object");
@@ -206,6 +208,66 @@ JNIEXPORT jobject JNICALL getrawdata
 		//get_inter_spu_height(),0);
 	
     LOGE("jni getdata!,eed return a java object:RawData");
+	return obj;
+
+}
+JNIEXPORT void JNICALL setidxsubfile
+	  (JNIEnv *env, jclass cl, jstring name )
+{
+    LOGE("jni setidxsubfile");
+	const char *file = (*env)->GetStringUTFChars(env,name, NULL);
+	init_subtitle(file);
+	(*env)->ReleaseStringUTFChars(env,name, file);
+
+}  
+
+
+JNIEXPORT jobject JNICALL getidxsubrawdata
+	  (JNIEnv *env, jclass cl, jint msec )  
+{
+    LOGE("jni getidxsubrawdata! return a java object:RawData         begin....");
+	jclass cls = (*env)->FindClass(env, "com/subtitleparser/subtypes/RawData");
+	if(!cls){
+		LOGE("com/subtitleparser/subtypes/RawData: failed to get RawData class reference");
+		return NULL;
+	}
+	
+	jmethodID constr = (*env)->GetMethodID(env, cls, "<init>", "([IIIIILjava/lang/String;)V");
+	if(!constr){
+		LOGE("com/subtitleparser/subtypes/RawData: failed to get  constructor method's ID");
+	  return NULL;
+	}
+	
+	subtitlevobsub_t* vobsub = getIdxSubData(msec);
+	if(vobsub->vob_pixData==NULL)
+	{
+		return NULL;
+	}
+
+	int sub_size = (vobsub->vob_subtitle_config.width) *(vobsub->vob_subtitle_config.height)/16;
+
+	LOGE("%d %d %d\n", vobsub->vob_subtitle_config.width ,vobsub->vob_subtitle_config.height,sub_size );
+
+
+	jintArray array= (*env)->NewIntArray(env,sub_size);
+	if(!array){
+		LOGE("new int array fail \n\n");
+		return NULL;
+	}
+ 	LOGE("end parser_inter_spu      begin.....\n\n");
+	LOGE("end parser_inter_spu      end \n\n");
+	(*env)->SetIntArrayRegion(env,array,0,sub_size, vobsub->vob_subtitle_config.prtData);	 
+	LOGE("start get new object\n\n");
+	jobject obj =  (*env)->NewObject(env, cls, constr,array,1,vobsub->vob_subtitle_config.width,
+		vobsub->vob_subtitle_config.height,3000,0);
+	if(!obj){
+	  LOGE("parseSubtitleFile: failed to create an object");
+	  return NULL;
+	}
+	//(*env)->CallVoidMethod(env, obj, constr, array, 1, get_inter_spu_width(),
+		//get_inter_spu_height(),0);
+	
+    LOGE("jni getdata! return a java object:RawData         finished");
 	return obj;
 
 }
@@ -282,14 +344,22 @@ static JNINativeMethod insubMethods[] = {
     	{ "getInSubtitleTotalByJni", "()I",                                 (void*)getInSubtitleTotal},
 		{ "setInSubtitleNumberByJni", "(I)I",                               (void*)setInSubtitleNumber},
 		{ "getCurrentInSubtitleIndexByJni", "()I",                          (void*)getCurrentInSubtitleIndex },
+		{ "FileChangedByJni", "(Ljava/lang/String;)V",                          (void*)playfileChanged },
+		
     };
     
 static JNINativeMethod insubdataMethods[] = {
     /* name, signature, funcPtr */
     	{ "getrawdata", "(I)Lcom/subtitleparser/subtypes/RawData;", (void*)getrawdata},
 //    	{ "getdataByJni", "(I)Lcom/subtitleparser/subtypes/InSubApi;", (void*)getdata},
-
     };    
+
+static JNINativeMethod idxsubdataMethods[] = {
+    /* name, signature, funcPtr */
+    	{ "setIdxFile", "(Ljava/lang/String;)V", (void*)setidxsubfile},
+    	{ "getIdxsubRawdata", "(I)Lcom/subtitleparser/subtypes/RawData;", (void*)getidxsubrawdata},
+
+    };  
 
 static int registerNativeMethods(JNIEnv* env, const char* className,
                                  const JNINativeMethod* methods, int numMethods)
@@ -333,6 +403,10 @@ JNI_OnLoad(JavaVM* vm, void* reserved)
 		LOGE("registerNativeMethods failed!");
 		return -1;
     }    
+    if (registerNativeMethods(env, "com/subtitleparser/subtypes/IdxSubApi",idxsubdataMethods, NELEM(idxsubdataMethods)) < 0){
+		LOGE("registerNativeMethods failed!");
+		return -1;
+    } 
 	subtitle_thread_create();
     return JNI_VERSION_1_4;
 }

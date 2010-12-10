@@ -87,7 +87,10 @@ public class FileIO {
 				while (( line = input.readLine()) != null&&testMaxLines>0)
 				{
 					Log.v("dectFileType"," -----new line--------"+(60-testMaxLines)+"  "+line);
-
+					if(line.length()>3000)
+					{
+						return Subtitle.SUBTYPE.SUB_INVALID;
+					}
 
 					testMaxLines--;
 					if(line==null)

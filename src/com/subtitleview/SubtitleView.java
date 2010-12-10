@@ -11,6 +11,7 @@ import android.widget.TextView;
 import com.subtitleparser.*;
 import android.graphics.Matrix;
 import android.graphics.Canvas;
+import android.widget.LinearLayout;
 
 public class SubtitleView extends TextView {
 	private static final String LOG_TAG = SubtitleView.class.getSimpleName();
@@ -21,6 +22,7 @@ public class SubtitleView extends TextView {
 	private Bitmap inter_bitmap = null;
 	private Subtitle subtitle=null;
 	private int timeoffset=1000;
+	private SubData data =null;
 	
 //	public void setInsubStatus(boolean flag)
 //	{
@@ -60,6 +62,11 @@ public class SubtitleView extends TextView {
 			setVisibility( VISIBLE); 
 		}
 	}
+	
+	
+	
+	
+	
 	public void tick(int millisec) {
 
 		if (needSubTitleShow==false) {
@@ -70,8 +77,18 @@ public class SubtitleView extends TextView {
 			Log.i(LOG_TAG,	"subapi!!!!!!!!!!!!!!!  null"  );
 			return;
 		}
+		int modifytime =millisec+1000;
+		if(data!=null)
+		{
+			Log.i(LOG_TAG,	"modifytime :"+modifytime  +"exist b:"+data.beginTime()+" e:"+data.endTime() );
+
+			if(modifytime>=data.beginTime()&& modifytime<=data.endTime())
+			{
+				return ;
+			}
+		}	
 			
-		SubData data = subapi.getdata(millisec+1000);
+		data = subapi.getdata(modifytime);
 		if(data == null)
 		{
 			Log.i(LOG_TAG,	"SubData return  null"  );
@@ -86,8 +103,7 @@ public class SubtitleView extends TextView {
 				{
 					Log.i(LOG_TAG,	"window" +this.getWidth()+"X"+this.getHeight() );
 					Log.i(LOG_TAG,	"invalidate " +inter_bitmap.getWidth()+"X"+inter_bitmap.getHeight() );
-			        this.setMinimumWidth(inter_bitmap.getWidth());
-			        this.setMinimumHeight(inter_bitmap.getHeight());
+					setLayoutParams(new LinearLayout.LayoutParams(inter_bitmap.getWidth(),inter_bitmap.getHeight()));
 					Log.i(LOG_TAG,	"window" +this.getWidth()+"X"+this.getHeight() );
 			        invalidate(); 
 				}

@@ -28,7 +28,16 @@ public class SubData
 	}
 	public Bitmap getSubBitmap(){
 		return bitmap;
+	}
+	public int beginTime()
+	{
+		return starttime;
+	}
+	public int endTime()
+	{
+		return endtime;
 	}	
+		
 	private String substr=null;
 	private Bitmap bitmap=null;
 	private int starttime=0;
