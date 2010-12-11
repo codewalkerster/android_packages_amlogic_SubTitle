@@ -113,6 +113,7 @@ err2:
 JNIEXPORT void JNICALL playfileChanged
   (JNIEnv *env, jclass cl,jstring filename )  
 {
+	close_subtitle();
     LOGE("playfileChanged!");
 	
 }
@@ -131,7 +132,16 @@ JNIEXPORT jint JNICALL getInSubtitleTotal
 
 JNIEXPORT jint JNICALL setInSubtitleNumber
   (JNIEnv *env, jclass cl, jint index )  
-{
+{	
+	if(index == 0xff){
+		set_subtitle_enable(0);
+		close_subtitle();
+	}
+	else if(index < get_subtitle_num()){
+		close_subtitle();
+		set_subtitle_enable(1);
+		set_subtitle_curr(index);
+	}
     LOGE("jni setInSubtitleNumber!");
 	return 0;
 }
@@ -193,12 +203,19 @@ JNIEXPORT jobject JNICALL getrawdata
 	}
  
 	parser_inter_spu(inter_sub_data);
+	int *resize_data = malloc(get_inter_spu_resize_size()*4);
+	if(resize_data == NULL){
+		free(inter_sub_data);
+		return NULL;
+	}
+	fill_resize_data(resize_data, inter_sub_data);
 	LOGE("end parser_inter_spu\n\n");
-	(*env)->SetIntArrayRegion(env,array,0,sub_size, inter_sub_data);	 
+	(*env)->SetIntArrayRegion(env,array,0,get_inter_spu_resize_size(), resize_data);	 
 	LOGE("start get new object\n\n");
 	free(inter_sub_data);
+	free(resize_data);
 	jobject obj =  (*env)->NewObject(env, cls, constr,array,1,get_inter_spu_width(),
-		get_inter_spu_height(),get_inter_spu_delay()/90,0);
+		get_inter_spu_height(),get_inter_spu_delay(),0);
 	add_read_position();
 	if(!obj){
 	  LOGE("parseSubtitleFile: failed to create an object");
