@@ -11,3 +11,12 @@
 	public native int getCurrentInSubtitleIndexByJni();
 	public native void FileChangedByJni(java.lang.String);
 }
+
+-keep class com.subtitleparser.subtypes.IdxSubApi {
+  native static RawData getIdxsubRawdata(int ); 
+	native void setIdxFile(java.lang.String);
+}
+-keep class com.subtitleparser.subtypes.InSubApi {
+	native static RawData getrawdata(int ); 
+	native static SubData getdataByJni(int ); 
+}
