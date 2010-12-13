@@ -77,7 +77,7 @@ public class SubtitleView extends TextView {
 			Log.i(LOG_TAG,	"subapi!!!!!!!!!!!!!!!  null"  );
 			return;
 		}
-		int modifytime =millisec+1000;
+		int modifytime =millisec;
 		if(data!=null)
 		{
 			Log.i(LOG_TAG,	"modifytime :"+modifytime  +"exist b:"+data.beginTime()+" e:"+data.endTime() );

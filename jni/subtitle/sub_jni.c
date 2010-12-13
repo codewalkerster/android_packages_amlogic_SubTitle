@@ -176,7 +176,8 @@ JNIEXPORT jobject JNICALL getrawdata
 	
 	
 	LOGE("start get packet\n\n");
-	int sub_pkt = get_inter_spu_packet(msec*90);
+	int sub_pkt = get_inter_spu_packet(msec*90+get_subtitle_startpts());
+	LOGI("subtitle get start pts is %x\n\n",get_subtitle_startpts());
 	if(sub_pkt < 0){
 		LOGE("sub pkt fail\n\n");
 		return NULL;
@@ -215,7 +216,7 @@ JNIEXPORT jobject JNICALL getrawdata
 	free(inter_sub_data);
 	free(resize_data);
 	jobject obj =  (*env)->NewObject(env, cls, constr,array,1,get_inter_spu_width(),
-		get_inter_spu_height(),get_inter_spu_delay(),0);
+		get_inter_spu_height(),(get_inter_spu_delay()-get_subtitle_startpts())/90,0);
 	add_read_position();
 	if(!obj){
 	  LOGE("parseSubtitleFile: failed to create an object");
