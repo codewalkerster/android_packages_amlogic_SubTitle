@@ -157,3 +157,18 @@ int get_subtitle_data()
 	return subtitle_data;   
 }
 
+int get_subtitle_startpts()
+{
+    int fd;
+	int subtitle_pts = 0;
+    char *path = "/sys/class/subtitle/startpts";    
+	char  bcmd[16];
+	fd=open(path, O_RDONLY);
+	if(fd>=0)	{    	
+    	read(fd,bcmd,sizeof(bcmd)); 
+		sscanf(bcmd, "%d", &subtitle_pts);
+    	close(fd);    	
+	}
+	return subtitle_pts;   
+}
+

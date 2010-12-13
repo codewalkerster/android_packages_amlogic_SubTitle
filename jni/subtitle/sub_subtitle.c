@@ -46,6 +46,11 @@ typedef struct{
 	int data_size;
 	int subtitle_width;
 	int subtitle_height;
+	int resize_height;
+	int resize_width;
+	int resize_xstart;
+	int resize_ystart;
+	int resize_size;
 	unsigned short sub_alpha;
 	char * data;
 }subtitle_data_t;
@@ -486,18 +491,25 @@ int get_inter_spu_size()
 
 int get_inter_spu_width()
 {
-	return ((inter_subtitle_data[read_position].subtitle_width+63)&0xffffffc0);
+	return inter_subtitle_data[read_position].resize_width;
+	//return ((inter_subtitle_data[read_position].subtitle_width+63)&0xffffffc0);
 }
 
 int get_inter_spu_height()
 {
-	return inter_subtitle_data[read_position].subtitle_height;
+	return inter_subtitle_data[read_position].resize_height;
+	//return inter_subtitle_data[read_position].subtitle_height;
 }
 
 
 int get_inter_spu_delay()
 {
 	return inter_subtitle_data[read_position].subtitle_delay_pts;
+}
+
+int get_inter_spu_resize_size()
+{
+	return inter_subtitle_data[read_position].resize_size;
 }
 
 int add_read_position()
@@ -507,7 +519,27 @@ int add_read_position()
 	return 0;
 }
 
-int parser_inter_spu(int *buffer)
+int fill_resize_data(int *dst_data, int *src_data)
+{
+	int y_start = inter_subtitle_data[read_position].resize_ystart;
+	int x_start = inter_subtitle_data[read_position].resize_xstart;
+	int y_end = y_start+inter_subtitle_data[read_position].resize_height;
+	int resize_width = inter_subtitle_data[read_position].resize_width;
+	int buffer_width = inter_subtitle_data[read_position].subtitle_width;
+	int buffer_height = inter_subtitle_data[read_position].subtitle_height;
+	int buffer_width_size = (buffer_width+63)&0xffffffc0;
+	int *resize_src_data = src_data + buffer_width_size*y_start;
+	int i = y_start;
+	for(; i<y_end; i++){
+		memcpy(dst_data+(resize_width*(i-y_start)), 
+			resize_src_data+(buffer_width_size*(i-y_start))+x_start,
+			resize_width*4);		
+	}
+	return 0;
+	
+}
+
+int *parser_inter_spu(int *buffer)
 {
 	LOGI("enter parser_inter_sup \n\n");
 	
@@ -518,8 +550,11 @@ int parser_inter_spu(int *buffer)
     unsigned index = 0, index1 = 0;
 	unsigned char n = 0;
 	unsigned short buffer_width, buffer_height;
+	int start_height = -1, end_height = 0;
 	buffer_width = inter_subtitle_data[read_position].subtitle_width;
 	buffer_height = inter_subtitle_data[read_position].subtitle_height;
+	int resize_width = buffer_width, resize_height;
+	int x_start = buffer_width, x_end = 0;
     unsigned data_byte = (((buffer_width*2)+15)>>4)<<1;
 	LOGI("data_byte is %d\n\n",data_byte);
 	int buffer_width_size = (buffer_width+63)&0xffffffc0;
@@ -560,17 +595,42 @@ int parser_inter_spu(int *buffer)
 			index1 = index%2?index-1:index+1;
 			n = data[index1];
 			index++;
-            result_buf[i*(buffer_width_size)+j] = RGBA_Pal[(n>>6)&0x3];
-            if(++j >= buffer_width)    break;
-            result_buf[i*(buffer_width_size)+j] = RGBA_Pal[(n>>4)&0x3];
-            if(++j >= buffer_width)    break;
-            result_buf[i*(buffer_width_size)+j] = RGBA_Pal[(n>>2)&0x3];
-            if(++j >= buffer_width)    break;
-            result_buf[i*(buffer_width_size)+j] = RGBA_Pal[n&0x3];
-		}
+			if(n){
+				if(start_height < 0){
+					start_height = i;
+					//start_height = (start_height%2)?(start_height-1):start_height;
+				}
+				end_height = i;
+				if(j < x_start)
+					x_start = j;
+	            result_buf[i*(buffer_width_size)+j] = RGBA_Pal[(n>>6)&0x3];
+	            if(++j >= buffer_width)    break;
+	            result_buf[i*(buffer_width_size)+j] = RGBA_Pal[(n>>4)&0x3];
+	            if(++j >= buffer_width)    break;
+	            result_buf[i*(buffer_width_size)+j] = RGBA_Pal[(n>>2)&0x3];
+	            if(++j >= buffer_width)    break;
+	            result_buf[i*(buffer_width_size)+j] = RGBA_Pal[n&0x3];
+				if(j > x_end)
+					x_end = j;
+			}
+			else
+				j+=3;
+			
+		}
+		
 	}
+	//end_height = (end_height%2)?(((end_height+1)<=buffer_height)?(end_height+1):end_height):end_height;
+	inter_subtitle_data[read_position].resize_xstart = x_start;
+	inter_subtitle_data[read_position].resize_ystart = start_height;
+	inter_subtitle_data[read_position].resize_width = (x_end - x_start + 1 + 63)&0xffffffc0;
+	inter_subtitle_data[read_position].resize_height = end_height - start_height + 1;
+	inter_subtitle_data[read_position].resize_size = inter_subtitle_data[read_position].resize_height * \
+							inter_subtitle_data[read_position].resize_width;
+	LOGI("resize height is %d\n\n",inter_subtitle_data[read_position].resize_height);
+	LOGI("resize_width is %d\n\n",inter_subtitle_data[read_position].resize_width);
+	return (result_buf+start_height*buffer_width_size);
 	//ADD_SUBTITLE_POSITION(read_position);
-	return 0;
+	return NULL;
 }
 
 int get_inter_spu()
