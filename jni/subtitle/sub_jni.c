@@ -158,6 +158,14 @@ JNIEXPORT jint JNICALL getCurrentInSubtitleIndex
 
 
 
+JNIEXPORT void JNICALL closeInSubView (JNIEnv *env, jclass cl )  
+{
+	LOGE("jni closeInSubView!");
+	set_subtitle_enable(0);
+	close_subtitle();
+}
+
+
 JNIEXPORT jobject JNICALL getrawdata
 	  (JNIEnv *env, jclass cl, jint msec )  
 {
@@ -234,10 +242,16 @@ JNIEXPORT void JNICALL setidxsubfile
 {
     LOGE("jni setidxsubfile");
 	const char *file = (*env)->GetStringUTFChars(env,name, NULL);
-	init_subtitle(file);
+	idxsub_init_subtitle(file);
 	(*env)->ReleaseStringUTFChars(env,name, file);
 
 }  
+
+JNIEXPORT void JNICALL  closeIdxSubFile(JNIEnv *env, jclass cl )
+{
+	LOGE("jni closeIdxSubFile");
+	idxsub_close_subtitle();
+}
 
 
 JNIEXPORT jobject JNICALL getidxsubrawdata
@@ -281,6 +295,7 @@ JNIEXPORT jobject JNICALL getidxsubrawdata
 	LOGE("parser_data over\n\n");
 
 	(*env)->SetIntArrayRegion(env,array,0,sub_size*4,idxsubdata);	 
+	free(idxsubdata);
 	LOGE("start get new object\n\n");
 	jobject obj =  (*env)->NewObject(env, cls, constr,array,1,vobsub->vob_subtitle_config.width,
 		vobsub->vob_subtitle_config.height,3000,0);
@@ -290,8 +305,7 @@ JNIEXPORT jobject JNICALL getidxsubrawdata
 	}
 	//(*env)->CallVoidMethod(env, obj, constr, array, 1, get_inter_spu_width(),
 		//get_inter_spu_height(),0);
-	
-	free(idxsubdata);
+
     LOGE("jni getdata! return a java object:RawData         finished");
 	return obj;
 
@@ -376,6 +390,8 @@ static JNINativeMethod insubMethods[] = {
 static JNINativeMethod insubdataMethods[] = {
     /* name, signature, funcPtr */
     	{ "getrawdata", "(I)Lcom/subtitleparser/subtypes/RawData;", (void*)getrawdata},
+		{ "closeInSub", "()V", (void*)closeInSubView},
+
 //    	{ "getdataByJni", "(I)Lcom/subtitleparser/subtypes/InSubApi;", (void*)getdata},
     };    
 
@@ -383,6 +399,7 @@ static JNINativeMethod idxsubdataMethods[] = {
     /* name, signature, funcPtr */
     	{ "setIdxFile", "(Ljava/lang/String;)V", (void*)setidxsubfile},
     	{ "getIdxsubRawdata", "(I)Lcom/subtitleparser/subtypes/RawData;", (void*)getidxsubrawdata},
+    	{ "closeIdxSub", "()V", (void*)closeIdxSubFile},
 
     };  
 

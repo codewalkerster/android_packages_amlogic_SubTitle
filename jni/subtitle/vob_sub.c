@@ -1841,7 +1841,7 @@ static void ini_subdata( subtitlevobsub_t * subtitlevobsub)
 
 
 //when change to other idxsub file ,should call close_subtitle() to free memory first;
-int init_subtitle( char* fileurl)
+int idxsub_init_subtitle( char* fileurl)
 {
 	if(vobsubdata==NULL)
 	{
@@ -1852,6 +1852,14 @@ int init_subtitle( char* fileurl)
 	}
 	totalsubnum= SubtitleVOBSub_SetExtSubtitle(vobsubdata,fileurl,1);
 	return totalsubnum;
+}
+
+void idxsub_close_subtitle()
+{
+	if(vobsubdata!=NULL)
+	{
+		close_subtitle(vobsubdata);
+	}
 }
 
 

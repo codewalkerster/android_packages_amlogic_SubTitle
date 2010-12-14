@@ -11,6 +11,7 @@ import android.widget.TextView;
 import com.subtitleparser.*;
 import android.graphics.Matrix;
 import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.widget.LinearLayout;
 
 public class SubtitleView extends TextView {
@@ -23,7 +24,7 @@ public class SubtitleView extends TextView {
 	private Subtitle subtitle=null;
 	private int timeoffset=1000;
 	private SubData data =null;
-	
+	private static String TAGl = "SubtitleView";
 //	public void setInsubStatus(boolean flag)
 //	{
 //		InsubStatus=flag;
@@ -101,15 +102,16 @@ public class SubtitleView extends TextView {
 				inter_bitmap=data.getSubBitmap();
 				if(inter_bitmap!=null)
 				{
-					Log.i(LOG_TAG,	"window" +this.getWidth()+"X"+this.getHeight() );
-					Log.i(LOG_TAG,	"invalidate " +inter_bitmap.getWidth()+"X"+inter_bitmap.getHeight() );
-//					setLayoutParams(new LinearLayout.LayoutParams(inter_bitmap.getWidth(),inter_bitmap.getHeight()));
-					Log.i(LOG_TAG,	"window" +this.getWidth()+"X"+this.getHeight() );
+//					Log.i(LOG_TAG,	"window" +this.getWidth()+"X"+this.getHeight() );
+//					Log.i(LOG_TAG,	"invalidate " +inter_bitmap.getWidth()+"X"+inter_bitmap.getHeight() );
+					//setLayoutParams(new LinearLayout.LayoutParams(inter_bitmap.getWidth(),inter_bitmap.getHeight()));
+//					Log.i(LOG_TAG,	"window" +this.getWidth()+"X"+this.getHeight() );
 			        invalidate(); 
 				}
 				return;
 			}else
 			{
+				Log.i(TAGl,	"window............." +this.getWidth()+"X"+this.getHeight() );
 				setText(data.getSubString());
 		    }
 		}
@@ -137,20 +139,62 @@ public class SubtitleView extends TextView {
 		   Matrix matrix = new Matrix();
            matrix.postScale(1.0f, 1.0f);
            //matrix.setRotate(90,120,120);
-           Log.i("SubView", "----"+inter_bitmap.getWidth()+inter_bitmap.getHeight() );
+           int offset_x =0;
+           int offset_y =0;
+           int display_width=0;
+           int display_height=0;
+           
+           
+           Log.i(LOG_TAG,"...window.......bitmap......." +this.getWidth()+"X"+this.getHeight() +"  " +inter_bitmap.getWidth()+"X"+inter_bitmap.getHeight() );
+           
 
-           canvas.drawBitmap(inter_bitmap, 0, 0, null);
-           Log.i(LOG_TAG,
-			"end draw bitmap ");
+
+			if((((float)this.getWidth())/inter_bitmap.getWidth())>(((float)this.getHeight())/inter_bitmap.getHeight()))
+			{
+				display_width = inter_bitmap.getWidth()*this.getHeight()/inter_bitmap.getHeight();
+        	    display_height = this.getHeight();		
+        	    offset_x = (this.getWidth()-display_width)/2;
+        	    offset_y = 0;
+			}else 
+			{
+				display_width = this.getWidth();
+        	    display_height =inter_bitmap.getHeight()*this.getWidth()/inter_bitmap.getWidth();
+        	    offset_x = 0;
+        	    offset_y = this.getHeight()-display_height;        	    		
+			}
+			
+			Log.i(TAGl, "....x y w h.........."+offset_x+" "+offset_y+" "+display_width+" "+display_height );
+
+           
+           Rect Src = new Rect(0,0,inter_bitmap.getWidth(),inter_bitmap.getHeight());
+		   Rect Dst = new Rect(offset_x,offset_y,offset_x+display_width,offset_y+display_height);
+           canvas.drawBitmap(inter_bitmap,Src,Dst,null);
+   
+
+           
+           Log.i(LOG_TAG,"end draw bitmap ");
            //inter_bitmap.recycle();
            inter_bitmap = null;
 		 } 	
 		 super.onDraw(canvas); 
 
     }
+    
+    public void closeSubtitle()
+    {
+		if(subapi!=null)
+		{
+			subapi.closeSubtitle();
+			subapi = null;				
+		}    	
+    }
 
 	public Subtitle.SUBTYPE setFile(String file, String enc) throws Exception {
-		subapi = null;
+		if(subapi!=null)
+		{
+			subapi.closeSubtitle();
+			subapi = null;				
+		}
 		InsubStatus=false;
 		// load Input File
 		try {

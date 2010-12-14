@@ -21,8 +21,9 @@ import com.subtitleparser.SubtitleParser;
 
 class InSubApi extends SubtitleApi
 {
-	native static RawData getrawdata(int millisec); 
-	native static SubData getdataByJni(int millisec); 
+	native  RawData getrawdata(int millisec); 
+	native  SubData getdataByJni(int millisec); 
+	native  void closeInSub();
 	private static final String SUBTITLE_FILE = "/data/subtitle.db";
 	private static final String WRITE_SUBTITLE_FILE = "/data/subtitle_img.jpeg";
 	private static int subtitle_packet_size = (4+1+4+4+2+2+2+2+2+4+720*576/4);
@@ -44,6 +45,10 @@ class InSubApi extends SubtitleApi
 	 InSubApi()
 	 {
 	 };
+	 public void closeSubtitle( )
+	 {
+		 closeInSub();
+	 }
 
 	 public SubData getdata(int millisec )
 	 {
@@ -60,7 +65,7 @@ class InSubApi extends SubtitleApi
 		 {
 			Log.i("SubData",	"get return null");
 			int[] data = new int[1];
-			Arrays.fill(data, 0x55555500);
+			Arrays.fill(data, 0x00000000);
 			bitmap= Bitmap.createBitmap( data,  1,  1, Config.ARGB_8888  ) ;	
 	 		return new SubData( bitmap, millisec, millisec+300);
 		}

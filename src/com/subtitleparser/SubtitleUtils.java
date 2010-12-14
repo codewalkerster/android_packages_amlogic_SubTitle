@@ -43,7 +43,6 @@ public class SubtitleUtils {
 			FileChangedByJni(name);
 			subfile= new File(filename);
 			accountExSubtitleNumber();
-
 		}
 	}
 	
@@ -93,7 +92,25 @@ public class SubtitleUtils {
 	    	            }
 	    	        }	    			
 	    		}
-	    	}    	
+	    	}
+	    	for(String file : strlist)
+	    	{
+	    		if(file.toLowerCase().endsWith("idx"))
+	    		{
+	    			Log.v("before: ",""+file );
+	    			String st=file.substring(0, file.length()-3);
+	    			for(int i=0;i<strlist.size();i++)
+	    			{
+	    				if(strlist.get(i).toLowerCase().endsWith("sub")&&
+	    						strlist.get(i).startsWith(st)&&
+	    						strlist.get(i).length()==file.length())
+	    				{
+	    	    			Log.v("accountExSubtitleNumber: ","clear "+strlist.get(i) );
+	    					strlist.remove(i);
+	    				}
+	    			}
+	    		}
+	    	}
     	}
     	exSubtotle=strlist.size();
     }

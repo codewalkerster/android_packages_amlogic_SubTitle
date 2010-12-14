@@ -17,8 +17,9 @@ import com.subtitleparser.SubtitleParser;
 
 class IdxSubApi extends SubtitleApi
 {
-	native static RawData getIdxsubRawdata(int millisec); 
+	native  RawData getIdxsubRawdata(int millisec); 
 	native void setIdxFile(String name);
+	native void closeIdxSub();
 	public  static int subtitle_file_position = 0;
 	public  static int subtitle_delay = 0;
 	private static Bitmap bf_show = null;
@@ -30,7 +31,10 @@ class IdxSubApi extends SubtitleApi
 		 filename =name;
 		 setIdxFile(filename);
 	 };
-
+	 public void closeSubtitle( )
+	 {
+		 closeIdxSub();
+	 }
 	 public SubData getdata(int millisec )
 	 {
 		 //add  value to bitmap
@@ -42,14 +46,14 @@ class IdxSubApi extends SubtitleApi
 				inter_data.height, Config.ARGB_8888);
 			
 			Log.i("SubData",	"time b: " + millisec+"  e:"+inter_data.sub_delay);
-//			File myCaptureFile = new File("/sdcard/idxsubtmp" + ".jpg");
+//			File myCaptureFile = new File("/sdcard/subtmp" + ".jpg");
 //			try {
 //				myCaptureFile.createNewFile();
 //			} catch (IOException e1) {
 //				// TODO Auto-generated catch block
 //				e1.printStackTrace();
 //			}
-//
+
 //			BufferedOutputStream bos;
 //			try {
 //				Log.i("","save file begin!!!!!!!!!!!!!!!!!!!");
@@ -68,9 +72,6 @@ class IdxSubApi extends SubtitleApi
 //				// TODO Auto-generated catch block
 //				e.printStackTrace();
 //			}
-
-
-			
 			
 			
 			
@@ -85,7 +86,7 @@ class IdxSubApi extends SubtitleApi
 
 //			Log.i("InSubApi", "------------getdata2-----------" );
 			int[] data = new int[1];
-			Arrays.fill(data, 0x99999900);    	
+			Arrays.fill(data, 0x00000000);    	
 			bitmap= Bitmap.createBitmap( data,  1,  1, Config.ARGB_8888  ) ;
  			return new SubData( bitmap, millisec,millisec+300);
 		 

@@ -19,6 +19,9 @@ class TextSubApi extends SubtitleApi
 	 public TextSubApi(SubtitleFile sf){
 		 SubFile=sf;
 	 }
+	 public void closeSubtitle( )
+	 {		 
+	 }
 	 public SubData getdata(int millisec )
 	 {
 		 try {

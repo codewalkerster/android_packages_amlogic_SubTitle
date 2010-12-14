@@ -22,6 +22,8 @@ class SsaApi extends SubtitleApi
 	 public SsaApi(SubtitleFile sf){
 		 SubFile=sf;
 	 }
+	 public void closeSubtitle( ){}
+	 
 	 public SubData getdata(int millisec )
 	 {
 		 try {
