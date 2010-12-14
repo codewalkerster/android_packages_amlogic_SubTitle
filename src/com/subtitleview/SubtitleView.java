@@ -103,7 +103,7 @@ public class SubtitleView extends TextView {
 				{
 					Log.i(LOG_TAG,	"window" +this.getWidth()+"X"+this.getHeight() );
 					Log.i(LOG_TAG,	"invalidate " +inter_bitmap.getWidth()+"X"+inter_bitmap.getHeight() );
-					//setLayoutParams(new LinearLayout.LayoutParams(inter_bitmap.getWidth(),inter_bitmap.getHeight()));
+//					setLayoutParams(new LinearLayout.LayoutParams(inter_bitmap.getWidth(),inter_bitmap.getHeight()));
 					Log.i(LOG_TAG,	"window" +this.getWidth()+"X"+this.getHeight() );
 			        invalidate(); 
 				}
