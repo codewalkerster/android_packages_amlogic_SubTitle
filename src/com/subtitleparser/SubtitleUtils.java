@@ -64,6 +64,7 @@ public class SubtitleUtils {
     		return strlist.get(index);
     	else if(index<getSubTotal())
     	{
+    		setInSubtitleNumber(0xff);
     		setInSubtitleNumber(index-exSubtotle);
     		return "INSUB";
     	}
