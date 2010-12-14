@@ -243,7 +243,7 @@ JNIEXPORT void JNICALL setidxsubfile
 JNIEXPORT jobject JNICALL getidxsubrawdata
 	  (JNIEnv *env, jclass cl, jint msec )  
 {
-    LOGE("jni getidxsubrawdata! return a java object:RawData         begin....");
+    LOGE("jni getidxsubrawdata! need return a java object:RawData         begin....");
 	jclass cls = (*env)->FindClass(env, "com/subtitleparser/subtypes/RawData");
 	if(!cls){
 		LOGE("com/subtitleparser/subtypes/RawData: failed to get RawData class reference");
@@ -257,24 +257,30 @@ JNIEXPORT jobject JNICALL getidxsubrawdata
 	}
 	
 	subtitlevobsub_t* vobsub = getIdxSubData(msec);
-	if(vobsub->vob_pixData==NULL)
-	{
+	
+	if(vobsub==NULL)
+			  return NULL;
+
+	int sub_size = (vobsub->vob_subtitle_config.width) *(vobsub->vob_subtitle_config.height)/4;   //byte
+
+	LOGE("w%d h%d s%d\n", vobsub->vob_subtitle_config.width ,vobsub->vob_subtitle_config.height,sub_size );
+	int *idxsubdata = NULL;
+	idxsubdata = malloc(sub_size*16);
+	if(idxsubdata == NULL){
+		LOGE("malloc sub_size fail \n\n");
 		return NULL;
 	}
-
-	int sub_size = (vobsub->vob_subtitle_config.width) *(vobsub->vob_subtitle_config.height)/16;
-
-	LOGE("%d %d %d\n", vobsub->vob_subtitle_config.width ,vobsub->vob_subtitle_config.height,sub_size );
-
-
-	jintArray array= (*env)->NewIntArray(env,sub_size);
+	memset(idxsubdata, 0x0, sub_size*16);
+	jintArray array= (*env)->NewIntArray(env,sub_size*4);
 	if(!array){
 		LOGE("new int array fail \n\n");
 		return NULL;
 	}
- 	LOGE("end parser_inter_spu      begin.....\n\n");
-	LOGE("end parser_inter_spu      end \n\n");
-	(*env)->SetIntArrayRegion(env,array,0,sub_size, vobsub->vob_subtitle_config.prtData);	 
+	LOGE("start parser_data\n\n");
+	idxsub_parser_data(vobsub->vob_subtitle_config.prtData,sub_size,vobsub->vob_subtitle_config.width/4 ,idxsubdata);
+	LOGE("parser_data over\n\n");
+
+	(*env)->SetIntArrayRegion(env,array,0,sub_size*4,idxsubdata);	 
 	LOGE("start get new object\n\n");
 	jobject obj =  (*env)->NewObject(env, cls, constr,array,1,vobsub->vob_subtitle_config.width,
 		vobsub->vob_subtitle_config.height,3000,0);
@@ -285,6 +291,7 @@ JNIEXPORT jobject JNICALL getidxsubrawdata
 	//(*env)->CallVoidMethod(env, obj, constr, array, 1, get_inter_spu_width(),
 		//get_inter_spu_height(),0);
 	
+	free(idxsubdata);
     LOGE("jni getdata! return a java object:RawData         finished");
 	return obj;
 

@@ -75,7 +75,9 @@ public class SubtitleUtils {
     private void  accountExSubtitleNumber()
     {
     	String tmp=subfile.getName();
-    	String prefix=tmp.substring(0, tmp.lastIndexOf('.'));
+    	String prefix=tmp.substring(0, tmp.lastIndexOf('.')+1);
+		Log.i("SubtitleUtils",	""+ prefix   );
+
       	File DirFile= subfile.getParentFile();
     	if(DirFile.isDirectory())
     	{

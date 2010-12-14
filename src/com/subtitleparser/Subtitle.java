@@ -189,9 +189,9 @@ public class Subtitle {
 			Log.i("SubtitleFile", "------------parseSubtitleFileByJni-----------"+fileName );
 			sp=new TextSubParser(); 
 		    return sp.parse(fileName,encoding);
-	//	case SUB_IDXSUB:
-	//		sp=new IdxSubParser(); 
-	//	    return sp.parse(fileName);
+		case SUB_IDXSUB:
+			sp=new IdxSubParser(); 
+		    return sp.parse(fileName);
 		case INSUB:
 			sp=new InSubParser(); 
 		    return sp.parse(fileName);		

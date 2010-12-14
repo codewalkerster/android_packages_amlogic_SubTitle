@@ -19,6 +19,11 @@
 #include "vob_sub.h"
 #define MAX_EXTNAME_LEN 8
 
+#include <android/log.h>
+
+#define  LOG_TAG    "sub_jni"
+#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 static int dbg_level = 0;
 
 
@@ -1747,6 +1752,8 @@ static int SubtitleVOBSub_ShowSubtitle(subtitlevobsub_t *subtitlevobsub,int pts 
                                             subtitlevobsub->vob_ptrPXDRead = (unsigned short *)((unsigned)(rawsubdata)+subtitlevobsub->VobSPU.bottom_pxd_addr);
                                             vob_fill_pixel(subtitlevobsub,2);        // 1 for odd, 2 for even
                                             show_vob_subtitle(subtitlevobsub);
+											LOGI("get subtitle ----------------yes\n");
+                                            ret=1;
                                         }
                                     }
                                     free(rawsubdata);
@@ -1801,8 +1808,10 @@ unsigned int totalsubnum=0;
 
 subtitlevobsub_t* getIdxSubData(int ptms)
 {
-    SubtitleVOBSub_ShowSubtitle(vobsubdata,ptms*90);
-    return vobsubdata;
+    if(SubtitleVOBSub_ShowSubtitle(vobsubdata,ptms*90)==1)
+    	return vobsubdata;
+    else
+    	return NULL;
 }
 
 
@@ -1838,9 +1847,88 @@ int init_subtitle( char* fileurl)
 	{
 
 		vobsubdata =(subtitlevobsub_t *)malloc(sizeof(subtitlevobsub_t));
+		memset(vobsubdata, 0x0, sizeof(subtitlevobsub_t));
 		ini_subdata(vobsubdata);
 	}
 	totalsubnum= SubtitleVOBSub_SetExtSubtitle(vobsubdata,fileurl,1);
 	return totalsubnum;
 }
 
+
+//change data from 2bit to 32bit
+void idxsub_parser_data( const unsigned char * source,long length,int linewidth,unsigned int * dist )
+{
+	covert2bto32b(source,length,linewidth,dist);
+	return 0;
+}
+
+
+
+
+
+ void covert2bto32b( const unsigned char * source,long length,int bytesPerLine, unsigned int * dist )
+{
+    if(dist==NULL)
+    {
+        return ;
+    }
+    
+    unsigned int RGBA_Pal[4];
+	RGBA_Pal[0] = 0;
+	RGBA_Pal[1] = 0xffffffff;
+	RGBA_Pal[2] = 0x77777777;
+	RGBA_Pal[3] = 0xaaaaaaaa;
+    
+    int i,j;
+    unsigned char a,b;
+	unsigned char * sourcemodify;
+
+//    int fd =open("/sdcard/subfrom", O_WRONLY|O_CREAT);
+//    if (fd==NULL)
+//    {
+//		LOGE("fd ================NULL");
+//    }
+//    long bytes = write(fd, source,length );
+//    close(fd);
+//
+//	LOGE("write bytes %d  / %d ",bytes, length);
+//	
+
+    for( i=0; i< length; i+=2)
+    {
+   	int linenumber = i/bytesPerLine;
+    	if(linenumber&1)
+    	{
+    		sourcemodify=source+(720*576/8);
+    	}
+    	else
+    	{
+    		sourcemodify=source;
+    	}
+    	
+        a = sourcemodify[(linenumber/2)*bytesPerLine+i%bytesPerLine];
+        b =sourcemodify[(linenumber/2)*bytesPerLine+i%bytesPerLine+1];
+        j=i*4;
+
+        dist[j]  = RGBA_Pal[(b&0xc0)>>6];
+        dist[j+1]= RGBA_Pal[(b&0x30)>>4];
+        dist[j+2]= RGBA_Pal[(b&0x0c)>>2];
+        dist[j+3]= RGBA_Pal[(b&0x03)];
+        dist[j+4]= RGBA_Pal[(a&0xc0)>>6];
+        dist[j+5]= RGBA_Pal[(a&0x30)>>4];
+        dist[j+6]= RGBA_Pal[(a&0x0c)>>2];
+        dist[j+7]= RGBA_Pal[(a&0x03)];
+
+    }
+
+//    int fdto =open("/sdcard/subto", O_WRONLY|O_CREAT);
+//    if (fdto==NULL)
+//    {
+//		LOGE("fd ================NULL");
+//    }
+//    bytes = write(fdto, dist,length*16 );
+//    close(fdto);
+//
+//	LOGE("write bytes %d  / %d ",bytes, length*16);    
+    
+}
