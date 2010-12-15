@@ -32,12 +32,23 @@ class TextSubApi extends SubtitleApi
 			} else {
 				SubFile.matchSubtitle(millisec);
 				cur = SubFile.curSubtitle();
-				if (millisec > cur.getEnd().getMilValue()) {
-					SubFile.toNextSubtitle();
+				if (millisec >= cur.getBegin().getMilValue()
+						&& millisec <= cur.getEnd().getMilValue()) {
+					st=SubFile.curSubtitle().getText();
+				}else if(millisec<cur.getBegin().getMilValue())
+				{
+					st="";
 				}
-				st="";
+				else
+				{
+					SubFile.toNextSubtitle();
+					st="";
+				}
 			}
-			return new SubData(st,cur.getBegin().getMilValue(),cur.getEnd().getMilValue());
+			if(st.compareTo("")!=0)
+				return new SubData(st,cur.getBegin().getMilValue(),cur.getEnd().getMilValue());
+			else
+				return new SubData(st,millisec,millisec+30);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
