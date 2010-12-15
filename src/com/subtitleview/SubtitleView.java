@@ -24,7 +24,12 @@ public class SubtitleView extends TextView {
 	private Subtitle subtitle=null;
 	private int timeoffset=1000;
 	private SubData data =null;
+	private int graphicViewMode = 0;
 	private static String TAGl = "SubtitleView";
+	public void setGraphicSubViewMode(int flag)
+	{
+		graphicViewMode=flag;
+	}
 //	public void setInsubStatus(boolean flag)
 //	{
 //		InsubStatus=flag;
@@ -146,22 +151,46 @@ public class SubtitleView extends TextView {
            
            
            Log.i(LOG_TAG,"...window.......bitmap......." +this.getWidth()+"X"+this.getHeight() +"  " +inter_bitmap.getWidth()+"X"+inter_bitmap.getHeight() );
-           
-
-
+   	   	  if(graphicViewMode==0)
+   	   	  {  
+   	   		  if(inter_bitmap.getHeight()<=this.getHeight()&&inter_bitmap.getWidth()<=this.getWidth())
+   	   		  {
+  				 display_width = inter_bitmap.getWidth();
+	       	     display_height =inter_bitmap.getHeight();
+	       	     offset_x = (this.getWidth()-display_width)/2;
+	       	     offset_y = this.getHeight()-display_height;  
+   	   		  }else
+   	   		  {
+   				if((((float)this.getWidth())/inter_bitmap.getWidth())>(((float)this.getHeight())/inter_bitmap.getHeight()))
+   				{
+   					display_width = inter_bitmap.getWidth()*this.getHeight()/inter_bitmap.getHeight();
+   		       	    display_height = this.getHeight();		
+   		       	    offset_x = (this.getWidth()-display_width)/2;
+   		       	    offset_y = 0;
+   				}else 
+   				{
+   					display_width = this.getWidth();
+   		       	    display_height =inter_bitmap.getHeight()*this.getWidth()/inter_bitmap.getWidth();
+   		       	    offset_x = 0;
+   		       	    offset_y = this.getHeight()-display_height;        	    		
+   				}		  
+   	   		  }
+   	   	  }else
+   	   	  {
 			if((((float)this.getWidth())/inter_bitmap.getWidth())>(((float)this.getHeight())/inter_bitmap.getHeight()))
 			{
 				display_width = inter_bitmap.getWidth()*this.getHeight()/inter_bitmap.getHeight();
-        	    display_height = this.getHeight();		
-        	    offset_x = (this.getWidth()-display_width)/2;
-        	    offset_y = 0;
+	       	    display_height = this.getHeight();		
+	       	    offset_x = (this.getWidth()-display_width)/2;
+	       	    offset_y = 0;
 			}else 
 			{
 				display_width = this.getWidth();
-        	    display_height =inter_bitmap.getHeight()*this.getWidth()/inter_bitmap.getWidth();
-        	    offset_x = 0;
-        	    offset_y = this.getHeight()-display_height;        	    		
+	       	    display_height =inter_bitmap.getHeight()*this.getWidth()/inter_bitmap.getWidth();
+	       	    offset_x = 0;
+	       	    offset_y = this.getHeight()-display_height;        	    		
 			}
+   	   	  }
 			
 			Log.i(TAGl, "....x y w h.........."+offset_x+" "+offset_y+" "+display_width+" "+display_height );
 
