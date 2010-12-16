@@ -16,6 +16,7 @@ import android.util.Log;
 
 import com.subtitleparser.MalformedSubException;
 import com.subtitleparser.SubData;
+import com.subtitleparser.Subtitle;
 import com.subtitleparser.SubtitleApi;
 import com.subtitleparser.SubtitleParser;
 
@@ -49,7 +50,10 @@ class InSubApi extends SubtitleApi
 	 {
 		 closeInSub();
 	 }
-
+	 public Subtitle.SUBTYPE type()
+	 {
+		 return Subtitle.SUBTYPE.INSUB;
+	 }
 	 public SubData getdata(int millisec )
 	 {
 		 //add  value to bitmap

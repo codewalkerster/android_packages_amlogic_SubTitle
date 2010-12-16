@@ -22,6 +22,10 @@ class TextSubApi extends SubtitleApi
 	 public void closeSubtitle( )
 	 {		 
 	 }
+	 public Subtitle.SUBTYPE type()
+	 {
+		 return Subtitle.SUBTYPE.SUB_COMMONTXT;
+	 }
 	 public SubData getdata(int millisec )
 	 {
 		 try {

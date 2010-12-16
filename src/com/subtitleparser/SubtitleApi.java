@@ -8,6 +8,7 @@ public abstract class SubtitleApi
 	protected int begingtime = 0 ,endtime = 0 ;
 	abstract public SubData getdata(int ms );
 	abstract public void closeSubtitle();
+	abstract public Subtitle.SUBTYPE type();
 }
 
 

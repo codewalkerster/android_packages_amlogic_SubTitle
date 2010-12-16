@@ -7,6 +7,7 @@ import android.util.Log;
 
 import com.subtitleparser.MalformedSubException;
 import com.subtitleparser.SubData;
+import com.subtitleparser.Subtitle;
 import com.subtitleparser.SubtitleFile;
 import com.subtitleparser.SubtitleLine;
 import com.subtitleparser.SubtitleParser;
@@ -23,7 +24,10 @@ class SsaApi extends SubtitleApi
 		 SubFile=sf;
 	 }
 	 public void closeSubtitle( ){}
-	 
+	 public Subtitle.SUBTYPE type()
+	 {
+		 return Subtitle.SUBTYPE.SUB_SSA;
+	 }
 	 public SubData getdata(int millisec )
 	 {
 		 try {

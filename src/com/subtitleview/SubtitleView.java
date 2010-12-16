@@ -25,21 +25,12 @@ public class SubtitleView extends TextView {
 	private int timeoffset=1000;
 	private SubData data =null;
 	private int graphicViewMode = 0;
+	private boolean hasopenInsubfile = false;
 	private static String TAGl = "SubtitleView";
 	public void setGraphicSubViewMode(int flag)
 	{
 		graphicViewMode=flag;
 	}
-//	public void setInsubStatus(boolean flag)
-//	{
-//		InsubStatus=flag;
-//		
-//		if(InsubStatus)
-//		{
-//			setText("");
-//			subapi = null;
-//		}
-//	}
 	
 
 	public SubtitleView(Context context) {
@@ -213,17 +204,37 @@ public class SubtitleView extends TextView {
     {
 		if(subapi!=null)
 		{
+			Log.i("SubView", "------------release subtitle-----------" );
 			subapi.closeSubtitle();
 			subapi = null;				
 		}    	
+		if(hasopenInsubfile==true)
+		{
+			hasopenInsubfile=false;
+			subtitle.setSubname("INSUB"); 
+			try {
+				subapi=subtitle.parse();
+				subapi.closeSubtitle();
+				subapi=null;
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
     }
 
 	public Subtitle.SUBTYPE setFile(String file, String enc) throws Exception {
 		if(subapi!=null)
 		{
-			subapi.closeSubtitle();
-			subapi = null;				
+			if(subapi.type()==Subtitle.SUBTYPE.INSUB)
+			{
+				//don't release now,apk will call closeSubtitle when change file.
+			}else
+			{
+				subapi.closeSubtitle();
+				subapi = null;
+			}
 		}
+		
 		InsubStatus=false;
 		// load Input File
 		try {
@@ -236,7 +247,10 @@ public class SubtitleView extends TextView {
 		    }
 		    else
 		    {
-		    	
+		    	if(type==Subtitle.SUBTYPE.INSUB)
+		    	{
+		    		hasopenInsubfile =true;
+		    	}
 		    	subapi =subtitle.parse();
 	    	}
 		Log.i("SubView", "--subapi=----------------" +subapi);

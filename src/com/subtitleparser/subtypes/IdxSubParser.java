@@ -12,6 +12,7 @@ import android.util.Log;
 
 import com.subtitleparser.MalformedSubException;
 import com.subtitleparser.SubData;
+import com.subtitleparser.Subtitle;
 import com.subtitleparser.SubtitleApi;
 import com.subtitleparser.SubtitleParser;
 
@@ -34,6 +35,10 @@ class IdxSubApi extends SubtitleApi
 	 public void closeSubtitle( )
 	 {
 		 closeIdxSub();
+	 }
+	 public Subtitle.SUBTYPE type()
+	 {
+		 return Subtitle.SUBTYPE.SUB_IDXSUB;
 	 }
 	 public SubData getdata(int millisec )
 	 {
@@ -75,7 +80,7 @@ class IdxSubApi extends SubtitleApi
 			
 			
 			
-			return new SubData( bf_show, millisec,millisec+3000);
+			return new SubData( bf_show, millisec,inter_data.sub_delay);
 		 }else
 		 {
 //			Log.i("SubData",	"get return null");

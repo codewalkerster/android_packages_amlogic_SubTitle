@@ -49,6 +49,7 @@ public class Subtitle {
 		 SUB_MPL2  ,
 		 SUB_DIVX  ,
 		 SUB_IDXSUB,
+		 SUB_COMMONTXT,
 		 INSUB
 	}
 	private String filename=null;
