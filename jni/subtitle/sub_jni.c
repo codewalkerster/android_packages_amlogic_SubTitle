@@ -297,9 +297,9 @@ JNIEXPORT jobject JNICALL getidxsubrawdata
 
 	(*env)->SetIntArrayRegion(env,array,0,sub_size*4,idxsubdata);	 
 	free(idxsubdata);
-	LOGE("start get new object\n\n");
+
 	jobject obj =  (*env)->NewObject(env, cls, constr,array,1,vobsub->vob_subtitle_config.width,
-		vobsub->vob_subtitle_config.height,3000,0);
+		vobsub->vob_subtitle_config.height,vobsub->cur_endpts100/90,0);
 	if(!obj){
 	  LOGE("parseSubtitleFile: failed to create an object");
 	  return NULL;
