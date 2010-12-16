@@ -75,7 +75,7 @@ class IdxSubApi extends SubtitleApi
 			
 			
 			
-			return new SubData( bf_show, millisec,millisec+3000);
+			return new SubData( bf_show, millisec,inter_data.sub_delay);
 		 }else
 		 {
 //			Log.i("SubData",	"get return null");
