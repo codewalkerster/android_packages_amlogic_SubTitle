@@ -1688,6 +1688,8 @@ static int SubtitleVOBSub_ShowSubtitle(subtitlevobsub_t *subtitlevobsub,int pts 
             mpeg_t* mpg = subtitlevobsub->mpeg;
             
             queue = vob->spu_streams + subtitlevobsub->cur_track_id;
+            if(queue->packets_size==0)
+            	return 0;
             for(i=0;i<queue->packets_size;i++){
                 if(queue->packets[i].pts100>=seek_pts100){
                     break;
