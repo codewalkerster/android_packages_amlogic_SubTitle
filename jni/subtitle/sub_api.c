@@ -567,7 +567,8 @@ static subtitle_t *internal_sub_read_line_sami(int fd, subtitle_t *current)
         }
 
         /* read next line */
-        s = internal_subf_gets (line, fd);
+        if(state != 99)
+        	s = internal_subf_gets (line, fd);
         if (state != 99 && !s) 
         {
             if (current->start > 0) 
@@ -592,6 +593,8 @@ static subtitle_t *internal_sub_read_line_sami(int fd, subtitle_t *current)
         {
             current->text.text[current->text.lines++] = internal_sub_strdup (text);
         }
+        else
+            return 0;
     }
 
     return current;
