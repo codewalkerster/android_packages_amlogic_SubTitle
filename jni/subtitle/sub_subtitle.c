@@ -96,7 +96,7 @@ static unsigned short GetWordFromPixBuffer(unsigned short bitpos, unsigned short
 	}
 }
 
-unsigned char spu_fill_pixel(unsigned short *pixelIn, char *pixelOut, AML_SPUVAR *sub_frame)
+unsigned char spu_fill_pixel(unsigned short *pixelIn, char *pixelOut, AML_SPUVAR *sub_frame, int n)
 {
 	unsigned short nPixelNum = 0,nPixelData = 0;
 	unsigned short nRLData,nBits;
@@ -107,11 +107,30 @@ unsigned char spu_fill_pixel(unsigned short *pixelIn, char *pixelOut, AML_SPUVAR
     unsigned short PixelDatas[4] = {0,1,2,3};
 	unsigned short rownum = sub_frame->spu_width;
 	unsigned short height = sub_frame->spu_height;
+	unsigned short _alpha = sub_frame->spu_alpha;
 	
 	static unsigned short *ptrPXDWrite;
         
 	memset(pixelOut, 0, VOB_SUB_SIZE/2);
 	ptrPXDWrite = (unsigned short *)pixelOut;
+
+	if(_alpha&0xF)
+    {
+        _alpha = _alpha>>4;
+        change_data++;
+      
+        while(_alpha&0xF)
+        {
+           change_data++;
+          _alpha = _alpha>>4;
+        }
+
+        PixelDatas[0] = change_data;
+        PixelDatas[change_data] = 0;
+        
+        if (n==2)
+          sub_frame->spu_alpha= (sub_frame->spu_alpha&0xFFF0) | (0x000F<<(change_data<<2));
+    }
 
 	for (j=0; j<height/2; j++) {
 		while(nDecodedPixNum < rownum){

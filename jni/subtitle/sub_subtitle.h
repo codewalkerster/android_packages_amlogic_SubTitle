@@ -40,6 +40,6 @@ typedef struct
 int get_spu(AML_SPUVAR *spu, int sub_fd);
 int release_spu(AML_SPUVAR *spu);
 int get_inter_spu();
-unsigned char spu_fill_pixel(unsigned short *pixelIn, char *pixelOut, AML_SPUVAR *sub_frame);
+unsigned char spu_fill_pixel(unsigned short *pixelIn, char *pixelOut, AML_SPUVAR *sub_frame, int n);
 
 #endif

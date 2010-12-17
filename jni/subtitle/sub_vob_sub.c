@@ -259,7 +259,7 @@ int get_vob_spu(char *spu_buf, unsigned length, AML_SPUVAR *spu)
 			goto error; 		//not enough memory
 		}
 		ptrPXDRead = (unsigned short *)(spu->spu_data + spu->top_pxd_addr);
-		spu_fill_pixel(ptrPXDRead, pixDataOdd, spu);	
+		spu_fill_pixel(ptrPXDRead, pixDataOdd, spu, 1);	
 
 		pixDataEven = malloc(VOB_SUB_SIZE/2);
 		LOGI("pixDataEven is %x\n\n",pixDataEven);
@@ -268,7 +268,7 @@ int get_vob_spu(char *spu_buf, unsigned length, AML_SPUVAR *spu)
 			goto error; 		//not enough memory
     }
 		ptrPXDRead = (unsigned short *)(spu->spu_data + spu->bottom_pxd_addr);
-		spu_fill_pixel(ptrPXDRead, pixDataEven, spu); 
+		spu_fill_pixel(ptrPXDRead, pixDataEven, spu, 2); 
 
 		memset(spu->spu_data, 0, VOB_SUB_SIZE);
 		#if 0
