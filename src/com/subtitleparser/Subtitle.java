@@ -56,6 +56,7 @@ public class Subtitle {
 	private String charset=null;
 	private SUBTYPE subtype=SUBTYPE.SUB_INVALID;
 	private static SubtitleApi subapi=null;
+	private int index=0;
 	private static String systemCharset="GBK";
     static {;
     	System.loadLibrary("subjni");
@@ -72,6 +73,16 @@ public class Subtitle {
 		charset=null;
 		subtype=SUBTYPE.SUB_INVALID;
 		subapi=null;
+		index=0;
+	}
+	//add for idx sub , 1 idx file can have more than one subtitles;
+	public void setSubID(SubID id)
+	{
+		filename=id.filename;
+		charset=null;
+		subtype=SUBTYPE.SUB_INVALID;
+		subapi=null;
+		index=id.index;
 	}
 	
 	public static void setSystemCharset(String st)
@@ -169,7 +180,7 @@ public class Subtitle {
 		case SUB_SSA:	
 			input = FileIO.file2string(fileName, encoding);
 			sp=new SsaParser();
-			return sp.parse(input);
+			return sp.parse(input,index);
 		case SUB_SAMI:
 //			input = FileIO.file2string(fileName, encoding);
 //			sp=new SamiParser(); 
@@ -192,10 +203,10 @@ public class Subtitle {
 		    return sp.parse(fileName,encoding);
 		case SUB_IDXSUB:
 			sp=new IdxSubParser(); 
-		    return sp.parse(fileName);
+		    return sp.parse(fileName,index);
 		case INSUB:
 			sp=new InSubParser(); 
-		    return sp.parse(fileName);		
+		    return sp.parse(fileName,index);		
 		default:
 			sp = null;
 			throw new Exception("Unknown File Extension.");

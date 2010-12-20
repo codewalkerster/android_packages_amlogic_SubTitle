@@ -239,11 +239,11 @@ JNIEXPORT jobject JNICALL getrawdata
 
 }
 JNIEXPORT void JNICALL setidxsubfile
-	  (JNIEnv *env, jclass cl, jstring name )
+	  (JNIEnv *env, jclass cl, jstring name,jint index )
 {
-    LOGE("jni setidxsubfile");
+    LOGE("jni setidxsubfile %s %d",name ,index);
 	const char *file = (*env)->GetStringUTFChars(env,name, NULL);
-	idxsub_init_subtitle(file);
+	idxsub_init_subtitle(file,index);
 	(*env)->ReleaseStringUTFChars(env,name, file);
 
 }  
@@ -398,7 +398,7 @@ static JNINativeMethod insubdataMethods[] = {
 
 static JNINativeMethod idxsubdataMethods[] = {
     /* name, signature, funcPtr */
-    	{ "setIdxFile", "(Ljava/lang/String;)V", (void*)setidxsubfile},
+    	{ "setIdxFile", "(Ljava/lang/String;I)V", (void*)setidxsubfile},
     	{ "getIdxsubRawdata", "(I)Lcom/subtitleparser/subtypes/RawData;", (void*)getidxsubrawdata},
     	{ "closeIdxSub", "()V", (void*)closeIdxSubFile},
 

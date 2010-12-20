@@ -1,7 +1,10 @@
 package com.subtitleparser;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import android.util.Log;
 
@@ -14,7 +17,8 @@ public class SubtitleUtils {
 
 	private String filename=null;
 	private File subfile =null;
-	private List<String> strlist = new ArrayList<String>();
+//	private List<String> strlist = new ArrayList<String>();
+	private List<SubID> strlist = new ArrayList<SubID>();
 	private int exSubtotle=0;
 	
     private static final String[] extensions = {
@@ -48,6 +52,10 @@ public class SubtitleUtils {
 	
     public int getSubTotal()
     {
+    	for(int i=0;i<exSubtotle;i++)
+    	{
+    		Log.v("Subfile list ",i+":"+getSubPath(i));
+    	}
     	return exSubtotle+accountInSubtitleNumber();
     }
    
@@ -61,7 +69,7 @@ public class SubtitleUtils {
     		return null ;
     	
     	if(index<exSubtotle)
-    		return strlist.get(index);
+    		return strlist.get(index).filename;
     	else if(index<getSubTotal())
     	{
     		setInSubtitleNumber(0xff);
@@ -72,6 +80,21 @@ public class SubtitleUtils {
 
     }
     
+    public SubID getSubID(int index)
+    {
+    	if(subfile==null)
+    		return null ;
+    	
+    	if(index<exSubtotle)
+    		return strlist.get(index);
+    	else if(index<getSubTotal())
+    	{
+    		setInSubtitleNumber(0xff);
+    		setInSubtitleNumber(index-exSubtotle);
+    		return new SubID("INSUB",index-exSubtotle);
+    	}
+		return null;    
+	}
     private void  accountExSubtitleNumber()
     {
     	String tmp=subfile.getName();
@@ -79,6 +102,8 @@ public class SubtitleUtils {
 		Log.i("SubtitleUtils",	""+ prefix   );
 
       	File DirFile= subfile.getParentFile();
+      	int idxindex=0;
+      	
     	if(DirFile.isDirectory())
     	{
 	    	for (String file : DirFile.list()) 
@@ -88,28 +113,39 @@ public class SubtitleUtils {
 	    	        for (String ext : extensions) {
 	    	            if (file.toLowerCase().endsWith(ext))
 	    	            {
-	    	            	strlist.add(DirFile.getAbsolutePath()+"/"+file);
+	    	            	strlist.add(new SubID(DirFile.getAbsolutePath()+"/"+file,0));
 	    	            	break;
 	    	            }
 	    	        }	    			
 	    		}
 	    	}
-	    	for(String file : strlist)
+	    	for(SubID file : strlist)
 	    	{
-	    		if(file.toLowerCase().endsWith("idx"))
+	    		if(file.filename.toLowerCase().endsWith("idx"))
 	    		{
+					strlist.remove(idxindex);
 	    			Log.v("before: ",""+file );
-	    			String st=file.substring(0, file.length()-3);
+	    			String st=file.filename.substring(0, file.filename.length()-3);
 	    			for(int i=0;i<strlist.size();i++)
 	    			{
-	    				if(strlist.get(i).toLowerCase().endsWith("sub")&&
-	    						strlist.get(i).startsWith(st)&&
-	    						strlist.get(i).length()==file.length())
+	    				if(strlist.get(i).filename.toLowerCase().endsWith("sub")&&
+	    						strlist.get(i).filename.startsWith(st)&&
+	    						strlist.get(i).filename.length()==file.filename.length())
 	    				{
 	    	    			Log.v("accountExSubtitleNumber: ","clear "+strlist.get(i) );
 	    					strlist.remove(i);
 	    				}
 	    			}
+	    			int idxtotal=accountIdxSubtitleNumber(file.filename);
+	    			for(int i=0;i<idxtotal; i++)
+	    			{
+    					strlist.add(new SubID(file.filename,i));
+	    			}
+	    	    	exSubtotle=strlist.size();
+	    	    	break;
+	    		}else
+	    		{	
+	    			idxindex++;
 	    		}
 	    	}
     	}
@@ -127,5 +163,26 @@ public class SubtitleUtils {
     	setInSubtitleNumberByJni(index);
     	return;
     }   
+    private int accountIdxSubtitleNumber( String filename )
+    {
+    	int idxcount =0;
+    	String inputString=null;
+		try {
+			inputString = FileIO.file2string(filename, "GBK");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return idxcount;
+		}
+		String n="\\"+System.getProperty("line.separator");
+		Pattern p = Pattern.compile("id:(.*?),\\s*"+"index:\\s*(\\d*)");
+		Matcher m = p.matcher(inputString);
+		while(m.find())
+		{
+			idxcount++;
+			Log.v("accountIdxSubtitleNumber","id:"+m.group(1) +" index:"+m.group(2) );
+		}
+		return idxcount;
+    }
 }
 

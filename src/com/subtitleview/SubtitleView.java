@@ -26,7 +26,6 @@ public class SubtitleView extends TextView {
 	private SubData data =null;
 	private int graphicViewMode = 0;
 	private boolean hasopenInsubfile = false;
-	private static String TAGl = "SubtitleView";
 	public void setGraphicSubViewMode(int flag)
 	{
 		graphicViewMode=flag;
@@ -107,7 +106,7 @@ public class SubtitleView extends TextView {
 				return;
 			}else
 			{
-				Log.i(TAGl,	"window............." +this.getWidth()+"X"+this.getHeight() );
+				Log.i(LOG_TAG,	"window............." +this.getWidth()+"X"+this.getHeight() );
 				setText(data.getSubString());
 		    }
 		}
@@ -183,7 +182,15 @@ public class SubtitleView extends TextView {
 			}
    	   	  }
 			
-			Log.i(TAGl, "....x y w h.........."+offset_x+" "+offset_y+" "+display_width+" "+display_height );
+//test mode 
+//   	   	  {
+//				display_width = inter_bitmap.getWidth();
+//	       	    display_height =inter_bitmap.getHeight();
+//	       	    offset_x = (this.getWidth()-display_width)/2;
+//	       	    offset_y = this.getHeight()-display_height;    
+//   	   	  }
+			
+			Log.i(LOG_TAG, "....x y w h.........."+offset_x+" "+offset_y+" "+display_width+" "+display_height );
 
            
            Rect Src = new Rect(0,0,inter_bitmap.getWidth(),inter_bitmap.getHeight());
@@ -222,7 +229,8 @@ public class SubtitleView extends TextView {
 		}
     }
 
-	public Subtitle.SUBTYPE setFile(String file, String enc) throws Exception {
+	public Subtitle.SUBTYPE setFile(SubID file, String enc) throws Exception {
+
 		if(subapi!=null)
 		{
 			if(subapi.type()==Subtitle.SUBTYPE.INSUB)
@@ -238,8 +246,8 @@ public class SubtitleView extends TextView {
 		InsubStatus=false;
 		// load Input File
 		try {
-		    Log.i("SubView", "------------setFile-----------" +file);
-			subtitle.setSubname(file);
+		    Log.i("SubView", "------------setFile-----------" +file.filename);
+			subtitle.setSubID(file);
 		    type=subtitle.getSubType();
 		    if (type==Subtitle.SUBTYPE.SUB_INVALID) 
 		    {

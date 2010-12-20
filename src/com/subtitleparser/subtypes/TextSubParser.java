@@ -86,7 +86,7 @@ public class TextSubParser implements SubtitleParser {
 
 		}
 	};
-	public SubtitleApi parse(String inputstring) throws MalformedSubException{
+	public SubtitleApi parse(String inputstring,int index) throws MalformedSubException{
 		return null;
 };
 

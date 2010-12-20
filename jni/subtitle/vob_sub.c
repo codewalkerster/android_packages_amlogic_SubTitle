@@ -1724,8 +1724,11 @@ static int SubtitleVOBSub_ShowSubtitle(subtitlevobsub_t *subtitlevobsub,int pts 
                                     while ((!mpeg_eof(mpg))&&(sublen>0))  {
                                         if (mpeg_run(mpg,1) < 0) {
                                             if (!mpeg_eof(mpg))
+                                            {
+
                                                 //AF_VOBSUB_LOG_ERR(dbg_level,"VobSub: mpeg_run error\n");
-                                            break;
+                                            	break;
+                                        	}
                                         }
                                         if (mpg->packet_size) {
                                             if ((mpg->packet)&&((mpg->aid & 0xe0) == 0x20)&&((mpg->aid & 0x1f)==subtitlevobsub->cur_track_id)) {
@@ -1843,7 +1846,7 @@ static void ini_subdata( subtitlevobsub_t * subtitlevobsub)
 
 
 //when change to other idxsub file ,should call close_subtitle() to free memory first;
-int idxsub_init_subtitle( char* fileurl)
+int idxsub_init_subtitle( char* fileurl,int index)
 {
 	if(vobsubdata==NULL)
 	{
@@ -1853,6 +1856,7 @@ int idxsub_init_subtitle( char* fileurl)
 		ini_subdata(vobsubdata);
 	}
 	totalsubnum= SubtitleVOBSub_SetExtSubtitle(vobsubdata,fileurl,1);
+	switch_sub(index);
 	return totalsubnum;
 }
 

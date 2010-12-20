@@ -75,7 +75,7 @@ class SsaApi extends SubtitleApi
 */
 public class SsaParser implements SubtitleParser{
 	
-	public SubtitleApi parse(String inputString) throws MalformedSubException{
+	public SubtitleApi parse(String inputString,int index) throws MalformedSubException{
 		try{
 			String n="\\"+System.getProperty("line.separator");
 			String tmpText="";

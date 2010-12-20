@@ -240,7 +240,7 @@ class InSubApi extends SubtitleApi
 
 public class InSubParser implements SubtitleParser{
 	
-	public SubtitleApi parse(String filename) throws MalformedSubException{
+	public SubtitleApi parse(String filename,int index) throws MalformedSubException{
 		Log.i("SubtitleApi", "------------SubtitleApi-----------" );
 		return new InSubApi();
 	};

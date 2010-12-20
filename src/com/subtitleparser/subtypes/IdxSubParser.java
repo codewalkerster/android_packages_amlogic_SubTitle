@@ -19,7 +19,7 @@ import com.subtitleparser.SubtitleParser;
 class IdxSubApi extends SubtitleApi
 {
 	native  RawData getIdxsubRawdata(int millisec); 
-	native void setIdxFile(String name);
+	native void setIdxFile(String name,int index);
 	native void closeIdxSub();
 	public  static int subtitle_file_position = 0;
 	public  static int subtitle_delay = 0;
@@ -27,10 +27,10 @@ class IdxSubApi extends SubtitleApi
 	private static RawData inter_data = null;
 	 private Bitmap bitmap=null;
 	 private String filename;
-	 IdxSubApi(String name)
+	 IdxSubApi(String name,int index)
 	 {
 		 filename =name;
-		 setIdxFile(filename);
+		 setIdxFile(filename,index);
 	 };
 	 public void closeSubtitle( )
 	 {
@@ -102,9 +102,9 @@ class IdxSubApi extends SubtitleApi
 
 public class IdxSubParser implements SubtitleParser{
 	
-	public SubtitleApi parse(String filename) throws MalformedSubException{
+	public SubtitleApi parse(String filename,int index) throws MalformedSubException{
 		//call jni to init parse;
-		return new IdxSubApi(filename);
+		return new IdxSubApi(filename,index);
 	};
 
 	public SubtitleApi parse(String inputString,String st2) throws MalformedSubException{
