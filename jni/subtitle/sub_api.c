@@ -606,7 +606,26 @@ subtitle_t *internal_sub_read_line_microdvd(int fd, subtitle_t *current)
     char line2[LINE_LEN+1];
     char *p, *next;
     int i;
-    float ptsrate = (float)current->end/960;
+    float ptsrate=0;
+    
+    {
+	    int fd;
+	    char *path = "/sys/class/video/frame_rate";    
+		char  bcmd[8];
+		fd=open(path, O_RDONLY);
+		if(fd>=0)	{    	
+	    	read(fd,bcmd,sizeof(bcmd)); 
+			sscanf(bcmd, "%f", &ptsrate);
+	    	close(fd);    	
+		}
+	}
+	if(ptsrate<=0)
+	{	
+		ptsrate=30;
+	}
+	log_print("--------internal_sub_read_line_microdvd---get frame rate: %f--\n",ptsrate);
+
+    
     current->end = 0;
 
     do {
@@ -640,9 +659,9 @@ subtitle_t *internal_sub_read_line_microdvd(int fd, subtitle_t *current)
     }
 
     current->text.lines = ++i;
-    current->start = current->start*ptsrate;
-    current->end = current->end*ptsrate;
-
+    current->start = current->start*100/ptsrate;
+    current->end = current->end*100/ptsrate;
+	log_print("time  %d %d \n",current->start,current->end);
     return current;
 }
 
