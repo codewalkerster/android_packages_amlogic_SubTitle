@@ -236,14 +236,6 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 	int ret, rd_oft, wr_oft, size;
 	char *spu_buf=NULL;
 	unsigned current_length, current_pts, current_type;
-	if(aml_sub_handle < 0){
-		aml_sub_handle = open(SUBTITLE_READ_DEVICE,O_RDONLY);
-	}
-	if(aml_sub_handle < 0){
-		LOGI("subtitle read device open fail\n");
-		return 0;
-	}
-	read_sub_fd = aml_sub_handle;
 
 	if(read_sub_fd < 0)
 		return 0;
@@ -679,12 +671,19 @@ int *parser_inter_spu(int *buffer)
 
 int get_inter_spu()
 {  
+	if(aml_sub_handle < 0){
+		aml_sub_handle = open(SUBTITLE_READ_DEVICE,O_RDONLY);
+	}
+	if(aml_sub_handle < 0){
+		LOGI("subtitle read device open fail\n");
+		return 0;
+	}
 	int read_sub_fd=0;
 	AML_SPUVAR spu;
 	memset(&spu,0x0,sizeof(AML_SPUVAR));
 	spu.sync_bytes = 0x414d4c55;
 	spu.buffer_size = VOB_SUB_SIZE;
-	int ret = get_spu(&spu, read_sub_fd); 
+	int ret = get_spu(&spu, aml_sub_handle); 
 	if(ret < 0)
 		return -1;
 

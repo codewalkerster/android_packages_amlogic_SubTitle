@@ -608,17 +608,9 @@ subtitle_t *internal_sub_read_line_microdvd(int fd, subtitle_t *current)
     int i;
     float ptsrate=0;
     
-    {
-	    int fd;
-	    char *path = "/sys/class/video/frame_rate";    
-		char  bcmd[8];
-		fd=open(path, O_RDONLY);
-		if(fd>=0)	{    	
-	    	read(fd,bcmd,sizeof(bcmd)); 
-			sscanf(bcmd, "%f", &ptsrate);
-	    	close(fd);    	
-		}
-	}
+    ptsrate = get_subtitle_fps()/100;
+	if(get_subtitle_fps()%100)
+		ptsrate ++;
 	if(ptsrate<=0)
 	{	
 		ptsrate=30;
