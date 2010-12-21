@@ -172,3 +172,33 @@ int get_subtitle_startpts()
 	return subtitle_pts;   
 }
 
+int get_subtitle_fps()
+{
+    int fd;
+	int subtitle_fps = 0;
+    char *path = "/sys/class/subtitle/fps";    
+	char  bcmd[16];
+	fd=open(path, O_RDONLY);
+	if(fd>=0)	{    	
+    	read(fd,bcmd,sizeof(bcmd)); 
+		sscanf(bcmd, "%d", &subtitle_fps);
+    	close(fd);    	
+	}
+	return subtitle_fps;   
+}
+
+int get_subtitle_subtype()
+{
+    int fd;
+	int subtitle_subtype = 0;
+    char *path = "/sys/class/subtitle/subtype";    
+	char  bcmd[16];
+	fd=open(path, O_RDONLY);
+	if(fd>=0)	{    	
+    	read(fd,bcmd,sizeof(bcmd)); 
+		sscanf(bcmd, "%d", &subtitle_subtype);
+    	close(fd);    	
+	}
+	return subtitle_subtype;   
+}
+
