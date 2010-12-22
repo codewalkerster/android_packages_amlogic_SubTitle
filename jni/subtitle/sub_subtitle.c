@@ -28,7 +28,7 @@
 #define SUBTITLE_PGS      1
 #define SUBTITLE_MKV_STR  2
 #define SUBTITLE_MKV_VOB  3
-#define  LOG_TAG    "sub_jni"
+#define  LOG_TAG    "sub_subtitle"
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 #define SUBTITLE_READ_DEVICE    "/dev/amstream_sub_read"
@@ -288,15 +288,21 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 		}
   	LOGI("current_type is %d\n",current_type);
 	switch (current_type) {
-		case 0x17000:
-      spu->subtitle_type = SUBTITLE_VOB;
+		case 0x17000://vob,mkv internel image
+     		spu->subtitle_type = SUBTITLE_VOB;
 			spu->spu_data = malloc(VOB_SUB_SIZE);
 			spu->pts = current_pts;
 			ret = get_vob_spu(spu_buf+rd_oft, current_length, spu); 
 			break;
-
+		case 0x17002://mkv internel utf-8
+		case 0x17004://mkv internel ssa
+			ret = -1;
+			break;
+		case 0x17003://avi internel image
+			ret = -1;
+			break;
 		default:
-      ret = -1;
+      		ret = -1;
 			break;
 	}
 
