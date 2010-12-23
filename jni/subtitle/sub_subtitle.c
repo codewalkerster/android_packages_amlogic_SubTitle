@@ -20,10 +20,10 @@
 #include "amstream.h"
 
 
-
+#include "sub_control.h"
 #include "sub_subtitle.h"
 #include "sub_vob_sub.h"
-
+#include "sub_pgs_sub.h"
 
 
 #define  LOG_TAG    "sub_subtitle"
@@ -182,55 +182,6 @@ unsigned char spu_fill_pixel(unsigned short *pixelIn, char *pixelOut, AML_SPUVAR
 	return 0;
 }
 
-
-int subtitle_poll_sub_fd(int sub_fd, int timeout)
-{
-    struct pollfd sub_poll_fd[1];
-
-    if (sub_fd <= 0)
-    {
-        return 0;
-    }
-    
-    sub_poll_fd[0].fd = sub_fd;
-    sub_poll_fd[0].events = POLLOUT;
-
-    return poll(sub_poll_fd, 1, timeout);    
-}
-
-
-int subtitle_get_sub_size_fd(int sub_fd)
-{
-    int sub_size, r;
-    
-    r=ioctl(sub_fd,AMSTREAM_IOC_SUB_LENGTH,(unsigned long)&sub_size);
-    if(r<0)
-        return 0;
-    else
-        return sub_size;
-}
-
-
-int subtitle_read_sub_data_fd(int sub_fd, char *buf, unsigned int length)
-{
-    int data_size=length, r, read_done=0;
-
-
-    while (data_size)
-    {
-        r = read(sub_fd,buf+read_done,data_size);
-        if (r<0)
-            return 0;
-        else
-        {
-            data_size -= r;
-            read_done += r;
-        }
-    }
-
-    return 0;
-}
-
 int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 {
 	int ret, rd_oft, wr_oft, size;
@@ -246,7 +197,30 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 	    ret = -1;
 		goto error; 
 	}
-
+	
+	if(get_subtitle_subtype() == 1){
+		//pgs subtitle
+		subtitlepgs_t subtitle_pgs;
+		memset(&subtitle_pgs, 0x0, sizeof(subtitlepgs_t));
+		subtitle_pgs.pgs_info = malloc(sizeof(pgs_info_t));
+		if(subtitle_pgs.pgs_info == NULL){
+			LOGE("malloc pgs_info failed\n");
+			return -1;
+		}
+		memset(subtitle_pgs.pgs_info, 0x0, sizeof(pgs_info_t));
+		int ret_spu = get_pgs_spu(&subtitle_pgs,read_sub_fd);
+		if(ret_spu == 1){	
+			LOGI("sucess get_pgs_spu\n");
+			spu->subtitle_type = SUBTITLE_PGS;
+			spu->spu_data = subtitle_pgs.showdata.result_buf;
+			spu->spu_width = subtitle_pgs.showdata.image_width;
+			spu->spu_height = subtitle_pgs.showdata.image_height;
+			spu->pts = subtitle_pgs.showdata.pts;
+			return ret_spu;
+		}
+		return -1;
+	}
+	
 	size = subtitle_get_sub_size_fd(read_sub_fd);
 	if (size <= 0){
     ret = -1;
@@ -401,6 +375,8 @@ int write_subtitle_file(AML_SPUVAR *spu)
 	inter_subtitle_data[file_position].sub_alpha = spu->spu_alpha;
 	inter_subtitle_data[file_position].subtitle_width = spu->spu_width;
 	inter_subtitle_data[file_position].subtitle_height = spu->spu_height;
+	inter_subtitle_data[file_position].resize_width = spu->spu_width;
+	inter_subtitle_data[file_position].resize_height = spu->spu_height;
 	
 	
 	LOGI(" write_subtitle_file[%d] subtitle_type is 0x%x size: %d \n",file_position,inter_subtitle_data[read_position].subtitle_type,
@@ -450,6 +426,11 @@ int get_inter_spu_size()
 	{
 		LOGI(" inter_subtitle_data[%d] data_size is 0x%x\n",read_position,inter_subtitle_data[read_position].data_size);
 		return inter_subtitle_data[read_position].data_size;
+	}
+	else if(get_inter_spu_type()==SUBTITLE_PGS)
+	{
+		LOGI(" inter_subtitle_data[%d] data_size is 0x%x\n",read_position,inter_subtitle_data[read_position].data_size);
+		return inter_subtitle_data[read_position].data_size/4;
 	}
 	return 0;
 }
@@ -644,10 +625,13 @@ int get_inter_spu()
 	int ret = get_spu(&spu, aml_sub_handle); 
 	if(ret < 0)
 		return -1;
-
+	if(get_subtitle_subtype()==1){
+		spu.buffer_size = spu.spu_width*spu.spu_height*4;
+	}
 
 	write_subtitle_file(&spu);
-	read_subtitle_file();
+	//read_subtitle_file();
+	free(spu.spu_data);
 	file_position = ADD_SUBTITLE_POSITION(file_position);
 	LOGI("file_position is %d\n\n",file_position);
 

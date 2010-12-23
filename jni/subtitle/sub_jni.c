@@ -198,7 +198,52 @@ JNIEXPORT jobject JNICALL getrawdata
 	}
 	
 	
-	if(get_inter_spu_type()==SUBTITLE_VOB) //SUBTITLE_VOB
+	if(get_inter_spu_type()==SUBTITLE_SSA)
+	{
+		int sub_size = get_inter_spu_size();
+		LOGE("getrawdata: get_inter_spu_type()=SUBTITLE_SSA size  %d ",sub_size);
+		if(sub_size <= 0){
+			return NULL;
+		}	
+		jbyteArray array= (*env)->NewByteArray(env,sub_size);
+		(*env)->SetByteArrayRegion(env,array,0, sub_size, get_inter_spu_data() );	 
+		
+		LOGE("getrawdata: SetByteArrayRegion finish");
+		
+		jobject obj =  (*env)->NewObject(env, cls, constrforstr,array,get_inter_spu_delay()/90,0);
+		LOGE("getrawdata: NewObject  finish");
+
+		add_read_position();
+		if(!obj){
+		  LOGE("parseSubtitleFile: failed to create an object");
+		  return NULL;
+		}
+		return obj;
+	}
+	else if(get_inter_spu_type()==SUBTITLE_PGS)
+	{
+		int sub_size = get_inter_spu_size();
+		LOGE("getrawdata: get_inter_spu_type()=SUBTITLE_PGS size  %d ",sub_size);
+		if(sub_size <= 0){
+			return NULL;
+		}	
+		jintArray array= (*env)->NewIntArray(env,sub_size);
+		(*env)->SetIntArrayRegion(env,array,0, sub_size, get_inter_spu_data() );	 
+		
+		LOGE("getrawdata: SetByteArrayRegion finish");
+		
+		jobject obj =  (*env)->NewObject(env, cls, constr,array,1,get_inter_spu_width(),
+			get_inter_spu_height(),1000,0);
+		LOGE("getrawdata: NewObject  finish");
+
+		add_read_position();
+		if(!obj){
+		  LOGE("parseSubtitleFile: failed to create an object");
+		  return NULL;
+		}
+		return obj;
+	}
+	else //if(get_inter_spu_type()==SUBTITLE_VOB) //SUBTITLE_VOB
 	{
 		LOGE("getrawdata: get_inter_spu_type()=SUBTITLE_VOB");
 
@@ -243,27 +288,6 @@ JNIEXPORT jobject JNICALL getrawdata
 		}
 		return obj;
 
-	}else if(get_inter_spu_type()==SUBTITLE_SSA)
-	{
-		int sub_size = get_inter_spu_size();
-		LOGE("getrawdata: get_inter_spu_type()=SUBTITLE_SSA size  %d ",sub_size);
-		if(sub_size <= 0){
-			return NULL;
-		}	
-		jbyteArray array= (*env)->NewByteArray(env,sub_size);
-		(*env)->SetByteArrayRegion(env,array,0, sub_size, get_inter_spu_data() );	 
-		
-		LOGE("getrawdata: SetByteArrayRegion finish");
-		
-		jobject obj =  (*env)->NewObject(env, cls, constrforstr,array,get_inter_spu_delay()/90,0);
-		LOGE("getrawdata: NewObject  finish");
-
-		add_read_position();
-		if(!obj){
-		  LOGE("parseSubtitleFile: failed to create an object");
-		  return NULL;
-		}
-		return obj;
 	}
 	LOGE("getrawdata: get_inter_spu_type()== other type");
 	return NULL;
