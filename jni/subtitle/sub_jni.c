@@ -22,6 +22,7 @@
 
 #include "sub_api.h"
 #include <string.h>
+#include "sub_subtitle.h"
 
 JNIEXPORT jobject JNICALL parseSubtitleFile
   (JNIEnv *env, jclass cl, jstring filename, jstring encode)
@@ -182,7 +183,11 @@ JNIEXPORT jobject JNICALL getrawdata
 		LOGE("com/subtitleparser/subtypes/RawData: failed to get  constructor method's ID");
 	  return NULL;
 	}
-	
+	jmethodID constrforstr = (*env)->GetMethodID(env, cls, "<init>", "([BILjava/lang/String;)V");
+	if(!constrforstr){
+		LOGE("com/subtitleparser/subtypes/RawData: failed to get  constructor method2's ID");
+	  return NULL;
+	}	
 	
 	LOGE("start get packet\n\n");
 	int sub_pkt = get_inter_spu_packet(msec*90+get_subtitle_startpts());
@@ -192,50 +197,77 @@ JNIEXPORT jobject JNICALL getrawdata
 		return NULL;
 	}
 	
-	int sub_size = get_inter_spu_size();
-	if(sub_size <= 0){
-		LOGE("sub_size invalid \n\n");
-		return NULL;
-	}	
-	LOGE("sub_size is %d\n\n",sub_size);
-	int *inter_sub_data = NULL;
-	inter_sub_data = malloc(sub_size*4);
-	if(inter_sub_data == NULL){
-		LOGE("malloc sub_size fail \n\n");
-		return NULL;
-	}
-	memset(inter_sub_data, 0x0, sub_size*4);
-	LOGE("start get new array\n\n");
-	jintArray array= (*env)->NewIntArray(env,sub_size);
-	if(!array){
-		LOGE("new int array fail \n\n");
-		return NULL;
-	}
- 
-	parser_inter_spu(inter_sub_data);
-	int *resize_data = malloc(get_inter_spu_resize_size()*4);
-	if(resize_data == NULL){
-		free(inter_sub_data);
-		return NULL;
-	}
-	fill_resize_data(resize_data, inter_sub_data);
-	LOGE("end parser_inter_spu\n\n");
-	(*env)->SetIntArrayRegion(env,array,0,get_inter_spu_resize_size(), resize_data);	 
-	LOGE("start get new object\n\n");
-	free(inter_sub_data);
-	free(resize_data);
-	jobject obj =  (*env)->NewObject(env, cls, constr,array,1,get_inter_spu_width(),
-		get_inter_spu_height(),(get_inter_spu_delay()-get_subtitle_startpts())/90,0);
-	add_read_position();
-	if(!obj){
-	  LOGE("parseSubtitleFile: failed to create an object");
-	  return NULL;
-	}
-	//(*env)->CallVoidMethod(env, obj, constr, array, 1, get_inter_spu_width(),
-		//get_inter_spu_height(),0);
 	
-    LOGE("jni getdata!,eed return a java object:RawData");
-	return obj;
+	if(get_inter_spu_type()==SUBTITLE_VOB) //SUBTITLE_VOB
+	{
+		LOGE("getrawdata: get_inter_spu_type()=SUBTITLE_VOB");
+
+		int sub_size = get_inter_spu_size();
+		if(sub_size <= 0){
+			LOGE("sub_size invalid \n\n");
+			return NULL;
+		}	
+		LOGE("sub_size is %d\n\n",sub_size);
+		int *inter_sub_data = NULL;
+		inter_sub_data = malloc(sub_size*4);
+		if(inter_sub_data == NULL){
+			LOGE("malloc sub_size fail \n\n");
+			return NULL;
+		}
+		memset(inter_sub_data, 0x0, sub_size*4);
+		LOGE("start get new array\n\n");
+		jintArray array= (*env)->NewIntArray(env,sub_size);
+		if(!array){
+			LOGE("new int array fail \n\n");
+			return NULL;
+		}
+	 
+		parser_inter_spu(inter_sub_data);
+		int *resize_data = malloc(get_inter_spu_resize_size()*4);
+		if(resize_data == NULL){
+			free(inter_sub_data);
+			return NULL;
+		}
+		fill_resize_data(resize_data, inter_sub_data);
+		LOGE("end parser_inter_spu\n\n");
+		(*env)->SetIntArrayRegion(env,array,0,get_inter_spu_resize_size(), resize_data);	 
+		LOGE("start get new object\n\n");
+		free(inter_sub_data);
+		free(resize_data);
+		jobject obj =  (*env)->NewObject(env, cls, constr,array,1,get_inter_spu_width(),
+			get_inter_spu_height(),(get_inter_spu_delay()-get_subtitle_startpts())/90,0);
+		add_read_position();
+		if(!obj){
+		  LOGE("parseSubtitleFile: failed to create an object");
+		  return NULL;
+		}
+		return obj;
+
+	}else if(get_inter_spu_type()==SUBTITLE_SSA)
+	{
+		int sub_size = get_inter_spu_size();
+		LOGE("getrawdata: get_inter_spu_type()=SUBTITLE_SSA size  %d ",sub_size);
+		if(sub_size <= 0){
+			return NULL;
+		}	
+		jbyteArray array= (*env)->NewByteArray(env,sub_size);
+		(*env)->SetByteArrayRegion(env,array,0, sub_size, get_inter_spu_data() );	 
+		
+		LOGE("getrawdata: SetByteArrayRegion finish");
+		
+		jobject obj =  (*env)->NewObject(env, cls, constrforstr,array,get_inter_spu_delay()/90,0);
+		LOGE("getrawdata: NewObject  finish");
+
+		add_read_position();
+		if(!obj){
+		  LOGE("parseSubtitleFile: failed to create an object");
+		  return NULL;
+		}
+		return obj;
+	}
+	LOGE("getrawdata: get_inter_spu_type()== other type");
+	return NULL;
+	
 
 }
 JNIEXPORT void JNICALL setidxsubfile

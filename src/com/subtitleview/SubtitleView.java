@@ -87,7 +87,10 @@ public class SubtitleView extends TextView {
 		data = subapi.getdata(modifytime);
 		if(data == null)
 		{
-			Log.i(LOG_TAG,	"SubData return  null"  );
+			Log.i(LOG_TAG,	"SubData return  null,so clear the view content"  );
+			setText("");
+			inter_bitmap=null;
+			invalidate(); 
 		}
 		else
 		{
@@ -106,7 +109,7 @@ public class SubtitleView extends TextView {
 				return;
 			}else
 			{
-				Log.i(LOG_TAG,	"window............." +this.getWidth()+"X"+this.getHeight() );
+//				Log.i(LOG_TAG,	"window............." +this.getWidth()+"X"+this.getHeight() );
 				setText(data.getSubString());
 		    }
 		}
@@ -140,7 +143,7 @@ public class SubtitleView extends TextView {
            int display_height=0;
            
            
-           Log.i(LOG_TAG,"...window.......bitmap......." +this.getWidth()+"X"+this.getHeight() +"  " +inter_bitmap.getWidth()+"X"+inter_bitmap.getHeight() );
+//           Log.i(LOG_TAG,"...window.......bitmap......." +this.getWidth()+"X"+this.getHeight() +"  " +inter_bitmap.getWidth()+"X"+inter_bitmap.getHeight() );
    	   	  if(graphicViewMode==0)
    	   	  {  
    	   		  if(inter_bitmap.getHeight()<=this.getHeight()&&inter_bitmap.getWidth()<=this.getWidth())
@@ -190,7 +193,7 @@ public class SubtitleView extends TextView {
 //	       	    offset_y = this.getHeight()-display_height;    
 //   	   	  }
 			
-			Log.i(LOG_TAG, "....x y w h.........."+offset_x+" "+offset_y+" "+display_width+" "+display_height );
+//			Log.i(LOG_TAG, "....x y w h.........."+offset_x+" "+offset_y+" "+display_width+" "+display_height );
 
            
            Rect Src = new Rect(0,0,inter_bitmap.getWidth(),inter_bitmap.getHeight());
@@ -199,7 +202,7 @@ public class SubtitleView extends TextView {
    
 
            
-           Log.i(LOG_TAG,"end draw bitmap ");
+//           Log.i(LOG_TAG,"end draw bitmap ");
            //inter_bitmap.recycle();
            inter_bitmap = null;
 		 } 	
@@ -242,7 +245,7 @@ public class SubtitleView extends TextView {
 				subapi = null;
 			}
 		}
-		
+		subtitle.setSystemCharset("BIG5");
 		InsubStatus=false;
 		// load Input File
 		try {

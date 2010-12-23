@@ -64,7 +64,7 @@ public class FileIO {
 		Pattern MICRODVD_Pattern_2 = Pattern.compile("\\{\\d+\\}\\{\\}");
 		Pattern SUB_MPL2_Pattern = Pattern.compile("\\[\\d+\\]\\[\\d+\\]");
 		Pattern SUBRIP_Pattern = Pattern.compile("\\d+:\\d+:\\d+.\\d+,\\d+:\\d+:\\d+.\\d+");
-		Pattern SUBVIEWER_Pattern = Pattern.compile("\\d+:\\d+:\\d+[\\,\\.:]\\d+ --> \\d+:\\d+:\\d+[\\,\\.:]\\d+");
+		Pattern SUBVIEWER_Pattern = Pattern.compile("\\d+:\\d+:\\d+[\\,\\.:]\\d+ ?--> ?\\d+:\\d+:\\d+[\\,\\.:]\\d+");
 		Pattern SUBVIEWER2_Pattern = Pattern.compile("\\{T \\d+:\\d+:\\d+:\\d+ ");
 		Pattern SAMI_Pattern = Pattern.compile("<SAMI>");
 		Pattern JACOSUB_Pattern = Pattern.compile("\\d+:\\d+:\\d+.\\d+ \\d+:\\d+:\\d+.\\d+");

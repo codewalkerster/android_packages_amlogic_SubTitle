@@ -24,10 +24,8 @@
 #include "sub_subtitle.h"
 #include "sub_vob_sub.h"
 
-#define SUBTITLE_VOB      0
-#define SUBTITLE_PGS      1
-#define SUBTITLE_MKV_STR  2
-#define SUBTITLE_MKV_VOB  3
+
+
 #define  LOG_TAG    "sub_subtitle"
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
@@ -36,10 +34,12 @@
 #define VOB_SUBTITLE_FRAMW_SIZE   (4+1+4+4+2+2+2+2+2+4+VOB_SUB_SIZE)
 #define MAX_SUBTITLE_PACKET_WRITE	50
 #define ADD_SUBTITLE_POSITION(x)  (((x+1)<MAX_SUBTITLE_PACKET_WRITE)?(x+1):0)
+#define DEC_SUBTITLE_POSITION(x)  (((x-1)>=0)?(x-1):(MAX_SUBTITLE_PACKET_WRITE-1))
 static off_t file_position=0;
 static off_t read_position=0;
 static int  aml_sub_handle = -1;
 typedef struct{
+	int subtitle_type;        //add yjf 
 	int subtitle_size;
 	int subtitle_pts;
 	int subtitle_delay_pts;
@@ -235,7 +235,7 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 {
 	int ret, rd_oft, wr_oft, size;
 	char *spu_buf=NULL;
-	unsigned current_length, current_pts, current_type;
+	unsigned current_length, current_pts, current_type,duration_pts;
 
 	if(read_sub_fd < 0)
 		return 0;
@@ -282,21 +282,39 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 	current_pts |= spu_buf[rd_oft++]<<8;
 	current_pts |= spu_buf[rd_oft++];
   	LOGI("current_pts is %d\n",current_pts);
+	//LOGI("current_length is %d\n",current_length);
 	if (current_pts==0){
 	ret = -1;
 		goto error;
 		}
-  	LOGI("current_type is %d\n",current_type);
+  	LOGI("current_type is 0x%x\n",current_type);
 	switch (current_type) {
 		case 0x17000://vob,mkv internel image
      		spu->subtitle_type = SUBTITLE_VOB;
+     		spu->buffer_size  = VOB_SUB_SIZE;
 			spu->spu_data = malloc(VOB_SUB_SIZE);
 			spu->pts = current_pts;
 			ret = get_vob_spu(spu_buf+rd_oft, current_length, spu); 
 			break;
 		case 0x17002://mkv internel utf-8
 		case 0x17004://mkv internel ssa
-			ret = -1;
+			duration_pts = spu_buf[rd_oft++]<<24;
+			duration_pts |= spu_buf[rd_oft++]<<16;
+			duration_pts |= spu_buf[rd_oft++]<<8;
+			duration_pts |= spu_buf[rd_oft++];
+			LOGI("duration_pts is %d\n",duration_pts);
+
+			
+      		spu->subtitle_type = SUBTITLE_SSA;
+      		spu->buffer_size = current_length+1;//256*(current_length/256+1);
+			spu->spu_data = malloc( spu->buffer_size );
+			memset(spu->spu_data,'\0',sizeof(spu->buffer_size));
+			spu->pts = current_pts;
+			spu->m_delay = duration_pts;
+			memcpy( spu->spu_data,spu_buf+rd_oft, current_length );
+
+			LOGI("CODEC_ID_SSA   size is:    %u ,data is:    %s\n",spu->buffer_size,spu->spu_data);
+			ret = 0;
 			break;
 		case 0x17003://avi internel image
 			ret = -1;
@@ -362,149 +380,84 @@ next  n bytes are subtitle data
 */
 int write_subtitle_file(AML_SPUVAR *spu)
 {
-#if 1
 	char *subtitle_data = NULL;
-	subtitle_data = malloc(VOB_SUB_SIZE);
+	subtitle_data = malloc(spu->buffer_size);
 	if(subtitle_data == NULL)
 		return 0;
+	if( spu->pts < inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_pts )
+	{
+		close_subtitle();
+	}	
 	if(inter_subtitle_data[file_position].data)
 		free(inter_subtitle_data[file_position].data);
-	#if 0
-	int subtitle_data_pos = 0;
-	set_int_value(spu->sync_bytes, subtitle_data+subtitle_data_pos, &subtitle_data_pos);
-	subtitle_data[subtitle_data_pos] = spu->subtitle_type;
-	subtitle_data_pos ++;
-	set_int_value(spu->pts, subtitle_data+subtitle_data_pos, &subtitle_data_pos);
-	set_int_value(spu->m_delay, subtitle_data+subtitle_data_pos, &subtitle_data_pos);
-	set_short_value(spu->spu_start_x, subtitle_data+subtitle_data_pos, &subtitle_data_pos);
-	set_short_value(spu->spu_start_y, subtitle_data+subtitle_data_pos, &subtitle_data_pos);
-	set_short_value(spu->spu_width, subtitle_data+subtitle_data_pos, &subtitle_data_pos);
-	set_short_value(spu->spu_height, subtitle_data+subtitle_data_pos, &subtitle_data_pos);
-	set_short_value(spu->spu_alpha, subtitle_data+subtitle_data_pos, &subtitle_data_pos);
-	set_int_value(spu->buffer_size, subtitle_data+subtitle_data_pos, &subtitle_data_pos);
-	memcpy(subtitle_data+subtitle_data_pos, spu->spu_data, VOB_SUB_SIZE);
-	#endif
-	memcpy(subtitle_data, spu->spu_data, VOB_SUB_SIZE);
+
+	memcpy(subtitle_data, spu->spu_data, spu->buffer_size);
+	inter_subtitle_data[file_position].subtitle_type = spu->subtitle_type;
 	inter_subtitle_data[file_position].data = subtitle_data;
-	inter_subtitle_data[file_position].data_size = VOB_SUBTITLE_FRAMW_SIZE;
+//	inter_subtitle_data[file_position].data_size = VOB_SUBTITLE_FRAMW_SIZE;    //?? need change for text sub
+	inter_subtitle_data[file_position].data_size = spu->buffer_size;    //?? need change for text sub
 	inter_subtitle_data[file_position].subtitle_pts = spu->pts;
 	inter_subtitle_data[file_position].subtitle_delay_pts = spu->m_delay;
 	inter_subtitle_data[file_position].sub_alpha = spu->spu_alpha;
 	inter_subtitle_data[file_position].subtitle_width = spu->spu_width;
 	inter_subtitle_data[file_position].subtitle_height = spu->spu_height;
-#elif 0
-
-
-	int subfile = open(SUBTITLE_FILE, O_RDWR|O_CREAT);
-	if(subfile >= 0){
-	    CODEC_PRINT("write pos is %ll\n\n",file_position*VOB_SUBTITLE_FRAMW_SIZE);
-	    off_t lseek_value = lseek(subfile,file_position*VOB_SUBTITLE_FRAMW_SIZE,SEEK_SET);
-	    CODEC_PRINT("lseek_value is %ll\n\n",lseek_value);
-		CODEC_PRINT("open subtitle file success\n\n");
-		CODEC_PRINT("sync_bytes is 0x414d4c55\n\n");
-		write(subfile,&spu->sync_bytes,4);
-		CODEC_PRINT("subtitle_type is %d\n\n",spu->subtitle_type);
-		write(subfile,&spu->subtitle_type,1);
-		CODEC_PRINT("spu->pts is %d\n\n",spu->pts);
-		write(subfile,&spu->pts,4);
-	    CODEC_PRINT("spu->m_delay is %d\n\n",spu->m_delay);
-		write(subfile,&spu->m_delay,4);
-		CODEC_PRINT("spu->spu_start_x is %d\n\n",spu->spu_start_x);
-		write(subfile,&spu->spu_start_x,2);
-		CODEC_PRINT("spu->spu_start_y is %d\n\n",spu->spu_start_y);
-		write(subfile,&spu->spu_start_y,2);   
-		CODEC_PRINT("spu->spu_width is %d\n\n",spu->spu_width);
-		write(subfile,&spu->spu_width,2);
-		CODEC_PRINT("spu->spu_height is %d\n\n",spu->spu_height);
-		write(subfile,&spu->spu_height,2);
-		CODEC_PRINT("spu->spu_alpha is %x\n\n",spu->spu_alpha);	
-		write(subfile,&spu->spu_alpha,2);
-		CODEC_PRINT("VOB_SUB_SIZE is %d\n\n",VOB_SUB_SIZE);		
-		write(subfile,&spu->buffer_size,4);
-		write(subfile,spu->spu_data,VOB_SUB_SIZE);
-		CODEC_PRINT("write subtitle file success\n\n");
-		close(subfile);
-	}
-#endif
+	
+	
+	LOGI(" write_subtitle_file[%d] subtitle_type is 0x%x size: %d \n",file_position,inter_subtitle_data[read_position].subtitle_type,
+					inter_subtitle_data[file_position].data_size);
 	return 0;
 }
 
 int read_subtitle_file()
 {
-#if 1
 	LOGI("subtitle data address is %x\n\n",(int)inter_subtitle_data[file_position].data);
-#elif 0
-	int subfile = open(SUBTITLE_FILE, O_RDONLY);
-	if(subfile >= 0){
-		unsigned sync_byte = 0;
-		unsigned short spu_rect = 0;
-		CODEC_PRINT("read pos is %ll\n\n",file_position*VOB_SUBTITLE_FRAMW_SIZE);
-		lseek(subfile,file_position*VOB_SUBTITLE_FRAMW_SIZE,SEEK_SET);
-		read(subfile, &sync_byte, 4);
-		CODEC_PRINT("sync bytes is %x\n\n",sync_byte); 
-		unsigned char subtitle_type = 0;
-    	read(subfile, &subtitle_type, 1);
-		CODEC_PRINT("subtitle_type is %x\n\n",subtitle_type); 
-		sync_byte = 0;
-		read(subfile, &sync_byte, 4);
-		CODEC_PRINT("current pts is %d\n\n",sync_byte); 
-		sync_byte = 0;
-		read(subfile, &sync_byte, 4);
-		CODEC_PRINT("subtitel delay is %d\n\n",sync_byte);
-		read(subfile, &spu_rect, 2);
-		CODEC_PRINT("spu_start_x is %d\n\n",spu_rect); 
-		spu_rect = 0;
-		read(subfile, &spu_rect, 2);
-		CODEC_PRINT("spu_start_y is %d\n\n",spu_rect); 
-		spu_rect = 0;
-		read(subfile, &spu_rect, 2);
-		CODEC_PRINT("spu_width is %d\n\n",spu_rect); 
-		spu_rect = 0;
-		read(subfile, &spu_rect, 2);
-		CODEC_PRINT("spu_height is %d\n\n",spu_rect); 
-		spu_rect = 0;
-		read(subfile, &spu_rect, 2);
-		CODEC_PRINT("spu_alpha is %x\n\n",spu_rect);
-		sync_byte = 0;
-		read(subfile, &sync_byte, 4);
-		CODEC_PRINT("spu size is %d\n\n",sync_byte);  
-		close(subfile);
-
-	}
-#endif
 	return 0;
 }
 
 int get_inter_spu_packet(int pts)
 {
+//	LOGI(" search pts %d , s %d \n",pts,pts/90);
+//	LOGI("inter_subtitle_data[%d].subtitle_pts is %d\n",read_position,inter_subtitle_data[read_position].subtitle_pts);
+
 	if(inter_subtitle_data[read_position].subtitle_pts > pts ||
 		inter_subtitle_data[read_position].subtitle_pts < (pts - 10*90000))
 		return -1;
-	#if 0
-	for(int i=0; i<MAX_SUBTITLE_PACKET_WRITE; i++){
-		if((inter_subtitle_data[read_position].subtitle_pts <= pts) && 
-			(inter_subtitle_data[read_position].subtitle_delay_pts > pts))
-			break;
-		else
-			ADD_SUBTITLE_POSITION(read_position);
-		read_position++;
-	}
-	#endif
-	LOGI("read_position is %d\n",read_position);
-	LOGI("file_position is %d\n",file_position);
+
+	LOGI("get_inter_spu_packet  read_position is %d  file_position is %d\n",read_position,file_position);
 	return read_position;
+	}
+
+int get_inter_spu_type()
+{
+	LOGI(" inter_subtitle_data[%d] subtitle_type is 0x%x\n",read_position,inter_subtitle_data[read_position].subtitle_type);
+	return inter_subtitle_data[read_position].subtitle_type;
 }
 
 int get_inter_spu_size()
 {
-	int subtitle_width = inter_subtitle_data[read_position].subtitle_width;
-	int subtitle_height = inter_subtitle_data[read_position].subtitle_height;
-	if(subtitle_width * subtitle_height == 0)
-		return 0;
-	int buffer_width = (subtitle_width+63)&0xffffffc0;
-	LOGI("buffer width is %d\n",buffer_width);
-	LOGI("buffer height is %d\n",subtitle_height);
-	return buffer_width*subtitle_height;
+	if(get_inter_spu_type()==SUBTITLE_VOB)
+	{
+		int subtitle_width = inter_subtitle_data[read_position].subtitle_width;
+		int subtitle_height = inter_subtitle_data[read_position].subtitle_height;
+		if(subtitle_width * subtitle_height == 0)
+			return 0;
+		int buffer_width = (subtitle_width+63)&0xffffffc0;
+		LOGI("buffer width is %d\n",buffer_width);
+		LOGI("buffer height is %d\n",subtitle_height);
+		return buffer_width*subtitle_height;
+	}
+	else if(get_inter_spu_type()==SUBTITLE_SSA)
+	{
+		LOGI(" inter_subtitle_data[%d] data_size is 0x%x\n",read_position,inter_subtitle_data[read_position].data_size);
+		return inter_subtitle_data[read_position].data_size;
+	}
+	return 0;
+}
+
+char* get_inter_spu_data()
+{
+		return inter_subtitle_data[read_position].data;
+
 }
 
 int get_inter_spu_width()
@@ -688,7 +641,6 @@ int get_inter_spu()
 	AML_SPUVAR spu;
 	memset(&spu,0x0,sizeof(AML_SPUVAR));
 	spu.sync_bytes = 0x414d4c55;
-	spu.buffer_size = VOB_SUB_SIZE;
 	int ret = get_spu(&spu, aml_sub_handle); 
 	if(ret < 0)
 		return -1;
@@ -706,6 +658,8 @@ int get_inter_spu()
 
 int close_subtitle()
 {
+	LOGI("----------------------close_subtitle------------------------------");
+
 	int i=0;
 	for(i=0; i<MAX_SUBTITLE_PACKET_WRITE; i++){
 		if(inter_subtitle_data[i].data)

@@ -4,6 +4,11 @@
 
 #define VOB_SUB_SIZE 720*576/4
 
+#define SUBTITLE_VOB      1
+#define SUBTITLE_PGS      2
+#define SUBTITLE_MKV_STR  3
+#define SUBTITLE_MKV_VOB  4
+#define SUBTITLE_SSA  5     //add yjf
 
 typedef struct 
 {
