@@ -245,7 +245,7 @@ public class SubtitleView extends TextView {
 				subapi = null;
 			}
 		}
-		subtitle.setSystemCharset("BIG5");
+		subtitle.setSystemCharset(enc);
 		InsubStatus=false;
 		// load Input File
 		try {
