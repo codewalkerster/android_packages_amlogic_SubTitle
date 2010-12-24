@@ -362,9 +362,7 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 			LOGI("CODEC_ID_SSA   size is:    %u ,data is:    %s\n",spu->buffer_size,spu->spu_data);
 			ret = 0;
 			break;
-		case 0x17003://avi internel image
-			ret = -1;
-			break;
+
 		default:
       		ret = -1;
 			break;
