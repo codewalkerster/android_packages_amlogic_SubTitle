@@ -321,6 +321,7 @@ static int pgs_decode(subtitlepgs_t* subtitlepgs, unsigned char* buf)
                 read_subpictureHeader(cur_buf-size, size, pgs_info);
             }
             else if(size==0xb){ //clearSubpictureHeader
+            	add_pgs_end_time(start_time);
                 //subtitlepgs_send_msg_bplay_show_subtitle(subtitlepgs->cntl, BROADCAST_ALL, SUBTITLE_TYPE_PGS, 0);
             }
             else{

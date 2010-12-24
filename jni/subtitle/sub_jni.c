@@ -231,9 +231,13 @@ JNIEXPORT jobject JNICALL getrawdata
 		(*env)->SetIntArrayRegion(env,array,0, sub_size, get_inter_spu_data() );	 
 		
 		LOGE("getrawdata: SetByteArrayRegion finish");
-		
+		int delay_pts = get_inter_spu_delay();
+		if(delay_pts <= 0)
+			delay_pts = 0;
+		else
+			delay_pts = (get_inter_spu_delay()-get_subtitle_startpts())/90;
 		jobject obj =  (*env)->NewObject(env, cls, constr,array,1,get_inter_spu_width(),
-			get_inter_spu_height(),1000,0);
+			get_inter_spu_height(),delay_pts,0);
 		LOGE("getrawdata: NewObject  finish");
 
 		add_read_position();

@@ -356,6 +356,13 @@ int init_subtitle_file()
 	return 0;
 }
 
+int add_pgs_end_time(int end_time)
+{
+	if(file_position >= 0 && inter_subtitle_data[file_position].data)
+		inter_subtitle_data[file_position].subtitle_delay_pts = end_time;
+	return 0;
+}
+
 /*
 write subtitle to file:SUBTITLE_FILE
 first 4 bytes are sync bytes:0x414d4c55(AMLU)

@@ -46,5 +46,6 @@ int get_spu(AML_SPUVAR *spu, int sub_fd);
 int release_spu(AML_SPUVAR *spu);
 int get_inter_spu();
 unsigned char spu_fill_pixel(unsigned short *pixelIn, char *pixelOut, AML_SPUVAR *sub_frame, int n);
+int add_pgs_end_time(int end_time);
 
 #endif
