@@ -197,6 +197,24 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 	    ret = -1;
 		goto error; 
 	}
+
+	//if don't enable subtitle, throw subtitle data
+	if(get_subtitle_enable()==0){
+		size = subtitle_get_sub_size_fd(read_sub_fd);
+		if (size <= 0){
+	    	ret = -1;
+	    	LOGI("\n player get sub size less than zero \n\n");
+			goto error; 
+		}
+		else{
+	    	LOGI("\n malloc subtitle size %d \n\n",size);
+			spu_buf = malloc(size);	
+		}
+
+		ret = subtitle_read_sub_data_fd(read_sub_fd, spu_buf, size);
+		ret = -1;
+		goto error;
+	}
 	
 	if(get_subtitle_subtype() == 1){
 		//pgs subtitle
@@ -223,7 +241,7 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 	
 	size = subtitle_get_sub_size_fd(read_sub_fd);
 	if (size <= 0){
-    ret = -1;
+    	ret = -1;
     	LOGI("\n player get sub size less than zero \n\n");
 		goto error; 
 	}
@@ -258,7 +276,7 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
   	LOGI("current_pts is %d\n",current_pts);
 	//LOGI("current_length is %d\n",current_length);
 	if (current_pts==0){
-	ret = -1;
+		ret = -1;
 		goto error;
 		}
   	LOGI("current_type is 0x%x\n",current_type);
@@ -437,8 +455,7 @@ int get_inter_spu_size()
 
 char* get_inter_spu_data()
 {
-		return inter_subtitle_data[read_position].data;
-
+	return inter_subtitle_data[read_position].data;
 }
 
 int get_inter_spu_width()
@@ -474,7 +491,7 @@ int add_read_position()
 int fill_resize_data(int *dst_data, int *src_data)
 {
 	if(inter_subtitle_data[read_position].resize_size == get_inter_spu_size()){
-		memcpy(dst_data, src_data, inter_subtitle_data[read_position].resize_size);
+		memcpy(dst_data, src_data, inter_subtitle_data[read_position].resize_size*4);
 		return 0;
 	}
 	int y_start = inter_subtitle_data[read_position].resize_ystart;

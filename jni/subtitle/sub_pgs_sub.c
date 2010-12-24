@@ -71,9 +71,9 @@ static unsigned char read_time_header(unsigned char** buf_start_ptr, int* size_i
         *start_time = (buf[2]<<24)|(buf[3]<<16)|(buf[4]<<8)|(buf[5]);
         *end_time = (buf[6]<<24)|(buf[7]<<16)|(buf[8]<<8)|(buf[9]);
         type = buf[10];
-		LOGI("type is %d\n", type);
+		//LOGI("type is %d\n", type);
         size = (buf[11]<<8)|buf[12];
-		LOGI("size is %d\n", size);
+		//LOGI("size is %d\n", size);
         *buf_start_ptr = buf+13+size;
         *size_i=size;
         return type;
@@ -133,7 +133,7 @@ static void read_color_table(unsigned char* buf, int size, pgs_info_t* pgs_info)
 {
     int pos;
     for(pos=2; pos<size; pos+=5){
-#if 0
+#if 1
         unsigned char r,g,b;
         unsigned  char y,u,v;
           y=buf[pos+1];
@@ -170,8 +170,8 @@ B = Y + 2.032U
 	    /* Store color in palette */
 	    //ctx->clut[color_id] = RGBA(r,g,b,alpha);
 	    pgs_info->palette[buf[pos]] = PGS_RGBA(r,g,b,alpha);
-	}
 #endif
+	}
 }
 
 static unsigned char read_bitmap(unsigned char* buf, int size, pgs_info_t* pgs_info)
@@ -398,7 +398,7 @@ int get_pgs_spu(subtitlepgs_t *subtitlepgs, int read_handle)
                 break;
         }
         if(packet_header==0x000001bd){  
-			LOGI("find header 0x000001bd\n");
+			//LOGI("find header 0x000001bd\n");
             if(read_spu_buf(read_handle, tmpbuf, 2)==2){
                 pgs_packet_length=(tmpbuf[0]<<8)|tmpbuf[1];
 #if 0

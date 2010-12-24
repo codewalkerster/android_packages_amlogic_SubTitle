@@ -377,7 +377,7 @@ JNIEXPORT jobject JNICALL getidxsubrawdata
 //}
 void inter_subtitle_parser()
 {
-	if(get_subtitle_enable()&&get_subtitle_num())
+	if(get_subtitle_num())
 		get_inter_spu();
 }
 
