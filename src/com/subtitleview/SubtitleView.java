@@ -234,6 +234,8 @@ public class SubtitleView extends TextView {
 
 	public Subtitle.SUBTYPE setFile(SubID file, String enc) throws Exception {
 
+		Log.i("SubView", "------------setFile-----------" +file.filename+"encoding:"+enc);
+
 		if(subapi!=null)
 		{
 			if(subapi.type()==Subtitle.SUBTYPE.INSUB)
@@ -249,7 +251,6 @@ public class SubtitleView extends TextView {
 		InsubStatus=false;
 		// load Input File
 		try {
-		    Log.i("SubView", "------------setFile-----------" +file.filename);
 			subtitle.setSubID(file);
 		    type=subtitle.getSubType();
 		    if (type==Subtitle.SUBTYPE.SUB_INVALID) 

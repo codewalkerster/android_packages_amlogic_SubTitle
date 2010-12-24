@@ -25,6 +25,29 @@
 #include "sub_vob_sub.h"
 #include "sub_pgs_sub.h"
 
+typedef struct _DivXSubPictColor
+{
+	char red;
+	char green;
+	char blue;
+} DivXSubPictColor;
+
+typedef struct _DivXSubPictHdr
+{
+	char duration[27];
+	unsigned short width;
+	unsigned short height;
+	unsigned short left;
+	unsigned short top;
+	unsigned short right;
+	unsigned short bottom;
+	unsigned short field_offset;
+	DivXSubPictColor background;
+	DivXSubPictColor pattern;
+	DivXSubPictColor emphasis1;
+	DivXSubPictColor emphasis2;
+	char *rleData;
+} DivXSubPictHdr;
 
 #define  LOG_TAG    "sub_subtitle"
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
@@ -187,7 +210,7 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 	int ret, rd_oft, wr_oft, size;
 	char *spu_buf=NULL;
 	unsigned current_length, current_pts, current_type,duration_pts;
-
+	DivXSubPictHdr* avihandle=NULL;
 	if(read_sub_fd < 0)
 		return 0;
 	ret = subtitle_poll_sub_fd(read_sub_fd, 10);
@@ -281,6 +304,37 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 		}
   	LOGI("current_type is 0x%x\n",current_type);
 	switch (current_type) {
+		case 0x17003://avi internel image
+/*			duration_pts = spu_buf[rd_oft++]<<24;
+			duration_pts |= spu_buf[rd_oft++]<<16;
+			duration_pts |= spu_buf[rd_oft++]<<8;
+			duration_pts |= spu_buf[rd_oft++];
+			LOGI("duration_pts is %d\n",duration_pts);
+			
+			avihandle=(DivXSubPictHdr*)(spu_buf+rd_oft);
+	
+			LOGI("0x17003 WIDTH %u ,HEIGHT %u\n",((avihandle->width)>>8&0xFF)|(avihandle->width<<8)&0xFF00,((avihandle->height)>>8&0xFF)|(avihandle->height<<8)&0xFF00);		
+			LOGI("0x17003 left 0x%x ,top 0x%x\n",avihandle->left,avihandle->top);		
+			if(avihandle->rleData=0)
+			{
+				ret=-1;
+				break;
+			}
+			spu->spu_data = malloc(VOB_SUB_SIZE);
+
+			memcpy( spu->spu_data, avihandle->rleData, VOB_SUB_SIZE );
+     		spu->subtitle_type = SUBTITLE_VOB;
+     		spu->buffer_size  = VOB_SUB_SIZE;
+			spu->pts = current_pts;		
+			ret = 0;*/
+			ret=-1;
+			break;
+		case 0x1700a://mkv internel image
+			duration_pts = spu_buf[rd_oft++]<<24;
+			duration_pts |= spu_buf[rd_oft++]<<16;
+			duration_pts |= spu_buf[rd_oft++]<<8;
+			duration_pts |= spu_buf[rd_oft++];
+			LOGI("duration_pts is %d\n",duration_pts);
 		case 0x17000://vob,mkv internel image
      		spu->subtitle_type = SUBTITLE_VOB;
      		spu->buffer_size  = VOB_SUB_SIZE;
