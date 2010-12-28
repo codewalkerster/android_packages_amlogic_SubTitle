@@ -32,6 +32,7 @@ typedef struct _DivXSubPictColor
 	char blue;
 } DivXSubPictColor;
 
+#pragma pack(1)
 typedef struct _DivXSubPictHdr
 {
 	char duration[27];
@@ -48,6 +49,8 @@ typedef struct _DivXSubPictHdr
 	DivXSubPictColor emphasis2;
 	char *rleData;
 } DivXSubPictHdr;
+ #pragma pack()
+
 
 #define  LOG_TAG    "sub_subtitle"
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
@@ -205,12 +208,14 @@ unsigned char spu_fill_pixel(unsigned short *pixelIn, char *pixelOut, AML_SPUVAR
 	return 0;
 }
 
+#define str2ms(s) (((s[1]-0x30)*3600*10+(s[2]-0x30)*3600+(s[4]-0x30)*60*10+(s[5]-0x30)*60+(s[7]-0x30)*10+(s[8]-0x30))*1000+(s[10]-0x30)*100+(s[11]-0x30)*10+(s[12]-0x30))     
 int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 {
 	int ret, rd_oft, wr_oft, size;
 	char *spu_buf=NULL;
 	unsigned current_length, current_pts, current_type,duration_pts;
 	DivXSubPictHdr* avihandle=NULL;
+	unsigned short *ptrPXDWrite=0,*ptrPXDRead=0;
 	if(read_sub_fd < 0)
 		return 0;
 	ret = subtitle_poll_sub_fd(read_sub_fd, 10);
@@ -305,29 +310,37 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
   	LOGI("current_type is 0x%x\n",current_type);
 	switch (current_type) {
 		case 0x17003://avi internel image
-/*			duration_pts = spu_buf[rd_oft++]<<24;
+			duration_pts = spu_buf[rd_oft++]<<24;
 			duration_pts |= spu_buf[rd_oft++]<<16;
 			duration_pts |= spu_buf[rd_oft++]<<8;
 			duration_pts |= spu_buf[rd_oft++];
-			LOGI("duration_pts is %d\n",duration_pts);
+			LOGI("duration_pts is %d, current_length=%d  ,rd_oft is %d\n",duration_pts,current_length,rd_oft);
 			
 			avihandle=(DivXSubPictHdr*)(spu_buf+rd_oft);
-	
-			LOGI("0x17003 WIDTH %u ,HEIGHT %u\n",((avihandle->width)>>8&0xFF)|(avihandle->width<<8)&0xFF00,((avihandle->height)>>8&0xFF)|(avihandle->height<<8)&0xFF00);		
-			LOGI("0x17003 left 0x%x ,top 0x%x\n",avihandle->left,avihandle->top);		
-			if(avihandle->rleData=0)
-			{
-				ret=-1;
-				break;
-			}
-			spu->spu_data = malloc(VOB_SUB_SIZE);
+//			LOGI("avihandle  is 0x%x,  spu_buf is 0x%x,  avihandle->rleData=0x%x \n",avihandle,spu_buf,&(avihandle->rleData));
 
-			memcpy( spu->spu_data, avihandle->rleData, VOB_SUB_SIZE );
+			spu->spu_data = malloc(VOB_SUB_SIZE);
+			memset(spu->spu_data,0,VOB_SUB_SIZE);
+
+
      		spu->subtitle_type = SUBTITLE_VOB;
      		spu->buffer_size  = VOB_SUB_SIZE;
-			spu->pts = current_pts;		
-			ret = 0;*/
-			ret=-1;
+     		{
+     			unsigned char  *s=&(avihandle->duration[0]);
+				spu->pts = str2ms(s)*90;	
+				s=&(avihandle->duration[13]);
+				spu->m_delay = str2ms(s)*90;	
+			}
+			spu->spu_width = avihandle->width;
+			spu->spu_height = avihandle->height;
+			LOGI(" spu->spu_width is 0x%x,  spu->spu_height=0x%x\n  spu->spu_width is %u,  spu->spu_height=%u\n",avihandle->width,avihandle->height,spu->spu_width,spu->spu_height);
+
+			ptrPXDRead = (unsigned short *)&(avihandle->rleData);
+			FillPixel(ptrPXDRead,spu->spu_data,1,spu,avihandle->field_offset);
+  			ptrPXDRead = (unsigned short *)((int)(&avihandle->rleData) +(int)(avihandle->field_offset));
+			FillPixel(ptrPXDRead,spu->spu_data+VOB_SUB_SIZE/2,2,spu,avihandle->field_offset);
+			
+			ret = 0;
 			break;
 		case 0x1700a://mkv internel image
 			duration_pts = spu_buf[rd_oft++]<<24;
@@ -456,8 +469,8 @@ int write_subtitle_file(AML_SPUVAR *spu)
 	inter_subtitle_data[file_position].resize_height = spu->spu_height;
 	
 	
-	LOGI(" write_subtitle_file[%d] subtitle_type is 0x%x size: %d \n",file_position,inter_subtitle_data[read_position].subtitle_type,
-					inter_subtitle_data[file_position].data_size);
+	LOGI(" write_subtitle_file[%d] subtitle_type is 0x%x size: %d  subtitle_pts =%u,subtitle_pts=%u \n",file_position,inter_subtitle_data[read_position].subtitle_type,
+					inter_subtitle_data[file_position].data_size,inter_subtitle_data[file_position].subtitle_pts,inter_subtitle_data[file_position].subtitle_delay_pts);
 	return 0;
 }
 
@@ -476,7 +489,7 @@ int get_inter_spu_packet(int pts)
 		inter_subtitle_data[read_position].subtitle_pts < (pts - 10*90000))
 		return -1;
 
-	LOGI("get_inter_spu_packet  read_position is %d  file_position is %d\n",read_position,file_position);
+	LOGI("get_inter_spu_packet  read_position is %d  file_position is %d  ,time is %d\n",read_position,file_position,inter_subtitle_data[read_position].subtitle_pts);
 	return read_position;
 	}
 

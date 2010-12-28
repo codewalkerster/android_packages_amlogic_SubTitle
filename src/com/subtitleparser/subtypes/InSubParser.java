@@ -48,7 +48,7 @@ class InSubApi extends SubtitleApi
 	 };
 	 public void closeSubtitle( )
 	 {
-		 closeInSub();
+//		 closeInSub();
 	 }
 	 public Subtitle.SUBTYPE type()
 	 {
@@ -66,12 +66,18 @@ class InSubApi extends SubtitleApi
 					inter_data.height, Config.ARGB_8888);
 				
 				Log.i("SubData",	"time b: " + millisec+"  e:"+inter_data.sub_delay);
-				return new SubData( bf_show, millisec,inter_data.sub_delay);				 
+				if(inter_data.sub_delay>millisec)
+					return new SubData( bf_show, millisec,inter_data.sub_delay);
+				else
+				    return new SubData( bf_show, millisec,millisec+1000);					 
 			 }
 			 else 
 			 {
 				Log.i("InSubApi",	"get SubData by string  delay time :"+inter_data.sub_delay);
-				return new SubData( inter_data.subtitlestring, millisec,millisec+3000);				 
+				if(inter_data.sub_delay>millisec)
+					return new SubData( inter_data.subtitlestring, millisec,inter_data.sub_delay);		
+				else
+					return new SubData( inter_data.subtitlestring, millisec,millisec+1000);				 
 			 }
 		 }else
 		 {

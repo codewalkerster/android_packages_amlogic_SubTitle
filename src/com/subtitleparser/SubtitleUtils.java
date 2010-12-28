@@ -44,7 +44,7 @@ public class SubtitleUtils {
 		{
 			strlist.clear();
 			filename = name;
-			FileChangedByJni(name);
+//			FileChangedByJni(name);
 			subfile= new File(filename);
 			accountExSubtitleNumber();
 		}
