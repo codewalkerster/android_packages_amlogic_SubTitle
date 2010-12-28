@@ -442,18 +442,17 @@ static JNINativeMethod gMethods[] = {
 static JNINativeMethod insubMethods[] = {
     /* name, signature, funcPtr */
     	{ "getInSubtitleTotalByJni", "()I",                                 (void*)getInSubtitleTotal},
-		{ "setInSubtitleNumberByJni", "(I)I",                               (void*)setInSubtitleNumber},
-		{ "getCurrentInSubtitleIndexByJni", "()I",                          (void*)getCurrentInSubtitleIndex },
-		{ "FileChangedByJni", "(Ljava/lang/String;)V",                          (void*)playfileChanged },
+//		{ "getCurrentInSubtitleIndexByJni", "()I",                          (void*)getCurrentInSubtitleIndex },
+//		{ "FileChangedByJni", "(Ljava/lang/String;)V",                          (void*)playfileChanged },
 		
     };
     
 static JNINativeMethod insubdataMethods[] = {
     /* name, signature, funcPtr */
     	{ "getrawdata", "(I)Lcom/subtitleparser/subtypes/RawData;", (void*)getrawdata},
+		{ "setInSubtitleNumberByJni", "(I)I",                               (void*)setInSubtitleNumber},
 		{ "closeInSub", "()V", (void*)closeInSubView},
 
-//    	{ "getdataByJni", "(I)Lcom/subtitleparser/subtypes/InSubApi;", (void*)getdata},
     };    
 
 static JNINativeMethod idxsubdataMethods[] = {

@@ -23,8 +23,9 @@ import com.subtitleparser.SubtitleParser;
 class InSubApi extends SubtitleApi
 {
 	native  RawData getrawdata(int millisec); 
-	native  SubData getdataByJni(int millisec); 
+	native int setInSubtitleNumberByJni(int  ms);
 	native  void closeInSub();
+
 	private static final String SUBTITLE_FILE = "/data/subtitle.db";
 	private static final String WRITE_SUBTITLE_FILE = "/data/subtitle_img.jpeg";
 	private static int subtitle_packet_size = (4+1+4+4+2+2+2+2+2+4+720*576/4);
@@ -40,11 +41,14 @@ class InSubApi extends SubtitleApi
 	private static RawData inter_data = null;
 	private static Bitmap bf_show=null;
 	
-
-	
 	 private Bitmap bitmap=null;
-	 InSubApi()
+	 private String filename=null;
+	 int index=0;
+	 InSubApi(String File,int id)
 	 {
+	 	 filename=File;
+	 	 index=id;
+	 	 setInSubtitleNumberByJni(index);
 	 };
 	 public void closeSubtitle( )
 	 {
@@ -238,7 +242,7 @@ public class InSubParser implements SubtitleParser{
 	
 	public SubtitleApi parse(String filename,int index) throws MalformedSubException{
 		Log.i("SubtitleApi", "------------SubtitleApi-----------" );
-		return new InSubApi();
+		return new InSubApi( filename, index);
 	};
 
 

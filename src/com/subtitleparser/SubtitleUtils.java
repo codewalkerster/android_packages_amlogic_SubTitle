@@ -11,9 +11,9 @@ import android.util.Log;
 public class SubtitleUtils {
 	public native int getInSubtitleTotalByJni();
 	
-	public native int setInSubtitleNumberByJni(int  ms);
-	public native int getCurrentInSubtitleIndexByJni();
-	public native void FileChangedByJni(String name);
+//	public native int setInSubtitleNumberByJni(int  ms);
+//	public native int getCurrentInSubtitleIndexByJni();
+//	public native void FileChangedByJni(String name);
 
 	private String filename=null;
 	private File subfile =null;
@@ -50,6 +50,11 @@ public class SubtitleUtils {
 		}
 	}
 	
+	public int getExSubTotal()
+    {
+    	return exSubtotle;
+    }
+	
     public int getSubTotal()
     {
     	for(int i=0;i<exSubtotle;i++)
@@ -72,8 +77,8 @@ public class SubtitleUtils {
     		return strlist.get(index).filename;
     	else if(index<getSubTotal())
     	{
-    		setInSubtitleNumber(0xff);
-    		setInSubtitleNumber(index-exSubtotle);
+//    		setInSubtitleNumber(0xff);
+//    		setInSubtitleNumber(index-exSubtotle);
     		return "INSUB";
     	}
 		return null;
@@ -89,8 +94,8 @@ public class SubtitleUtils {
     		return strlist.get(index);
     	else if(index<getSubTotal())
     	{
-    		setInSubtitleNumber(0xff);
-    		setInSubtitleNumber(index-exSubtotle);
+//    		setInSubtitleNumber(0xff);
+//    		setInSubtitleNumber(index-exSubtotle);
     		return new SubID("INSUB",index-exSubtotle);
     	}
 		return null;    
@@ -160,7 +165,7 @@ public class SubtitleUtils {
     //wait to finish.
     private  void setInSubtitleNumber(int index)
     {
-    	setInSubtitleNumberByJni(index);
+//    	setInSubtitleNumberByJni(index);
     	return;
     }   
     private int accountIdxSubtitleNumber( String filename )
