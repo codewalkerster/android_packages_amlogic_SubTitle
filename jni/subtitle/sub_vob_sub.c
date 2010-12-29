@@ -204,6 +204,11 @@ static int get_spu_cmd(AML_SPUVAR *sub_frame)
 
 int get_vob_spu(char *spu_buf, unsigned length, AML_SPUVAR *spu)
 {
+//	LOGI("spubuf  %x %x %x %x %x %x %x %x   %x %x %x %x %x %x %x %x  \n %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n",
+//	    spu_buf[0], spu_buf[1],spu_buf[2],spu_buf[3],spu_buf[4],spu_buf[5],spu_buf[6],spu_buf[7],
+//	    spu_buf[8],spu_buf[9],spu_buf[10],spu_buf[11],spu_buf[12],spu_buf[13],spu_buf[14],spu_buf[15],
+//	    spu_buf[16],spu_buf[17],spu_buf[18],spu_buf[19],spu_buf[20],spu_buf[21],spu_buf[22],spu_buf[23],
+//	    spu_buf[24],spu_buf[25],spu_buf[26],spu_buf[27],spu_buf[28],spu_buf[29],spu_buf[30],spu_buf[31] );
 	int rd_oft, wr_oft, i;
 	unsigned current_length = length;
 	int ret = -1;

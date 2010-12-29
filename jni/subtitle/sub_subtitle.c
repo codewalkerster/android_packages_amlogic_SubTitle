@@ -226,23 +226,7 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 		goto error; 
 	}
 
-	//if don't enable subtitle, throw subtitle data
-	if(get_subtitle_enable()==0){
-		size = subtitle_get_sub_size_fd(read_sub_fd);
-		if (size <= 0){
-	    	ret = -1;
-	    	LOGI("\n player get sub size less than zero \n\n");
-			goto error; 
-		}
-		else{
-	    	LOGI("\n malloc subtitle size %d \n\n",size);
-			spu_buf = malloc(size);	
-		}
 
-		ret = subtitle_read_sub_data_fd(read_sub_fd, spu_buf, size);
-		ret = -1;
-		goto error;
-	}
 	
 	if(get_subtitle_subtype() == 1){
 		//pgs subtitle
@@ -268,7 +252,9 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 	}
 	
 	size = subtitle_get_sub_size_fd(read_sub_fd);
-	if (size <= 0){
+	
+	
+	if (size <= 0||get_subtitle_enable()==0){
     	ret = -1;
     	LOGI("\n player get sub size less than zero \n\n");
 		goto error; 
@@ -277,110 +263,177 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
     	LOGI("\n malloc subtitle size %d \n\n",size);
 		spu_buf = malloc(size);	
 	}
+	int sizeflag=size;
+	char* spu_buf_tmp=spu_buf;
+	char* spu_buf_piece=spu_buf_piece;
+	while(sizeflag>30)
+	{
+		LOGI("\n sizeflag =%u  \n\n",sizeflag);
 
-	ret = subtitle_read_sub_data_fd(read_sub_fd, spu_buf, size);
+		if (sizeflag <= 16){
+	    	ret = -1;
+	    	LOGI("\n player get sub size less than zero \n\n");
+			goto error; 
+		}
+	    char* spu_buf_piece= spu_buf_tmp;
 	
-
-	rd_oft = 0;
-	if ((spu_buf[rd_oft++]!=0x41)||(spu_buf[rd_oft++]!=0x4d)||
-		(spu_buf[rd_oft++]!=0x4c)||(spu_buf[rd_oft++]!=0x55)|| (spu_buf[rd_oft++]!=0xaa)){
-		ret = -1;
-		goto error; 		// wrong head
+		ret = subtitle_read_sub_data_fd(read_sub_fd, spu_buf_piece, 16);
+		sizeflag-=16;spu_buf_tmp+=16;
+	
+		rd_oft = 0;
+		if ((spu_buf_piece[rd_oft++]!=0x41)||(spu_buf_piece[rd_oft++]!=0x4d)||
+			(spu_buf_piece[rd_oft++]!=0x4c)||(spu_buf_piece[rd_oft++]!=0x55)|| (spu_buf_piece[rd_oft++]!=0xaa)){
+				
+					ret = subtitle_read_sub_data_fd(read_sub_fd, spu_buf_piece, size);
+					LOGI("\n\n ******* find wrong subtitle header!! ******\n\n");
+	
+			ret = -1;
+			goto error; 		// wrong head
 	}
 	LOGI("\n\n ******* find correct subtitle header ******\n\n");
-	current_type = spu_buf[rd_oft++]<<16;
-	current_type |= spu_buf[rd_oft++]<<8;
-	current_type |= spu_buf[rd_oft++];
-
-	current_length = spu_buf[rd_oft++]<<24;
-	current_length |= spu_buf[rd_oft++]<<16;
-	current_length |= spu_buf[rd_oft++]<<8;
-	current_length |= spu_buf[rd_oft++];	
+		current_type = spu_buf_piece[rd_oft++]<<16;
+		current_type |= spu_buf_piece[rd_oft++]<<8;
+		current_type |= spu_buf_piece[rd_oft++];
 	
-	current_pts = spu_buf[rd_oft++]<<24;
-	current_pts |= spu_buf[rd_oft++]<<16;
-	current_pts |= spu_buf[rd_oft++]<<8;
-	current_pts |= spu_buf[rd_oft++];
-  	LOGI("current_pts is %d\n",current_pts);
-	//LOGI("current_length is %d\n",current_length);
-	if (current_pts==0){
-		ret = -1;
-		goto error;
+		current_length = spu_buf_piece[rd_oft++]<<24;
+		current_length |= spu_buf_piece[rd_oft++]<<16;
+		current_length |= spu_buf_piece[rd_oft++]<<8;
+		current_length |= spu_buf_piece[rd_oft++];	
+		
+		current_pts = spu_buf_piece[rd_oft++]<<24;
+		current_pts |= spu_buf_piece[rd_oft++]<<16;
+		current_pts |= spu_buf_piece[rd_oft++]<<8;
+		current_pts |= spu_buf_piece[rd_oft++];
+	  	LOGI("current_pts is %d\n",current_pts);
+		LOGI("current_length is %d\n",current_length);
+		
+
+		
+		LOGI("\n sizeflag =%u  \n\n",sizeflag);
+
+		if(current_length >sizeflag)
+		{
+			  	LOGI("current_length >size");
+			ret = subtitle_read_sub_data_fd(read_sub_fd, spu_buf_piece, sizeflag);
+			ret=-1;
+			goto error;
 		}
-  	LOGI("current_type is 0x%x\n",current_type);
-	switch (current_type) {
-		case 0x17003://avi internel image
-			duration_pts = spu_buf[rd_oft++]<<24;
-			duration_pts |= spu_buf[rd_oft++]<<16;
-			duration_pts |= spu_buf[rd_oft++]<<8;
-			duration_pts |= spu_buf[rd_oft++];
-			LOGI("duration_pts is %d, current_length=%d  ,rd_oft is %d\n",duration_pts,current_length,rd_oft);
-			
-			avihandle=(DivXSubPictHdr*)(spu_buf+rd_oft);
-//			LOGI("avihandle  is 0x%x,  spu_buf is 0x%x,  avihandle->rleData=0x%x \n",avihandle,spu_buf,&(avihandle->rleData));
+		if(current_type==0x17000)
+		{
+			LOGI("current_type=0x17000\n");
+//			ret = subtitle_read_sub_data_fd(read_sub_fd, spu_buf_piece+16, current_length);
+			ret = subtitle_read_sub_data_fd(read_sub_fd, spu_buf_piece+16, sizeflag);
 
-			spu->spu_data = malloc(VOB_SUB_SIZE);
-			memset(spu->spu_data,0,VOB_SUB_SIZE);
+			sizeflag=0;
+			spu_buf_tmp+=current_length;
+	
+		}
+		else
+		{
+			LOGI("current_type!!=0x17000\n");
+	        ret = subtitle_read_sub_data_fd(read_sub_fd, spu_buf_piece+16, current_length+4);
+		 	sizeflag-=(current_length+4);
+		    spu_buf_tmp+=(current_length+4);
+			LOGI("current_type!!=0x17000\n");
+		}
+		if (current_pts==0){
+			LOGI("current_pts==0\n");
 
-
-     		spu->subtitle_type = SUBTITLE_VOB;
-     		spu->buffer_size  = VOB_SUB_SIZE;
-     		{
-     			unsigned char  *s=&(avihandle->duration[0]);
-				spu->pts = str2ms(s)*90;	
-				s=&(avihandle->duration[13]);
-				spu->m_delay = str2ms(s)*90;	
+			ret = -1;
+			goto error;
 			}
-			spu->spu_width = avihandle->width;
-			spu->spu_height = avihandle->height;
-			LOGI(" spu->spu_width is 0x%x,  spu->spu_height=0x%x\n  spu->spu_width is %u,  spu->spu_height=%u\n",avihandle->width,avihandle->height,spu->spu_width,spu->spu_height);
-
-			ptrPXDRead = (unsigned short *)&(avihandle->rleData);
-			FillPixel(ptrPXDRead,spu->spu_data,1,spu,avihandle->field_offset);
-  			ptrPXDRead = (unsigned short *)((int)(&avihandle->rleData) +(int)(avihandle->field_offset));
-			FillPixel(ptrPXDRead,spu->spu_data+VOB_SUB_SIZE/2,2,spu,avihandle->field_offset);
-			
-			ret = 0;
-			break;
-		case 0x1700a://mkv internel image
-			duration_pts = spu_buf[rd_oft++]<<24;
-			duration_pts |= spu_buf[rd_oft++]<<16;
-			duration_pts |= spu_buf[rd_oft++]<<8;
-			duration_pts |= spu_buf[rd_oft++];
-			LOGI("duration_pts is %d\n",duration_pts);
-		case 0x17000://vob,mkv internel image
-     		spu->subtitle_type = SUBTITLE_VOB;
-     		spu->buffer_size  = VOB_SUB_SIZE;
-			spu->spu_data = malloc(VOB_SUB_SIZE);
-			spu->pts = current_pts;
-			ret = get_vob_spu(spu_buf+rd_oft, current_length, spu); 
-			break;
-		case 0x17002://mkv internel utf-8
-		case 0x17004://mkv internel ssa
-			duration_pts = spu_buf[rd_oft++]<<24;
-			duration_pts |= spu_buf[rd_oft++]<<16;
-			duration_pts |= spu_buf[rd_oft++]<<8;
-			duration_pts |= spu_buf[rd_oft++];
-			LOGI("duration_pts is %d\n",duration_pts);
-
-			
-      		spu->subtitle_type = SUBTITLE_SSA;
-      		spu->buffer_size = current_length+1;//256*(current_length/256+1);
-			spu->spu_data = malloc( spu->buffer_size );
-			memset(spu->spu_data,'\0',sizeof(spu->buffer_size));
-			spu->pts = current_pts;
-			spu->m_delay = duration_pts;
-			memcpy( spu->spu_data,spu_buf+rd_oft, current_length );
-
-			LOGI("CODEC_ID_SSA   size is:    %u ,data is:    %s\n",spu->buffer_size,spu->spu_data);
-			ret = 0;
-			break;
-
-		default:
-      		ret = -1;
-			break;
+	  	LOGI("current_type is 0x%x\n",current_type);
+		switch (current_type) {
+			case 0x17003://avi internel image
+				duration_pts = spu_buf_piece[rd_oft++]<<24;
+				duration_pts |= spu_buf_piece[rd_oft++]<<16;
+				duration_pts |= spu_buf_piece[rd_oft++]<<8;
+				duration_pts |= spu_buf_piece[rd_oft++];
+				LOGI("duration_pts is %d, current_length=%d  ,rd_oft is %d\n",duration_pts,current_length,rd_oft);
+				
+				avihandle=(DivXSubPictHdr*)(spu_buf_piece+rd_oft);
+	
+				LOGI(" %c %c %c %c %c %c %c %c    %c %c %c %c %c %c %c %c  %c %c %c %c %c %c %c %c    %c %c %c    \n",avihandle->duration[0],avihandle->duration[1],avihandle->duration[2],avihandle->duration[3],
+										avihandle->duration[4],avihandle->duration[5],avihandle->duration[6],avihandle->duration[7]	,
+										avihandle->duration[8],avihandle->duration[9],avihandle->duration[10],avihandle->duration[11],	
+										avihandle->duration[12],avihandle->duration[13],avihandle->duration[14],avihandle->duration[15],
+										avihandle->duration[16],avihandle->duration[17],avihandle->duration[18],avihandle->duration[19],
+										avihandle->duration[20],avihandle->duration[21],avihandle->duration[22],avihandle->duration[23]	,
+										avihandle->duration[24],avihandle->duration[25],avihandle->duration[26]);
+	
+	
+				spu->spu_data = malloc(VOB_SUB_SIZE);
+				memset(spu->spu_data,0,VOB_SUB_SIZE);
+	
+	
+	     		spu->subtitle_type = SUBTITLE_VOB;
+	     		spu->buffer_size  = VOB_SUB_SIZE;
+	     		{
+	     			unsigned char  *s=&(avihandle->duration[0]);
+					spu->pts = str2ms(s)*90;	
+					s=&(avihandle->duration[13]);
+					spu->m_delay = str2ms(s)*90;	
+				}
+				spu->spu_width = avihandle->width;
+				spu->spu_height = avihandle->height;
+				LOGI(" spu->spu_width is 0x%x,  spu->spu_height=0x%x\n  spu->spu_width is %u,  spu->spu_height=%u\n",avihandle->width,avihandle->height,spu->spu_width,spu->spu_height);
+	
+				ptrPXDRead = (unsigned short *)&(avihandle->rleData);
+				FillPixel(ptrPXDRead,spu->spu_data,1,spu,avihandle->field_offset);
+	  			ptrPXDRead = (unsigned short *)((int)(&avihandle->rleData) +(int)(avihandle->field_offset));
+				FillPixel(ptrPXDRead,spu->spu_data+VOB_SUB_SIZE/2,2,spu,avihandle->field_offset);
+				
+				ret = 0;
+				break;
+			case 0x1700a://mkv internel image
+				duration_pts = spu_buf_piece[rd_oft++]<<24;
+				duration_pts |= spu_buf_piece[rd_oft++]<<16;
+				duration_pts |= spu_buf_piece[rd_oft++]<<8;
+				duration_pts |= spu_buf_piece[rd_oft++];
+				LOGI("duration_pts is %d\n",duration_pts);
+			case 0x17000://vob internel image
+	     		spu->subtitle_type = SUBTITLE_VOB;
+	     		spu->buffer_size  = VOB_SUB_SIZE;
+				spu->spu_data = malloc(VOB_SUB_SIZE);
+				spu->pts = current_pts;
+				ret = get_vob_spu(spu_buf_piece+rd_oft, current_length, spu); 
+				break;
+			case 0x17002://mkv internel utf-8
+			case 0x17004://mkv internel ssa
+				duration_pts = spu_buf_piece[rd_oft++]<<24;
+				duration_pts |= spu_buf_piece[rd_oft++]<<16;
+				duration_pts |= spu_buf_piece[rd_oft++]<<8;
+				duration_pts |= spu_buf_piece[rd_oft++];
+				LOGI("duration_pts is %d\n",duration_pts);
+	
+				
+	      		spu->subtitle_type = SUBTITLE_SSA;
+	      		spu->buffer_size = current_length+1;//256*(current_length/256+1);
+				spu->spu_data = malloc( spu->buffer_size );
+				memset(spu->spu_data,'\0',sizeof(spu->buffer_size));
+				spu->pts = current_pts;
+				spu->m_delay = duration_pts;
+				memcpy( spu->spu_data,spu_buf_piece+rd_oft, current_length );
+	
+				LOGI("CODEC_ID_SSA   size is:    %u ,data is:    %s\n",spu->buffer_size,spu->spu_data);
+				ret = 0;
+				break;
+	
+			default:
+	      		ret = -1;
+				break;
+		}
+		if(ret < 0)
+			goto error;
+		if(get_subtitle_subtype()==1){
+			spu->buffer_size = spu->spu_width*spu->spu_height*4;
+		}
+	
+		write_subtitle_file(spu);
+		free(spu->spu_data);
+		file_position = ADD_SUBTITLE_POSITION(file_position);
+	
 	}
-
 error:
 	if (spu_buf)
 		free(spu_buf);
@@ -714,14 +767,13 @@ int get_inter_spu()
 	int ret = get_spu(&spu, aml_sub_handle); 
 	if(ret < 0)
 		return -1;
-	if(get_subtitle_subtype()==1){
-		spu.buffer_size = spu.spu_width*spu.spu_height*4;
-	}
-
-	write_subtitle_file(&spu);
-	//read_subtitle_file();
-	free(spu.spu_data);
-	file_position = ADD_SUBTITLE_POSITION(file_position);
+//	if(get_subtitle_subtype()==1){
+//		spu.buffer_size = spu.spu_width*spu.spu_height*4;
+//	}
+//
+//	write_subtitle_file(&spu);
+//	free(spu.spu_data);
+//	file_position = ADD_SUBTITLE_POSITION(file_position);
 	LOGI("file_position is %d\n\n",file_position);
 
 	LOGI("end parser subtitle success\n");

@@ -136,11 +136,11 @@ JNIEXPORT jint JNICALL setInSubtitleNumber
 {	
 	if(index == 0xff){
 		set_subtitle_enable(0);
-		close_subtitle();
+//		close_subtitle();
 		//should clear subtitle buffer and don't send data in libplayer
 	}
 	else if(index < get_subtitle_num()){
-		close_subtitle();
+//		close_subtitle();
 		set_subtitle_enable(1);
 		set_subtitle_curr(index);
 	}
