@@ -52,7 +52,7 @@ class InSubApi extends SubtitleApi
 	 };
 	 public void closeSubtitle( )
 	 {
-		 closeInSub();
+//		 closeInSub();
 	 }
 	 public Subtitle.SUBTYPE type()
 	 {

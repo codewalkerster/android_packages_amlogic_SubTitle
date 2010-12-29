@@ -340,8 +340,8 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 			LOGI("current_pts==0\n");
 
 			ret = -1;
-			goto error;
-			}
+			continue;
+		}
 	  	LOGI("current_type is 0x%x\n",current_type);
 		switch (current_type) {
 			case 0x17003://avi internel image
