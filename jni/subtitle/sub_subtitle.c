@@ -522,7 +522,7 @@ int write_subtitle_file(AML_SPUVAR *spu)
 	inter_subtitle_data[file_position].resize_height = spu->spu_height;
 	
 	
-	LOGI(" write_subtitle_file[%d] subtitle_type is 0x%x size: %d  subtitle_pts =%u,subtitle_pts=%u \n",file_position,inter_subtitle_data[read_position].subtitle_type,
+	LOGI(" write_subtitle_file[%d] subtitle_type is 0x%x size: %d  subtitle_pts =%u,subtitle_delay_pts=%u \n",file_position,inter_subtitle_data[read_position].subtitle_type,
 					inter_subtitle_data[file_position].data_size,inter_subtitle_data[file_position].subtitle_pts,inter_subtitle_data[file_position].subtitle_delay_pts);
 	return 0;
 }
@@ -535,11 +535,23 @@ int read_subtitle_file()
 
 int get_inter_spu_packet(int pts)
 {
-//	LOGI(" search pts %d , s %d \n",pts,pts/90);
-//	LOGI("inter_subtitle_data[%d].subtitle_pts is %d\n",read_position,inter_subtitle_data[read_position].subtitle_pts);
+	LOGI(" search pts %d , s %d \n",pts,pts/90);
+	
+	int storenumber=(file_position>=read_position)?file_position-read_position:MAX_SUBTITLE_PACKET_WRITE+file_position-1-read_position;
+	
+	LOGI("inter_subtitle_data[%d].subtitle_pts is %d storenumber=%d \n",read_position,inter_subtitle_data[read_position].subtitle_pts,storenumber);
 
-	if(inter_subtitle_data[read_position].subtitle_pts > pts ||
-		inter_subtitle_data[read_position].subtitle_pts < (pts - 10*90000))
+
+	int i;
+	for(i=0;i<storenumber-1;i++)
+	{
+		if(pts>=inter_subtitle_data[ADD_SUBTITLE_POSITION(read_position)].subtitle_pts )
+			read_position++;
+		else 
+			break;
+	}
+
+	if(inter_subtitle_data[read_position].subtitle_pts > pts ||	inter_subtitle_data[read_position].subtitle_pts < (pts - 10*90000))
 		return -1;
 
 	LOGI("get_inter_spu_packet  read_position is %d  file_position is %d  ,time is %d\n",read_position,file_position,inter_subtitle_data[read_position].subtitle_pts);

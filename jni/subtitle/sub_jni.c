@@ -131,8 +131,9 @@ JNIEXPORT jint JNICALL getInSubtitleTotal
 	return 0;
 }
 
+static 
 JNIEXPORT jint JNICALL setInSubtitleNumber
-  (JNIEnv *env, jclass cl, jint index )  
+  (JNIEnv *env, jclass cl, jint index,jstring name )  
 {	
 	if(index == 0xff){
 		set_subtitle_enable(0);
@@ -450,7 +451,7 @@ static JNINativeMethod insubMethods[] = {
 static JNINativeMethod insubdataMethods[] = {
     /* name, signature, funcPtr */
     	{ "getrawdata", "(I)Lcom/subtitleparser/subtypes/RawData;", (void*)getrawdata},
-		{ "setInSubtitleNumberByJni", "(I)I",                               (void*)setInSubtitleNumber},
+		{ "setInSubtitleNumberByJni", "(ILjava/lang/String;)I",                               (void*)setInSubtitleNumber},
 		{ "closeInSub", "()V", (void*)closeInSubView},
 
     };    

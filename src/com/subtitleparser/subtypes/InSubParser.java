@@ -23,8 +23,8 @@ import com.subtitleparser.SubtitleParser;
 class InSubApi extends SubtitleApi
 {
 	native  RawData getrawdata(int millisec); 
-	native int setInSubtitleNumberByJni(int  ms);
-	native  void closeInSub();
+	native int setInSubtitleNumberByJni(int  ms,String filename);
+	native  void closeInSub( );
 
 	private static final String SUBTITLE_FILE = "/data/subtitle.db";
 	private static final String WRITE_SUBTITLE_FILE = "/data/subtitle_img.jpeg";
@@ -44,15 +44,15 @@ class InSubApi extends SubtitleApi
 	 private Bitmap bitmap=null;
 	 private String filename=null;
 	 int index=0;
-	 InSubApi(String File,int id)
+	 InSubApi(String file1,int id)
 	 {
-	 	 filename=File;
+	 	 filename=file1;
 	 	 index=id;
-	 	 setInSubtitleNumberByJni(index);
+	 	 setInSubtitleNumberByJni(index,filename);
 	 };
 	 public void closeSubtitle( )
 	 {
-//		 closeInSub();
+		 closeInSub();
 	 }
 	 public Subtitle.SUBTYPE type()
 	 {
