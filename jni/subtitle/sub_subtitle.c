@@ -246,6 +246,12 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 			spu->spu_width = subtitle_pgs.showdata.image_width;
 			spu->spu_height = subtitle_pgs.showdata.image_height;
 			spu->pts = subtitle_pgs.showdata.pts;
+			
+			
+			spu->buffer_size = spu->spu_width*spu->spu_height*4;
+			write_subtitle_file(spu);
+			free(spu->spu_data);
+			file_position = ADD_SUBTITLE_POSITION(file_position);
 			return ret_spu;
 		}
 		return -1;
@@ -425,9 +431,7 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 		}
 		if(ret < 0)
 			goto error;
-		if(get_subtitle_subtype()==1){
-			spu->buffer_size = spu->spu_width*spu->spu_height*4;
-		}
+
 	
 		write_subtitle_file(spu);
 		free(spu->spu_data);
