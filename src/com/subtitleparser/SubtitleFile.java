@@ -279,9 +279,40 @@ public class SubtitleFile extends LinkedList {
             endTime = new SubtitleTime(end / 3600000, ((end / 1000 ) % 3600) / 60, (end / 1000 ) % 60, end % 1000);
 
             sl = new SubtitleLine(index, startTime, endTime, text);
-            add(sl);
+            try {
+            	if(size()==0)
+            		add(sl);
+            	else if(sl.getBegin().getMilValue()>((SubtitleLine)get(size()-1)).getBegin().getMilValue())
+					add(sl);
+				else
+					addSubtitleLine(sl);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
         }    
+    private void addSubtitleLine(SubtitleLine s)
+    {
+    	int i=size();
+    	while(i>0)
+    	{
+            try {
+				if(s.getBegin().getMilValue()<((SubtitleLine)get(i-1)).getBegin().getMilValue())
+				{
+					i--;
+				}else
+				{
+					break;
+				}
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+    	
+    	}
+    	add(i,s);
     
+    }
     
 
 }
