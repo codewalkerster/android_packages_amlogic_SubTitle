@@ -226,7 +226,21 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 		goto error; 
 	}
 
-
+	if(get_subtitle_enable()==0)
+	{
+		size = subtitle_get_sub_size_fd(read_sub_fd);
+		if(size>0)
+		{
+			char* buff=malloc(size);
+			if(buff)
+			{
+				subtitle_read_sub_data_fd(read_sub_fd, buff, size);
+				free(buff);
+			}
+		}
+		ret = -1;
+		goto error;
+	}
 	
 	if(get_subtitle_subtype() == 1){
 		//pgs subtitle
@@ -260,7 +274,7 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 	size = subtitle_get_sub_size_fd(read_sub_fd);
 	
 	
-	if (size <= 0||get_subtitle_enable()==0){
+	if (size <= 0){
     	ret = -1;
     	LOGI("\n player get sub size less than zero \n\n");
 		goto error; 
@@ -278,7 +292,7 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 
 		if (sizeflag <= 16){
 	    	ret = -1;
-	    	LOGI("\n player get sub size less than zero \n\n");
+	    	LOGI("\n sizeflag is too little \n\n");
 			goto error; 
 		}
 	    char* spu_buf_piece= spu_buf_tmp;
@@ -410,7 +424,6 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 				duration_pts |= spu_buf_piece[rd_oft++]<<16;
 				duration_pts |= spu_buf_piece[rd_oft++]<<8;
 				duration_pts |= spu_buf_piece[rd_oft++];
-				LOGI("duration_pts is %d\n",duration_pts);
 	
 				
 	      		spu->subtitle_type = SUBTITLE_SSA;
@@ -418,7 +431,19 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 				spu->spu_data = malloc( spu->buffer_size );
 				memset(spu->spu_data,'\0',sizeof(spu->buffer_size));
 				spu->pts = current_pts;
-				spu->m_delay = duration_pts;
+				if(duration_pts==0)
+				{
+					if(spu->buffer_size>50)
+						spu->m_delay = spu->pts + 90*2000;
+					else
+						spu->m_delay = spu->pts + 90*1000;
+					LOGI("duration_pts modifyed is %d\n",duration_pts);
+				}
+				else
+				{
+					LOGI("duration_pts is %d\n",duration_pts);
+					spu->m_delay = duration_pts;
+				}
 				memcpy( spu->spu_data,spu_buf_piece+rd_oft, current_length );
 	
 				LOGI("CODEC_ID_SSA   size is:    %u ,data is:    %s\n",spu->buffer_size,spu->spu_data);
@@ -509,6 +534,20 @@ int write_subtitle_file(AML_SPUVAR *spu)
 	{
 		close_subtitle();
 	}	
+    //for mkv string subtitle
+	{
+		if(read_position!=file_position)
+		{
+			if(spu->pts<inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_delay_pts)
+			{
+				inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_delay_pts=spu->pts-100;
+			}
+			else if(spu->pts>inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_delay_pts+3000*90)
+			{
+				inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_delay_pts += 800*90;
+			}
+		}		
+	}
 	if(inter_subtitle_data[file_position].data)
 		free(inter_subtitle_data[file_position].data);
 
