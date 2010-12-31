@@ -263,6 +263,10 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 			
 			
 			spu->buffer_size = spu->spu_width*spu->spu_height*4;
+			if(spu->m_delay==0)
+			{
+				spu->m_delay = spu->pts+90*1000;
+			}
 			write_subtitle_file(spu);
 			free(spu->spu_data);
 			file_position = ADD_SUBTITLE_POSITION(file_position);
