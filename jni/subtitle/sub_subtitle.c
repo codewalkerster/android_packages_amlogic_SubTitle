@@ -350,15 +350,6 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 				
 				avihandle=(DivXSubPictHdr*)(spu_buf_piece+rd_oft);
 	
-				LOGI(" %c %c %c %c %c %c %c %c    %c %c %c %c %c %c %c %c  %c %c %c %c %c %c %c %c    %c %c %c    \n",avihandle->duration[0],avihandle->duration[1],avihandle->duration[2],avihandle->duration[3],
-										avihandle->duration[4],avihandle->duration[5],avihandle->duration[6],avihandle->duration[7]	,
-										avihandle->duration[8],avihandle->duration[9],avihandle->duration[10],avihandle->duration[11],	
-										avihandle->duration[12],avihandle->duration[13],avihandle->duration[14],avihandle->duration[15],
-										avihandle->duration[16],avihandle->duration[17],avihandle->duration[18],avihandle->duration[19],
-										avihandle->duration[20],avihandle->duration[21],avihandle->duration[22],avihandle->duration[23]	,
-										avihandle->duration[24],avihandle->duration[25],avihandle->duration[26]);
-	
-	
 				spu->spu_data = malloc(VOB_SUB_SIZE);
 				memset(spu->spu_data,0,VOB_SUB_SIZE);
 	
@@ -408,19 +399,8 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 				spu->spu_data = malloc( spu->buffer_size );
 				memset(spu->spu_data,'\0',sizeof(spu->buffer_size));
 				spu->pts = current_pts;
-				if(duration_pts==0)
-				{
-					if(spu->buffer_size>50)
-						spu->m_delay = spu->pts + 90*2000;
-					else
-						spu->m_delay = spu->pts + 90*1000;
-					LOGI("duration_pts modifyed is %d\n",duration_pts);
-				}
-				else
-				{
-					LOGI("duration_pts is %d\n",duration_pts);
-					spu->m_delay = duration_pts;
-				}
+				spu->m_delay = duration_pts;
+
 				memcpy( spu->spu_data,spu_buf_piece+rd_oft, current_length );
 	
 				LOGI("CODEC_ID_SSA   size is:    %u ,data is:    %s\n",spu->buffer_size,spu->spu_data);
@@ -518,7 +498,9 @@ int write_subtitle_file(AML_SPUVAR *spu)
 		close_subtitle();
 	}	
     //for mkv string subtitle
+    if(spu->m_delay==0)
 	{
+		spu->m_delay=spu->pts+1000*90;
 		if(read_position!=file_position)
 		{
 			if(spu->pts<inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_delay_pts)
@@ -527,7 +509,7 @@ int write_subtitle_file(AML_SPUVAR *spu)
 			}
 			else if(spu->pts>inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_delay_pts+3000*90)
 			{
-				inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_delay_pts += 800*90;
+				inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_delay_pts += 1500*90;
 			}
 		}		
 	}
