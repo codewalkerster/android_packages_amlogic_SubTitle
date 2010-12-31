@@ -511,5 +511,6 @@ JNI_OnLoad(JavaVM* vm, void* reserved)
 		return -1;
     } 
 	subtitle_thread_create();
+	init_subtitle_file();
     return JNI_VERSION_1_4;
 }

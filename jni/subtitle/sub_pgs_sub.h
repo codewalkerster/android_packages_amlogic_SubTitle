@@ -94,5 +94,6 @@ typedef struct draw_result{
     unsigned short h;
 }draw_result_t;
 typedef int (*draw_pixel_fun_t)(int x, int y, unsigned pixel, void* arg);
-int get_pgs_spu(subtitlepgs_t *subtitlepgs, int read_handle);
+int get_pgs_spu(AML_SPUVAR *spu, int read_handle);
+int init_pgs_subtitle();
 #endif
