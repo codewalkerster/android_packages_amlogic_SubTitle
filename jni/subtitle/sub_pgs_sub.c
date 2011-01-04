@@ -14,6 +14,7 @@
 #include "vob_sub.h"
 #include "sub_control.h"
 
+
 #define  LOG_TAG    "sub_pgs"
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
@@ -45,8 +46,10 @@ static int read_spu_byte(int read_handle, char* byte)
         ret=1;
     }
     else{
-        if((subtitle_get_sub_size_fd(read_handle)) < SPU_RD_HOLD_SIZE)
+        if((subtitle_get_sub_size_fd(read_handle)) < SPU_RD_HOLD_SIZE){
+			LOGI("current pgs sub buffer size %d\n", (subtitle_get_sub_size_fd(read_handle)));
 			ret = 0;
+        }
         else{
 			subtitle_read_sub_data_fd(read_handle, &(uVobSPU.spu_cache[0]), 8);
 			int i=0;
@@ -252,8 +255,11 @@ void af_pgs_subtitle_register_draw_pixel_fun(draw_pixel_fun_t draw_pixel_fun)
 
 void af_pgs_subtitle_rlebitmap_render(PGS_subtitle_showdata* showdata, void* arg, char mode)
 {
-    unsigned char* ptr=showdata->rle_buf;
-    unsigned char* end_buf=showdata->rle_buf+showdata->rle_buf_size;
+	unsigned char* ptr = NULL;
+	unsigned char* end_buf = NULL;
+
+	ptr=showdata->rle_buf;
+	end_buf=showdata->rle_buf+showdata->rle_buf_size;
     int x, y, count;
     unsigned char color_index;
     
@@ -322,17 +328,34 @@ void af_pgs_subtitle_rlebitmap_render(PGS_subtitle_showdata* showdata, void* arg
 
 int parser_one_pgs(AML_SPUVAR *spu)
 {
-	int buffer_size = (subtitle_pgs.showdata.image_width*
-							subtitle_pgs.showdata.image_height*4);
+	int buffer_size = 0;
+	buffer_size = (subtitle_pgs.showdata.image_width*
+						subtitle_pgs.showdata.image_height*4);
 	if(buffer_size <= 0)
 		return -1;
 	subtitle_pgs.showdata.result_buf = malloc(buffer_size);
 	if(subtitle_pgs.showdata.result_buf == NULL){
 		LOGE("malloc pgs result buf failed \n");
-		return 1;
+		return -1;
 	}
 	memset(subtitle_pgs.showdata.result_buf, 0x0, buffer_size);
     af_pgs_subtitle_rlebitmap_render(&(subtitle_pgs.showdata), &subtitle_pgs.showdata, 1);
+
+	if(subtitle_pgs.showdata.image_width == 1920 &&
+		subtitle_pgs.showdata.image_height == 1080){
+		unsigned char* cut_buffer = NULL;
+		cut_buffer = malloc(buffer_size/4);
+		if(cut_buffer != NULL){
+			memset(cut_buffer, 0x0, buffer_size/4);
+			memcpy(cut_buffer, subtitle_pgs.showdata.result_buf+buffer_size*3/4,
+			buffer_size/4);
+			free(subtitle_pgs.showdata.result_buf);
+			subtitle_pgs.showdata.result_buf = cut_buffer;
+			subtitle_pgs.showdata.image_height /= 4;
+		}
+		else
+			LOGI("malloc cut buffer failed \n ");		
+	}
 
 	spu->subtitle_type = SUBTITLE_PGS;
 	spu->spu_data = subtitle_pgs.showdata.result_buf;
@@ -344,7 +367,11 @@ int parser_one_pgs(AML_SPUVAR *spu)
 	if(spu->buffer_size > 0 && spu->spu_data!= NULL){
 		write_subtitle_file(spu);
 	}
-	free(subtitle_pgs.showdata.result_buf);
+	else{
+		LOGI("spu buffer size %d, spu->spu_data %x\n", spu->buffer_size,
+		spu->spu_data);
+		free(subtitle_pgs.showdata.result_buf);
+	}
 	subtitle_pgs.showdata.result_buf = NULL;
 	return 1;
 }
@@ -360,11 +387,11 @@ static int pgs_decode(AML_SPUVAR *spu, unsigned char* buf)
     switch(type){
         case 0x16: 
             if(size==0x13){ //subpicture header
-            	LOGI("enter type 0x16,0x13\n");
+            	LOGI("enter type 0x16,0x13, %d\n",read_pgs_byte);
                 read_subpictureHeader(cur_buf-size, size, pgs_info);
             }
             else if(size==0xb){ //clearSubpictureHeader
-            	LOGI("enter type 0x16,0xb\n");
+            	LOGI("enter type 0x16,0xb, %d\n", read_pgs_byte);
             	add_pgs_end_time(start_time);
                 //subtitle_pgs_send_msg_bplay_show_subtitle(subtitle_pgs.cntl, BROADCAST_ALL, SUBTITLE_TYPE_PGS, 0);
             }
@@ -374,18 +401,18 @@ static int pgs_decode(AML_SPUVAR *spu, unsigned char* buf)
             break;
         case 0x17: //window        	
             if(size==0xa){
-				LOGI("enter type 0x17\n");
+				LOGI("enter type 0x17, %d\n",read_pgs_byte);
                 read_windowHeader(cur_buf-size, size, pgs_info);
             }
             else{
             }
             break;
         case 0x14: //color table
-        	LOGI("enter type 0x14\n");
+        	LOGI("enter type 0x14 %d\n",read_pgs_byte);
             read_color_table(cur_buf-size, size, pgs_info);
             break;
         case 0x15: //bitmap
-        	LOGI("enter type 0x15\n");
+        	LOGI("enter type 0x15 %d\n", read_pgs_byte);
             if(read_bitmap(cur_buf-size, size, pgs_info)){
 				LOGI("success read_bitmap \n ");
                 //render it
@@ -420,6 +447,7 @@ static int pgs_decode(AML_SPUVAR *spu, unsigned char* buf)
 
 int get_pgs_spu(AML_SPUVAR *spu, int read_handle)
 {
+	read_pgs_byte = 0;
 	LOGI("enter get_pgs_spu\n");
 	int pgs_ret = 0;
 	if(subtitle_pgs.pgs_info == NULL){
@@ -435,8 +463,10 @@ int get_pgs_spu(AML_SPUVAR *spu, int read_handle)
         unsigned packet_header=0;
         char skip_packet_flag=0;
 		
-		if((subtitle_get_sub_size_fd(read_handle)) < SPU_RD_HOLD_SIZE)
+		if((subtitle_get_sub_size_fd(read_handle)) < SPU_RD_HOLD_SIZE){
+			LOGI("current pgs sub buffer size %d\n", (subtitle_get_sub_size_fd(read_handle)));
 			break;
+		}
 
         uVobSPU.spu_cache_pos=0; 
         while(read_spu_buf(read_handle,tmpbuf, 1)==1){
@@ -550,13 +580,16 @@ int get_pgs_spu(AML_SPUVAR *spu, int read_handle)
 							LOGI("start decode pgs subtitle\n\n");
 							pgs_ret = pgs_decode(spu,buf);
                         }
-						free(buf);
-                        continue;
+						free(buf);                        
                     }
+					continue;
                 }
             }
         }
-        break;
+		else{
+			LOGI("header is not 0x000001bd\n");
+        	break;
+		}
     }
     return pgs_ret;
 }

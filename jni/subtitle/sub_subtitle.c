@@ -244,7 +244,11 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 	
 	if(get_subtitle_subtype() == 1){
 		//pgs subtitle
+		size = subtitle_get_sub_size_fd(read_sub_fd);
+		LOGI("start pgs sub buffer size %d\n", size);
 		int ret_spu = get_pgs_spu(spu,read_sub_fd);
+		size = subtitle_get_sub_size_fd(read_sub_fd);
+		LOGI("end pgs sub buffer size %d\n", size);
 		return 0;
 	}
 	
@@ -416,7 +420,6 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 
 	
 		write_subtitle_file(spu);
-		free(spu->spu_data);
 		file_position = ADD_SUBTITLE_POSITION(file_position);
 	
 	}
@@ -468,6 +471,8 @@ int add_pgs_end_time(int end_time)
 		LOGI("add file_position %d read_position is %d\n",
 			DEC_SUBTITLE_POSITION(file_position), read_position);
 	}
+	//if(read_position > DEC_SUBTITLE_POSITION(file_position))
+		//use jni fun to clear subtitle
 	return 0;
 }
 
@@ -487,17 +492,7 @@ next  n bytes are subtitle data
 */
 int write_subtitle_file(AML_SPUVAR *spu)
 {
-	char *subtitle_data = NULL;
-	subtitle_data = malloc(spu->buffer_size);
-	if(subtitle_data == NULL)
-		return 0;
-	if( spu->pts < inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_pts )
-	{
-		LOGI("inter_subtitle_data[%d].subtitle_pts %d",
-			DEC_SUBTITLE_POSITION(file_position), inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_pts);
-		close_subtitle();
-	}	
-    //for mkv string subtitle
+	//for mkv string subtitle
     if(spu->m_delay==0)
 	{
 		spu->m_delay=spu->pts+1000*90;
@@ -507,18 +502,24 @@ int write_subtitle_file(AML_SPUVAR *spu)
 			{
 				inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_delay_pts=spu->pts-100;
 			}
-			else if(spu->pts>inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_delay_pts+3000*90)
+			else if(spu->pts>(inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_delay_pts+3000*90))
 			{
 				inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_delay_pts += 1500*90;
 			}
 		}		
 	}
+	if( spu->pts < inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_pts )
+	{
+		LOGI("inter_subtitle_data[%d].subtitle_pts %d",
+			DEC_SUBTITLE_POSITION(file_position), inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_pts);
+		close_subtitle();
+	}	
+    
 	if(inter_subtitle_data[file_position].data)
 		free(inter_subtitle_data[file_position].data);
 
-	memcpy(subtitle_data, spu->spu_data, spu->buffer_size);
 	inter_subtitle_data[file_position].subtitle_type = spu->subtitle_type;
-	inter_subtitle_data[file_position].data = subtitle_data;
+	inter_subtitle_data[file_position].data = spu->spu_data;
 //	inter_subtitle_data[file_position].data_size = VOB_SUBTITLE_FRAMW_SIZE;    //?? need change for text sub
 	inter_subtitle_data[file_position].data_size = spu->buffer_size;    //?? need change for text sub
 	inter_subtitle_data[file_position].subtitle_pts = spu->pts;
@@ -528,12 +529,11 @@ int write_subtitle_file(AML_SPUVAR *spu)
 	inter_subtitle_data[file_position].subtitle_height = spu->spu_height;
 	inter_subtitle_data[file_position].resize_width = spu->spu_width;
 	inter_subtitle_data[file_position].resize_height = spu->spu_height;
-
-	if(spu->subtitle_type == SUBTITLE_PGS)
-		file_position = ADD_SUBTITLE_POSITION(file_position);
 	
 	LOGI(" write_subtitle_file[%d] subtitle_type is 0x%x size: %d  subtitle_pts =%u,subtitle_delay_pts=%u \n",file_position,inter_subtitle_data[read_position].subtitle_type,
 					inter_subtitle_data[file_position].data_size,inter_subtitle_data[file_position].subtitle_pts,inter_subtitle_data[file_position].subtitle_delay_pts);
+	if(spu->subtitle_type == SUBTITLE_PGS)
+		file_position = ADD_SUBTITLE_POSITION(file_position);
 	return 0;
 }
 
@@ -574,6 +574,11 @@ int get_inter_spu_type()
 {
 	LOGI(" inter_subtitle_data[%d] subtitle_type is 0x%x\n",read_position,inter_subtitle_data[read_position].subtitle_type);
 	return inter_subtitle_data[read_position].subtitle_type;
+}
+
+int get_subtitle_buffer_size()
+{
+	return subtitle_get_sub_size_fd(aml_sub_handle);
 }
 
 int get_inter_spu_size()

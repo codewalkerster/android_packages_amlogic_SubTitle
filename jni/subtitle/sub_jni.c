@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <signal.h>
 #include <unistd.h>
+#include <pthread.h>
 
 
 #include "sub_set_sys.h"
@@ -197,7 +198,8 @@ JNIEXPORT jobject JNICALL getrawdata
 		LOGE("sub pkt fail\n\n");
 		return NULL;
 	}
-	
+	int size = get_subtitle_buffer_size();
+	LOGI("when get sub packet buffer size %d\n", size);
 	
 	if(get_inter_spu_type()==SUBTITLE_SSA)
 	{
@@ -380,16 +382,28 @@ JNIEXPORT jobject JNICALL getidxsubrawdata
 //	return NULL;
 //
 //}
+#if 0
 void inter_subtitle_parser()
 {
 	if(get_subtitle_num())
 		get_inter_spu();
 }
+#else
+void *inter_subtitle_parser()
+{
+	while(1){
+		if(get_subtitle_num())
+			get_inter_spu();
+		usleep(500000);
+	}
+	return NULL;
+}
+#endif
 
 
 int subtitle_thread_create()
 {
-#if 0
+#if 1
 	pthread_t thread;
     int rc;
     LOGI("[subtitle_thread:%d]starting controler thread!!\n", __LINE__);
@@ -398,7 +412,7 @@ int subtitle_thread_create()
         LOGE("[subtitle_thread:%d]ERROR; start failed rc=%d\n", __LINE__,rc);
     }
 	return rc;
-
+#if 0
 	struct sigaction act; 
     union sigval tsval; 
 
@@ -413,6 +427,7 @@ int subtitle_thread_create()
         sigqueue(getpid(), 50, tsval); 
     } 
     return 0; 
+#endif
 #else
 
     struct sigaction tact; 
