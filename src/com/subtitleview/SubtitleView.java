@@ -109,8 +109,10 @@ public class SubtitleView extends TextView {
 				return;
 			}else
 			{
-//				Log.i(LOG_TAG,	"window............." +this.getWidth()+"X"+this.getHeight() );
-				setText(data.getSubString());
+				String sttmp = data.getSubString();
+				sttmp=sttmp.replaceAll("\r","");
+				setText(sttmp);
+				
 		    }
 		}
 	}

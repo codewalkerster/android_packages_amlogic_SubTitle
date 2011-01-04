@@ -389,6 +389,15 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 				spu->spu_data = malloc(VOB_SUB_SIZE);
 				spu->pts = current_pts;
 				ret = get_vob_spu(spu_buf_piece+rd_oft, current_length, spu); 
+//				{
+//					int fd =open("/sdcard/subtitle.rawdata", O_RDWR|O_CREAT );
+//					if(fd!=-1)
+//					{
+//						write(fd,spu->spu_data,VOB_SUB_SIZE);
+//						close(fd);
+//					}
+//					
+//	    		}				
 				break;
 			case 0x17002://mkv internel utf-8
 			case 0x17004://mkv internel ssa
@@ -713,6 +722,11 @@ int *parser_inter_spu(int *buffer)
     else if((subtitle_alpha==0xff00)){
 		RGBA_Pal[2] = 0xffffffff; 
 		RGBA_Pal[3] = 0xff000000;
+    }else if(subtitle_alpha == 0xfe0)
+    {
+		RGBA_Pal[1] = 0xffffffff;
+		RGBA_Pal[2] = 0xff000000; 
+		RGBA_Pal[3] = 0;   	
     }
 	else{
 		RGBA_Pal[1] = 0xffffffff;
@@ -724,6 +738,11 @@ int *parser_inter_spu(int *buffer)
         RGBA_Pal[1] = 0xffffffff;
 		RGBA_Pal[2] = 0xff000000; 
 		RGBA_Pal[3] = 0xff000000;
+    }else if(subtitle_alpha == 0xfe0)
+    {
+		RGBA_Pal[1] = 0xffffffff;
+		RGBA_Pal[2] = 0xff000000; 
+		RGBA_Pal[3] = 0;   	
     }
 	else{
 		RGBA_Pal[1] = 0xffffffff;
