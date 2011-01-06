@@ -233,10 +233,12 @@ int draw_pixel_fun(int x, int y, unsigned pixel, void* arg)
     int line_size=result->image_width*4;
     char* buf;
  
-    if(x&1)
-        buf=result->result_buf+line_size*y+(x-1)*4;
-    else
-        buf=result->result_buf+line_size*y+(x+1)*4;
+    //if(x&1)
+        //buf=result->result_buf+line_size*y+(x-1)*4;
+    //else
+        //buf=result->result_buf+line_size*y+(x+1)*4;
+
+	buf=result->result_buf+line_size*y+(x)*4;
 
     if((x>=result->image_width)||(y>=result->image_height))
         return 0; 
