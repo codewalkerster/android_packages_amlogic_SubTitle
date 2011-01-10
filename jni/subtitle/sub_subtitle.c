@@ -283,14 +283,17 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 	
 		rd_oft = 0;
 		if ((spu_buf_piece[rd_oft++]!=0x41)||(spu_buf_piece[rd_oft++]!=0x4d)||
-			(spu_buf_piece[rd_oft++]!=0x4c)||(spu_buf_piece[rd_oft++]!=0x55)|| (spu_buf_piece[rd_oft++]!=0xaa)){
-				
-					ret = subtitle_read_sub_data_fd(read_sub_fd, spu_buf_piece, size);
-					LOGI("\n\n ******* find wrong subtitle header!! ******\n\n");
+			(spu_buf_piece[rd_oft++]!=0x4c)||(spu_buf_piece[rd_oft++]!=0x55)|| (spu_buf_piece[rd_oft++]!=0xaa))
+		{
+			LOGI("\n wrong subtitle header :%x %x %x %x    %x %x %x %x    %x %x %x %x \n",spu_buf_piece[0],spu_buf_piece[1],spu_buf_piece[2],spu_buf_piece[3],spu_buf_piece[4],spu_buf_piece[5],
+									spu_buf_piece[6],spu_buf_piece[7],spu_buf_piece[8],spu_buf_piece[9],spu_buf_piece[10],spu_buf_piece[11]);
+			ret = subtitle_read_sub_data_fd(read_sub_fd, spu_buf_piece,sizeflag );
+			sizeflag=0;
+			LOGI("\n\n ******* find wrong subtitle header!! ******\n\n");
 	
 			ret = -1;
 			goto error; 		// wrong head
-	}
+		}
 	LOGI("\n\n ******* find correct subtitle header ******\n\n");
 		current_type = spu_buf_piece[rd_oft++]<<16;
 		current_type |= spu_buf_piece[rd_oft++]<<8;
@@ -316,6 +319,7 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 		{
 			  	LOGI("current_length >size");
 			ret = subtitle_read_sub_data_fd(read_sub_fd, spu_buf_piece, sizeflag);
+			sizeflag=0;
 			ret=-1;
 			goto error;
 		}
@@ -801,6 +805,8 @@ int *parser_inter_spu(int *buffer)
 
 int get_inter_spu()
 {  
+	LOGI("get_inter_spu\n");
+	
 	if(aml_sub_handle < 0){
 		aml_sub_handle = open(SUBTITLE_READ_DEVICE,O_RDONLY);
 	}
