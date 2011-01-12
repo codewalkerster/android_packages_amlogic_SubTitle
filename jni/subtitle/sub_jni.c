@@ -337,28 +337,31 @@ JNIEXPORT jobject JNICALL getidxsubrawdata
 	subtitlevobsub_t* vobsub = getIdxSubData(msec);
 	
 	if(vobsub==NULL)
-			  return NULL;
-
-	int sub_size = (vobsub->vob_subtitle_config.width) *(vobsub->vob_subtitle_config.height)/4;   //byte
-
-	LOGE("w%d h%d s%d\n", vobsub->vob_subtitle_config.width ,vobsub->vob_subtitle_config.height,sub_size );
+	{
+		LOGE("jni vobsub==NULL");
+		return NULL;
+	}
+	int raw_byte = (vobsub->vob_subtitle_config.width) *(vobsub->vob_subtitle_config.height)/4;   //byte
+	int pixnumber = (vobsub->vob_subtitle_config.width) *(vobsub->vob_subtitle_config.height);
+	int photosize = pixnumber*4;
+	LOGE("w%d h%d s%d\n", vobsub->vob_subtitle_config.width ,vobsub->vob_subtitle_config.height,raw_byte );
 	int *idxsubdata = NULL;
-	idxsubdata = malloc(sub_size*16);
+	idxsubdata = malloc(photosize);
 	if(idxsubdata == NULL){
 		LOGE("malloc sub_size fail \n\n");
 		return NULL;
 	}
-	memset(idxsubdata, 0x0, sub_size*16);
-	jintArray array= (*env)->NewIntArray(env,sub_size*4);
+	memset(idxsubdata, 0x0, photosize);
+	jintArray array= (*env)->NewIntArray(env,pixnumber);
 	if(!array){
 		LOGE("new int array fail \n\n");
 		return NULL;
 	}
 	LOGE("start parser_data\n\n");
-	idxsub_parser_data(vobsub->vob_subtitle_config.prtData,sub_size,vobsub->vob_subtitle_config.width/4 ,idxsubdata);
+	idxsub_parser_data(vobsub->vob_subtitle_config.prtData,raw_byte,(vobsub->vob_subtitle_config.width)/4 ,idxsubdata);
 	LOGE("parser_data over\n\n");
 
-	(*env)->SetIntArrayRegion(env,array,0,sub_size*4,idxsubdata);	 
+	(*env)->SetIntArrayRegion(env,array,0,pixnumber,idxsubdata);	 
 	free(idxsubdata);
 
 	jobject obj =  (*env)->NewObject(env, cls, constr,array,1,vobsub->vob_subtitle_config.width,

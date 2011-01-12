@@ -385,7 +385,7 @@ mpeg_open(const char *filename)
 	res->stream = rar_open(filename, "rb");
 	err = res->stream == NULL;
 	if (err)
-        perror("fopen Vobsub file failed");
+        LOGI("fopen Vobsub file failed");
 	if (err)
         free(res);
     }
@@ -1190,7 +1190,7 @@ static void show_vob_subtitle(subtitlevobsub_t* subtitlevobsub)
 {
 	subtitlevobsub->vob_subtitle_config.left = subtitlevobsub->VobSPU.spu_start_x;
 	subtitlevobsub->vob_subtitle_config.top= subtitlevobsub->VobSPU.spu_start_y ;
-	subtitlevobsub->vob_subtitle_config.width = subtitlevobsub->VobSPU.spu_width;
+	subtitlevobsub->vob_subtitle_config.width = (((subtitlevobsub->VobSPU.spu_width+7)>>3)<<3);
 	subtitlevobsub->vob_subtitle_config.height= subtitlevobsub->VobSPU.spu_height;
     subtitlevobsub->vob_subtitle_config.contrast = subtitlevobsub->VobSPU.spu_alpha;
 
