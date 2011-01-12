@@ -728,18 +728,6 @@ vobsub_add_id(vobsub_t *vob, const char *id, size_t idlen, const unsigned int in
 	memcpy(vob->spu_streams[index].id, id, idlen);
     }
     vob->spu_streams_current = index;
-#if 0
-    if (identify)
-    {
-//	AF_VOBSUB_LOG_INF(dbg_level, "ID_VOBSUB_ID=%d\n", index);
-	if (id && idlen)
-	{
-//        AF_VOBSUB_LOG_INF(dbg_level, "ID_VSID_%d_LANG=%s\n", index, vob->spu_streams[index].id);
-    }
-    }
-#endif    
-//    AF_VOBSUB_LOG_INF(dbg_level,"[vobsub] subtitle (vobsubid): %d language %s\n",
-//    	index, vob->spu_streams[index].id);
     return 0;
 }
 

@@ -141,11 +141,7 @@ public class SubtitleUtils {
 	    					strlist.remove(i);
 	    				}
 	    			}
-	    			int idxtotal=accountIdxSubtitleNumber(file.filename);
-	    			for(int i=0;i<idxtotal; i++)
-	    			{
-    					strlist.add(new SubID(file.filename,i));
-	    			}
+	    			accountIdxSubtitleNumber(file.filename);
 	    	    	exSubtotle=strlist.size();
 	    	    	break;
 	    		}else
@@ -186,6 +182,7 @@ public class SubtitleUtils {
 		{
 			idxcount++;
 			Log.v("accountIdxSubtitleNumber","id:"+m.group(1) +" index:"+m.group(2) );
+			strlist.add(new SubID(filename,Integer.parseInt(m.group(2))));
 		}
 		return idxcount;
     }

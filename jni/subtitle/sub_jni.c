@@ -304,7 +304,7 @@ JNIEXPORT jobject JNICALL getrawdata
 JNIEXPORT void JNICALL setidxsubfile
 	  (JNIEnv *env, jclass cl, jstring name,jint index )
 {
-    LOGE("jni setidxsubfile %s %d",name ,index);
+    LOGE("jni setidxsubfile  %d %s \n",index,name );
 	const char *file = (*env)->GetStringUTFChars(env,name, NULL);
 	idxsub_init_subtitle(file,index);
 	(*env)->ReleaseStringUTFChars(env,name, file);
