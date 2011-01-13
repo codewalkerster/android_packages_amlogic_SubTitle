@@ -12,6 +12,7 @@ public class RawData
 {
 	public RawData(int[] data,int t,int w,int h,int delay,String st)// ([BILjava/lang/String;)V
 	{
+
 		rawdata=data;type=t;width=w;height=h;sub_delay=delay;codec=st;subtitlestring=null;
 	}
 	public RawData(byte[] data,int delay,String st)
@@ -19,9 +20,8 @@ public class RawData
 		type=0;
 		try {
 			subtitlestring=new String((byte[])data,"UTF8");
-			Log.v("RawData","------------------------"+subtitlestring);
 			subtitlestring=subtitlestring.replaceAll( "Dialogue:[^,]*,\\s*\\d:\\d\\d:\\d\\d.\\d\\d\\s*,\\s*\\d:\\d\\d:\\d\\d.\\d\\d[^,]*,[^,]*,[^,]*,[^,]*,[^,]*,[^,]*,[^,]*,", "" );
-			Log.v("RawData2","------------------------"+subtitlestring);
+			subtitlestring=subtitlestring.replaceAll( "<(.*?)>","" );
 			subtitlestring=subtitlestring.replaceAll( "\\{(.*?)\\}","" );
 			subtitlestring=subtitlestring.replaceAll( "\\\\N","\\\n" );
 		}catch (UnsupportedEncodingException e) {
