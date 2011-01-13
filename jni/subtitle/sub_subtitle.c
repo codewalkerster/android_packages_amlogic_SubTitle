@@ -414,12 +414,10 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 	      		spu->subtitle_type = SUBTITLE_SSA;
 	      		spu->buffer_size = current_length+1;//256*(current_length/256+1);
 				spu->spu_data = malloc( spu->buffer_size );
-				memset(spu->spu_data,'\0',sizeof(spu->buffer_size));
+				memset(spu->spu_data,0,spu->buffer_size);
 				spu->pts = current_pts;
 				spu->m_delay = duration_pts;
-
 				memcpy( spu->spu_data,spu_buf_piece+rd_oft, current_length );
-	
 				LOGI("CODEC_ID_SSA   size is:    %u ,data is:    %s\n",spu->buffer_size,spu->spu_data);
 				ret = 0;
 				break;
