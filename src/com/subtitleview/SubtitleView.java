@@ -22,7 +22,7 @@ public class SubtitleView extends TextView {
 	private boolean InsubStatus=false;
 	private Bitmap inter_bitmap = null;
 	private Subtitle subtitle=null;
-	private int timeoffset=1000;
+	private int timeoffset=400;
 	private SubData data =null;
 	private int graphicViewMode = 0;
 	private boolean hasopenInsubfile = false;
@@ -73,7 +73,7 @@ public class SubtitleView extends TextView {
 			Log.i(LOG_TAG,	"subapi!!!!!!!!!!!!!!!  null"  );
 			return;
 		}
-		int modifytime =millisec+1000;
+		int modifytime =millisec+timeoffset;
 		if(data!=null)
 		{
 			Log.i(LOG_TAG,	"modifytime :"+modifytime  +"exist b:"+data.beginTime()+" e:"+data.endTime() );
