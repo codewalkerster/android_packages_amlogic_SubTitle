@@ -243,10 +243,14 @@ int draw_pixel_fun(int x, int y, unsigned pixel, void* arg)
     if((x>=result->image_width)||(y>=result->image_height))
         return 0; 
 
-    buf[3]=pixel>>24;
-    buf[2]=(pixel>>16)&0xff;
-    buf[1]=(pixel>>8)&0xff;
-    buf[0]=pixel&0xff;    
+//    buf[3]=pixel>>24;
+//    buf[2]=(pixel>>16)&0xff;
+//    buf[1]=(pixel>>8)&0xff;
+//    buf[0]=pixel&0xff;    
+    buf[0]=pixel>>24;
+    buf[1]=(pixel>>16)&0xff;
+    buf[2]=(pixel>>8)&0xff;
+    buf[3]=pixel&0xff;   
     return 0;    
 }  
 
@@ -393,7 +397,7 @@ static int pgs_decode(AML_SPUVAR *spu, unsigned char* buf)
                 read_subpictureHeader(cur_buf-size, size, pgs_info);
             }
             else if(size==0xb){ //clearSubpictureHeader
-            	LOGI("enter type 0x16,0xb, %d\n", read_pgs_byte);
+            	LOGI("enter type 0x16,0xb, %d %d\n", start_time,end_time);
             	add_pgs_end_time(start_time);
                 //subtitle_pgs_send_msg_bplay_show_subtitle(subtitle_pgs.cntl, BROADCAST_ALL, SUBTITLE_TYPE_PGS, 0);
             }
