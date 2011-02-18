@@ -1858,9 +1858,9 @@ void idxsub_close_subtitle()
 
 
 //change data from 2bit to 32bit
-void idxsub_parser_data( const unsigned char * source,long length,int linewidth,unsigned int * dist )
+void idxsub_parser_data( const unsigned char * source,long length,int linewidth,unsigned int * dist,int subtitle_alpha )
 {
-	covert2bto32b(source,length,linewidth,dist);
+	covert2bto32b(source,length,linewidth,dist,subtitle_alpha);
 	return 0;
 }
 
@@ -1868,7 +1868,7 @@ void idxsub_parser_data( const unsigned char * source,long length,int linewidth,
 
 
 
- void covert2bto32b( const unsigned char * source,long length,int bytesPerLine, unsigned int * dist )
+ void covert2bto32b( const unsigned char * source,long length,int bytesPerLine, unsigned int * dist,int subtitle_alpha )
 {
     if(dist==NULL)
     {
@@ -1876,10 +1876,26 @@ void idxsub_parser_data( const unsigned char * source,long length,int linewidth,
     }
     
     unsigned int RGBA_Pal[4];
-	RGBA_Pal[0] = 0;
-	RGBA_Pal[1] = 0xffffffff;
-	RGBA_Pal[2] = 0x77777777;
-	RGBA_Pal[3] = 0xaaaaaaaa;
+	RGBA_Pal[0] = RGBA_Pal[1] = RGBA_Pal[2] = RGBA_Pal[3] = 0;
+
+	if(subtitle_alpha&0xf000 && subtitle_alpha&0x0f00 &&\
+		subtitle_alpha&0x00f0){
+        RGBA_Pal[1] = 0xffffffff;
+		RGBA_Pal[2] = 0xff000000; 
+		RGBA_Pal[3] = 0xff000000;
+    }else if(subtitle_alpha == 0xfe0)
+    {
+		RGBA_Pal[1] = 0xffffffff;
+		RGBA_Pal[2] = 0xff000000; 
+		RGBA_Pal[3] = 0;   	
+    }
+	else{
+		RGBA_Pal[1] = 0xffffffff;
+		RGBA_Pal[3] = 0xff000000;
+	}
+	
+	
+	
     
     int i,j;
     unsigned char a,b;

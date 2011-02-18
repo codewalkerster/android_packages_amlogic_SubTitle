@@ -354,11 +354,11 @@ JNIEXPORT jobject JNICALL getidxsubrawdata
 	memset(idxsubdata, 0x0, photosize);
 	jintArray array= (*env)->NewIntArray(env,pixnumber);
 	if(!array){
-		LOGE("new int array fail \n\n");
+		LOGE("new int array fail \n");
 		return NULL;
 	}
-	LOGE("start parser_data\n\n");
-	idxsub_parser_data(vobsub->vob_subtitle_config.prtData,raw_byte,(vobsub->vob_subtitle_config.width)/4 ,idxsubdata);
+	LOGE("start parser_data  spu_alpha=0x%x \n",vobsub->vob_subtitle_config.contrast);
+	idxsub_parser_data(vobsub->vob_subtitle_config.prtData,raw_byte,(vobsub->vob_subtitle_config.width)/4 ,idxsubdata,vobsub->vob_subtitle_config.contrast );
 	LOGE("parser_data over\n\n");
 
 	(*env)->SetIntArrayRegion(env,array,0,pixnumber,idxsubdata);	 
