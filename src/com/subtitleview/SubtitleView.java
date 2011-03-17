@@ -107,15 +107,14 @@ public class SubtitleView extends TextView {
 			        invalidate(); 
 				}
 				return;
-			}else
+			}else	
 			{
-				String sttmp = data.getSubString();
+				String sttmp = data.getSubString();		
 				sttmp=sttmp.replaceAll("\r","");
 				byte sttmp_2[] = sttmp.getBytes();
-				if( 0 == sttmp_2[ sttmp_2.length-1] )
+				if( sttmp_2.length > 0 && 0 == sttmp_2[ sttmp_2.length-1] )
 					sttmp_2[ sttmp_2.length-1] = 0x20;
 				setText( new String( sttmp_2 ) );
-				
 		    }
 		}
 	}
