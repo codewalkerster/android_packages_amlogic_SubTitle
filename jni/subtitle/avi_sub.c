@@ -25,7 +25,7 @@
 
 
 //static char *pixData1, *pixData2;
-#define OSD_HALF_SIZE (720*576/8)
+#define OSD_HALF_SIZE (1440*1080/8)
 
 
 static unsigned short DecodeRL(unsigned short RLData,unsigned short *pixelnum,unsigned short *pixeldata)

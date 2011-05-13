@@ -150,12 +150,12 @@ static int get_spu_cmd(AML_SPUVAR *sub_frame)
                 sub_frame->spu_height= ((data_byte1 & 0x03) << 8) |(data_byte0);
                 sub_frame->spu_height = sub_frame->spu_height - sub_frame->spu_start_y+1;
             
-            	if((sub_frame->spu_width > 720) ||
-                    (sub_frame->spu_height > 576)
+            	if((sub_frame->spu_width > 1440) ||
+                    (sub_frame->spu_height > 1080)
                     )
             	{
-                    sub_frame->spu_width = 720;
-                    sub_frame->spu_height = 576;
+                    sub_frame->spu_width = 1440;
+                    sub_frame->spu_height = 1080;
             	}
              
             	break;

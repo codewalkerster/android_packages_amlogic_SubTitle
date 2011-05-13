@@ -35,20 +35,41 @@ typedef struct _DivXSubPictColor
 #pragma pack(1)
 typedef struct _DivXSubPictHdr
 {
-	char duration[27];
-	unsigned short width;
-	unsigned short height;
-	unsigned short left;
-	unsigned short top;
-	unsigned short right;
-	unsigned short bottom;
-	unsigned short field_offset;
-	DivXSubPictColor background;
-	DivXSubPictColor pattern;
-	DivXSubPictColor emphasis1;
-	DivXSubPictColor emphasis2;
-	char *rleData;
+    char duration[27];
+    unsigned short width;
+    unsigned short height;
+    unsigned short left;
+    unsigned short top;
+    unsigned short right;
+    unsigned short bottom;
+    unsigned short field_offset;
+    DivXSubPictColor background;
+    DivXSubPictColor pattern1;
+    DivXSubPictColor pattern2;
+    DivXSubPictColor pattern3;
+    unsigned char *rleData;
 } DivXSubPictHdr;
+
+typedef struct _DivXSubPictHdr_HD
+{
+    char duration[27];
+    unsigned short width;
+    unsigned short height;
+    unsigned short left;
+    unsigned short top;
+    unsigned short right;
+    unsigned short bottom;
+    unsigned short field_offset;
+    DivXSubPictColor background;
+    DivXSubPictColor pattern1;
+    DivXSubPictColor pattern2;
+    DivXSubPictColor pattern3;
+	unsigned char background_transparency;	//HD profile only
+	unsigned char pattern1_transparency;	//HD profile only
+	unsigned char pattern2_transparency;	//HD profile only
+	unsigned char pattern3_transparency;	//HD profile only
+    unsigned char *rleData;
+} DivXSubPictHdr_HD;
  #pragma pack()
 
 
@@ -214,8 +235,10 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 	int ret, rd_oft, wr_oft, size;
 	char *spu_buf=NULL;
 	unsigned current_length, current_pts, current_type,duration_pts;
-	DivXSubPictHdr* avihandle=NULL;
 	unsigned short *ptrPXDWrite=0,*ptrPXDRead=0;
+	DivXSubPictHdr* avihandle=NULL;
+	DivXSubPictHdr_HD* avihandle_hd=NULL;
+
 	if(read_sub_fd < 0)
 		return 0;
 	ret = subtitle_poll_sub_fd(read_sub_fd, 10);
@@ -348,8 +371,10 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 			continue;
 		}
 	  	LOGI("current_type is 0x%x\n",current_type);
+
 		switch (current_type) {
-			case 0x17003://avi internel image
+			case 0x17003:	//XSUB		
+				
 				duration_pts = spu_buf_piece[rd_oft++]<<24;
 				duration_pts |= spu_buf_piece[rd_oft++]<<16;
 				duration_pts |= spu_buf_piece[rd_oft++]<<8;
@@ -381,6 +406,41 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 				
 				ret = 0;
 				break;
+
+			case 0x17008:	//XSUB HD
+			case 0x17009:	//XSUB+ (XSUA HD)						
+				duration_pts = spu_buf_piece[rd_oft++]<<24;
+				duration_pts |= spu_buf_piece[rd_oft++]<<16;
+				duration_pts |= spu_buf_piece[rd_oft++]<<8;
+				duration_pts |= spu_buf_piece[rd_oft++];
+				LOGI("duration_pts is %d, current_length=%d  ,rd_oft is %d\n",duration_pts,current_length,rd_oft);
+				
+				avihandle_hd=(DivXSubPictHdr_HD*)(spu_buf_piece+rd_oft);
+	
+				spu->spu_data = malloc(VOB_SUB_SIZE);
+				memset(spu->spu_data,0,VOB_SUB_SIZE);
+	
+	
+	     		spu->subtitle_type = SUBTITLE_VOB;
+	     		spu->buffer_size  = VOB_SUB_SIZE;
+	     		{
+	     			unsigned char  *s=&(avihandle_hd->duration[0]);
+					spu->pts = str2ms(s)*90;	
+					s=&(avihandle_hd->duration[13]);
+					spu->m_delay = str2ms(s)*90;	
+				}
+				spu->spu_width = avihandle_hd->width;
+				spu->spu_height = avihandle_hd->height;
+				LOGI(" spu->spu_width is 0x%x,  spu->spu_height=0x%x\n  spu->spu_width is %u,  spu->spu_height=%u\n",avihandle_hd->width,avihandle_hd->height,spu->spu_width,spu->spu_height);
+	
+				ptrPXDRead = (unsigned short *)&(avihandle_hd->rleData);
+				FillPixel(ptrPXDRead,spu->spu_data,1,spu,avihandle_hd->field_offset);
+	  			ptrPXDRead = (unsigned short *)((int)(&avihandle_hd->rleData) +(int)(avihandle_hd->field_offset));
+				FillPixel(ptrPXDRead,spu->spu_data+VOB_SUB_SIZE/2,2,spu,avihandle_hd->field_offset);
+				
+				ret = 0;
+				break;
+
 			case 0x1700a://mkv internel image
 				duration_pts = spu_buf_piece[rd_oft++]<<24;
 				duration_pts |= spu_buf_piece[rd_oft++]<<16;
@@ -753,7 +813,7 @@ int *parser_inter_spu(int *buffer)
 	#endif
     for (i=0;i<buffer_height;i++){
 		if(i&1)
-			data = inter_subtitle_data[read_position].data+(i>>1)*data_byte + (720*576/8);
+			data = inter_subtitle_data[read_position].data+(i>>1)*data_byte + (1440*1080/8);
 		else
 			data = inter_subtitle_data[read_position].data+(i>>1)*data_byte;
 		index=0;
