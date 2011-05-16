@@ -38,7 +38,12 @@ typedef struct
  unsigned char displaying;
  unsigned char subtitle_type;
  unsigned char reser[2];   
-  
+
+ unsigned rgba_enable;	
+ unsigned rgba_background;
+ unsigned rgba_pattern1;
+ unsigned rgba_pattern2;
+ unsigned rgba_pattern3; 
 } AML_SPUVAR;
 
 

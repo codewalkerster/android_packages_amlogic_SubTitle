@@ -99,6 +99,11 @@ typedef struct{
 	int resize_ystart;
 	int resize_size;
 	unsigned short sub_alpha;
+	unsigned rgba_enable;
+	unsigned rgba_background;
+	unsigned rgba_pattern1;
+	unsigned rgba_pattern2;
+	unsigned rgba_pattern3; 
 	char * data;
 }subtitle_data_t;
 static subtitle_data_t inter_subtitle_data[MAX_SUBTITLE_PACKET_WRITE];
@@ -398,6 +403,15 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 				spu->spu_width = avihandle->width;
 				spu->spu_height = avihandle->height;
 				LOGI(" spu->spu_width is 0x%x,  spu->spu_height=0x%x\n  spu->spu_width is %u,  spu->spu_height=%u\n",avihandle->width,avihandle->height,spu->spu_width,spu->spu_height);
+
+				spu->rgba_enable = 1;	// XSUB
+				spu->rgba_background = (unsigned)avihandle->background.red<<16 | (unsigned)avihandle->background.green<<8 | (unsigned)avihandle->background.blue; 
+				spu->rgba_pattern1 = (unsigned)avihandle->pattern1.red<<16 | (unsigned)avihandle->pattern1.green<<8 | (unsigned)avihandle->pattern1.blue;
+				spu->rgba_pattern2 = (unsigned)avihandle->pattern2.red<<16 | (unsigned)avihandle->pattern2.green<<8 | (unsigned)avihandle->pattern2.blue;
+				spu->rgba_pattern3 = (unsigned)avihandle->pattern3.red<<16 | (unsigned)avihandle->pattern3.green<<8 | (unsigned)avihandle->pattern3.blue;
+				LOGI(" spu->rgba_background == 0x%x,  spu->rgba_pattern1 == 0x%x\n", spu->rgba_background, spu->rgba_pattern1);
+				LOGI(" spu->rgba_pattern2 == 0x%x,  spu->rgba_pattern3 == 0x%x\n", spu->rgba_pattern2, spu->rgba_pattern3);
+					
 	
 				ptrPXDRead = (unsigned short *)&(avihandle->rleData);
 				FillPixel(ptrPXDRead,spu->spu_data,1,spu,avihandle->field_offset);
@@ -432,7 +446,28 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 				spu->spu_width = avihandle_hd->width;
 				spu->spu_height = avihandle_hd->height;
 				LOGI(" spu->spu_width is 0x%x,  spu->spu_height=0x%x\n  spu->spu_width is %u,  spu->spu_height=%u\n",avihandle_hd->width,avihandle_hd->height,spu->spu_width,spu->spu_height);
-	
+
+				spu->rgba_enable = 1;	// XSUB
+				spu->rgba_background = (unsigned)avihandle_hd->background.red<<16 | (unsigned)avihandle_hd->background.green<<8 | (unsigned)avihandle_hd->background.blue | avihandle_hd->background_transparency<<24; 
+				spu->rgba_pattern1 = (unsigned)avihandle_hd->pattern1.red<<16 | (unsigned)avihandle_hd->pattern1.green<<8 | (unsigned)avihandle_hd->pattern1.blue | avihandle_hd->pattern1_transparency<<24;
+				spu->rgba_pattern2 = (unsigned)avihandle_hd->pattern2.red<<16 | (unsigned)avihandle_hd->pattern2.green<<8 | (unsigned)avihandle_hd->pattern2.blue | avihandle_hd->pattern2_transparency<<24;
+				spu->rgba_pattern3 = (unsigned)avihandle_hd->pattern3.red<<16 | (unsigned)avihandle_hd->pattern3.green<<8 | (unsigned)avihandle_hd->pattern3.blue | avihandle_hd->pattern3_transparency<<24;
+
+				LOGI(" avihandle_hd->background.red == 0x%x,  avihandle_hd->background.green == 0x%x\n", avihandle_hd->background.red, avihandle_hd->background.green);
+				LOGI(" avihandle_hd->background.blue == 0x%x,  avihandle_hd->background_transparency == 0x%x\n\n", avihandle_hd->background.blue, avihandle_hd->background_transparency);
+
+				LOGI(" avihandle_hd->pattern1.red == 0x%x,  avihandle_hd->pattern1.green == 0x%x\n", avihandle_hd->pattern1.red, avihandle_hd->pattern1.green);
+				LOGI(" avihandle_hd->pattern1.blue == 0x%x,	avihandle_hd->pattern1_transparency == 0x%x\n\n", avihandle_hd->pattern1.blue, avihandle_hd->pattern1_transparency);
+
+				LOGI(" avihandle_hd->pattern2.red == 0x%x,  avihandle_hd->pattern2.green == 0x%x\n", avihandle_hd->pattern2.red, avihandle_hd->pattern2.green);
+				LOGI(" avihandle_hd->pattern2.blue == 0x%x,	avihandle_hd->pattern@_transparency == 0x%x\n\n", avihandle_hd->pattern2.blue, avihandle_hd->pattern2_transparency);
+
+				LOGI(" avihandle_hd->pattern3.red == 0x%x,  avihandle_hd->pattern3.green == 0x%x\n", avihandle_hd->pattern3.red, avihandle_hd->pattern3.green);
+				LOGI(" avihandle_hd->pattern3.blue == 0x%x,	avihandle_hd->pattern3_transparency == 0x%x\n\n", avihandle_hd->pattern3.blue, avihandle_hd->pattern3_transparency);
+
+				LOGI(" spu->rgba_background == 0x%x,  spu->rgba_pattern1 == 0x%x\n", spu->rgba_background, spu->rgba_pattern1);
+				LOGI(" spu->rgba_pattern2 == 0x%x,  spu->rgba_pattern3 == 0x%x\n", spu->rgba_pattern2, spu->rgba_pattern3);
+								
 				ptrPXDRead = (unsigned short *)&(avihandle_hd->rleData);
 				FillPixel(ptrPXDRead,spu->spu_data,1,spu,avihandle_hd->field_offset);
 	  			ptrPXDRead = (unsigned short *)((int)(&avihandle_hd->rleData) +(int)(avihandle_hd->field_offset));
@@ -600,6 +635,12 @@ int write_subtitle_file(AML_SPUVAR *spu)
 	inter_subtitle_data[file_position].subtitle_height = spu->spu_height;
 	inter_subtitle_data[file_position].resize_width = spu->spu_width;
 	inter_subtitle_data[file_position].resize_height = spu->spu_height;
+
+	inter_subtitle_data[file_position].rgba_enable = spu->rgba_enable;
+	inter_subtitle_data[file_position].rgba_background = spu->rgba_background;
+	inter_subtitle_data[file_position].rgba_pattern1= spu->rgba_pattern1;
+	inter_subtitle_data[file_position].rgba_pattern2= spu->rgba_pattern2;
+	inter_subtitle_data[file_position].rgba_pattern3= spu->rgba_pattern3;
 	
 	LOGI(" write_subtitle_file[%d] subtitle_type is 0x%x size: %d  subtitle_pts =%u,subtitle_delay_pts=%u \n",file_position,inter_subtitle_data[read_position].subtitle_type,
 					inter_subtitle_data[file_position].data_size,inter_subtitle_data[file_position].subtitle_pts,inter_subtitle_data[file_position].subtitle_delay_pts);
@@ -795,7 +836,16 @@ int *parser_inter_spu(int *buffer)
 		RGBA_Pal[3] = 0xff000000;
 	}
 	#else
-	if(subtitle_alpha&0xf000 && subtitle_alpha&0x0f00 &&\
+	if(inter_subtitle_data[read_position].rgba_enable){
+		RGBA_Pal[0] = inter_subtitle_data[read_position].rgba_background;
+		RGBA_Pal[1] = inter_subtitle_data[read_position].rgba_pattern1;
+		RGBA_Pal[2] = inter_subtitle_data[read_position].rgba_pattern2;
+		RGBA_Pal[3] = inter_subtitle_data[read_position].rgba_pattern3;
+		
+		LOGI(" RGBA_Pal[0] == 0x%x, RGBA_Pal[1] == 0x%x\n", RGBA_Pal[0] ,RGBA_Pal[1]);
+		LOGI(" RGBA_Pal[2] == 0x%x,	RGBA_Pal[3] == 0x%x\n", RGBA_Pal[2] ,RGBA_Pal[3]);
+	}
+	else if(subtitle_alpha&0xf000 && subtitle_alpha&0x0f00 &&\
 		subtitle_alpha&0x00f0){
         RGBA_Pal[1] = 0xffffffff;
 		RGBA_Pal[2] = 0xff000000; 
