@@ -863,7 +863,7 @@ int *parser_inter_spu(int *buffer)
 	#endif
     for (i=0;i<buffer_height;i++){
 		if(i&1)
-			data = inter_subtitle_data[read_position].data+(i>>1)*data_byte + (1440*1080/8);
+			data = inter_subtitle_data[read_position].data+(i>>1)*data_byte + (VOB_SUB_SIZE/2);
 		else
 			data = inter_subtitle_data[read_position].data+(i>>1)*data_byte;
 		index=0;
@@ -871,29 +871,24 @@ int *parser_inter_spu(int *buffer)
 			index1 = index%2?index-1:index+1;
 			n = data[index1];
 			index++;
-			if(n){
-				if(start_height < 0){
-					start_height = i;
-					//start_height = (start_height%2)?(start_height-1):start_height;
-				}
-				end_height = i;
-				if(j < x_start)
-					x_start = j;
-	            result_buf[i*(buffer_width_size)+j] = RGBA_Pal[(n>>6)&0x3];
-	            if(++j >= buffer_width)    break;
-	            result_buf[i*(buffer_width_size)+j] = RGBA_Pal[(n>>4)&0x3];
-	            if(++j >= buffer_width)    break;
-	            result_buf[i*(buffer_width_size)+j] = RGBA_Pal[(n>>2)&0x3];
-	            if(++j >= buffer_width)    break;
-	            result_buf[i*(buffer_width_size)+j] = RGBA_Pal[n&0x3];
-				if(j > x_end)
-					x_end = j;
+
+			if(start_height < 0){
+				start_height = i;
+				//start_height = (start_height%2)?(start_height-1):start_height;
 			}
-			else
-				j+=3;
-			
-		}
-		
+			end_height = i;
+			if(j < x_start)
+				x_start = j;
+			result_buf[i*(buffer_width_size)+j] = RGBA_Pal[(n>>6)&0x3];
+			if(++j >= buffer_width)    break;
+			result_buf[i*(buffer_width_size)+j] = RGBA_Pal[(n>>4)&0x3];
+			if(++j >= buffer_width)    break;
+			result_buf[i*(buffer_width_size)+j] = RGBA_Pal[(n>>2)&0x3];
+			if(++j >= buffer_width)    break;
+			result_buf[i*(buffer_width_size)+j] = RGBA_Pal[n&0x3];
+			if(j > x_end)
+				x_end = j;		
+		}
 	}
 	//end_height = (end_height%2)?(((end_height+1)<=buffer_height)?(end_height+1):end_height):end_height;
 	inter_subtitle_data[read_position].resize_xstart = x_start;
