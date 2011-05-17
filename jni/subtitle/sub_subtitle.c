@@ -405,7 +405,8 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 				LOGI(" spu->spu_width is 0x%x,  spu->spu_height=0x%x\n  spu->spu_width is %u,  spu->spu_height=%u\n",avihandle->width,avihandle->height,spu->spu_width,spu->spu_height);
 
 				spu->rgba_enable = 1;	// XSUB
-				spu->rgba_background = (unsigned)avihandle->background.red<<16 | (unsigned)avihandle->background.green<<8 | (unsigned)avihandle->background.blue | 0xff<<24; 
+				//FFT:The background pixels are 100% transparent 
+				spu->rgba_background = (unsigned)avihandle->background.red<<16 | (unsigned)avihandle->background.green<<8 | (unsigned)avihandle->background.blue | 0<<24; 
 				spu->rgba_pattern1 = (unsigned)avihandle->pattern1.red<<16 | (unsigned)avihandle->pattern1.green<<8 | (unsigned)avihandle->pattern1.blue | 0xff<<24;
 				spu->rgba_pattern2 = (unsigned)avihandle->pattern2.red<<16 | (unsigned)avihandle->pattern2.green<<8 | (unsigned)avihandle->pattern2.blue | 0xff<<24;
 				spu->rgba_pattern3 = (unsigned)avihandle->pattern3.red<<16 | (unsigned)avihandle->pattern3.green<<8 | (unsigned)avihandle->pattern3.blue | 0xff<<24;
