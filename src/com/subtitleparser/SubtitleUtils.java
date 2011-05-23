@@ -12,7 +12,7 @@ public class SubtitleUtils {
 	public native int getInSubtitleTotalByJni();
 	
 //	public native int setInSubtitleNumberByJni(int  ms);
-//	public native int getCurrentInSubtitleIndexByJni();
+	public native int getCurrentInSubtitleIndexByJni();
 //	public native void FileChangedByJni(String name);
 
 	private String filename=null;

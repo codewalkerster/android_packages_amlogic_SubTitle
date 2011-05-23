@@ -461,7 +461,7 @@ static JNINativeMethod gMethods[] = {
 static JNINativeMethod insubMethods[] = {
     /* name, signature, funcPtr */
     	{ "getInSubtitleTotalByJni", "()I",                                 (void*)getInSubtitleTotal},
-//		{ "getCurrentInSubtitleIndexByJni", "()I",                          (void*)getCurrentInSubtitleIndex },
+		{ "getCurrentInSubtitleIndexByJni", "()I",                          (void*)getCurrentInSubtitleIndex },
 //		{ "FileChangedByJni", "(Ljava/lang/String;)V",                          (void*)playfileChanged },
 		
     };

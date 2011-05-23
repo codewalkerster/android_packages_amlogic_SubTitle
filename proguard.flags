@@ -10,6 +10,7 @@
 	public native int setInSubtitleNumberByJni(int  );
 	public native int getCurrentInSubtitleIndexByJni();
 	public native void FileChangedByJni(java.lang.String);
+	public native int getCurrentInSubtitleIndexByJni();
 }
 
 -keep class com.subtitleparser.subtypes.IdxSubApi {
