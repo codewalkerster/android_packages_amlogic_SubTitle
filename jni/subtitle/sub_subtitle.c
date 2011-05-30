@@ -367,14 +367,18 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 	        ret = subtitle_read_sub_data_fd(read_sub_fd, spu_buf_piece+16, current_length+4);
 		 	sizeflag-=(current_length+4);
 		    spu_buf_tmp+=(current_length+4);
-			LOGI("current_type!!=0x17000\n");
 		}
-		if (current_pts==0){
+
+		//FFT: i dont know why we throw the first sub, when pts == 0. remove these codes first. 
+		/*
+		if ((current_pts==0)&&(current_type!=0x17009)){
 			LOGI("current_pts==0\n");
 
 			ret = -1;
 			continue;
 		}
+		*/
+		
 	  	LOGI("current_type is 0x%x\n",current_type);
 
 		switch (current_type) {
