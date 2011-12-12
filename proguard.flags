@@ -15,7 +15,7 @@
 
 -keep class com.subtitleparser.subtypes.IdxSubApi {
   native static RawData getIdxsubRawdata(int ); 
-	native void setIdxFile(java.lang.String);
+	native void setIdxFile(java.lang.String,int);
 }
 -keep class com.subtitleparser.subtypes.InSubApi {
 	native static RawData getrawdata(int ); 
