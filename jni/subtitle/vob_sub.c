@@ -1883,7 +1883,7 @@ void idxsub_parser_data( const unsigned char * source,long length,int linewidth,
         RGBA_Pal[1] = 0xffffffff;
 		RGBA_Pal[2] = 0xff000000; 
 		RGBA_Pal[3] = 0xff000000;
-    }else if(subtitle_alpha == 0xfe0)
+    }else if(subtitle_alpha == 0xfe0||subtitle_alpha == 0xff0)
     {
 		RGBA_Pal[1] = 0xffffffff;
 		RGBA_Pal[2] = 0xff000000; 
@@ -1917,7 +1917,8 @@ void idxsub_parser_data( const unsigned char * source,long length,int linewidth,
    	int linenumber = i/bytesPerLine;
     	if(linenumber&1)
     	{
-    		sourcemodify=source+(720*576/8);
+    		//sourcemodify=source+(720*576/8);
+    		sourcemodify=source+OSD_HALF_SIZE;
     	}
     	else
     	{
