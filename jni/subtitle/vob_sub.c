@@ -890,7 +890,8 @@ vobsub_parse_palette(vobsub_t *vob, const char *line)
 	y = MIN(MAX((int)(0.1494 * r + 0.6061 * g + 0.2445 * b), 0), 0xff);
 	u = MIN(MAX((int)(0.6066 * r - 0.4322 * g - 0.1744 * b) + 128, 0), 0xff);
 	v = MIN(MAX((int)(-0.08435 * r - 0.3422 * g + 0.4266 * b) + 128, 0), 0xff);
-	vob->palette[n++] = y << 16 | u << 8 | v;
+	//vob->palette[n++] = y << 16 | u << 8 | v;
+	vob->palette[n++]=tmp;
 	if (n == 16)
         break;
 	if (*p == ',')
@@ -1878,7 +1879,7 @@ void idxsub_parser_data( const unsigned char * source,long length,int linewidth,
     unsigned int RGBA_Pal[4];
 	RGBA_Pal[0] = RGBA_Pal[1] = RGBA_Pal[2] = RGBA_Pal[3] = 0;
 
-	if(subtitle_alpha&0xf000 && subtitle_alpha&0x0f00 &&\
+/*  	if(subtitle_alpha&0xf000 && subtitle_alpha&0x0f00 &&\
 		subtitle_alpha&0x00f0){
         RGBA_Pal[1] = 0xffffffff;
 		RGBA_Pal[2] = 0xff000000; 
@@ -1892,12 +1893,31 @@ void idxsub_parser_data( const unsigned char * source,long length,int linewidth,
 	else{
 		RGBA_Pal[1] = 0xffffffff;
 		RGBA_Pal[3] = 0xff000000;
-	}
+	}*/
 	
 	
 	
     
-    int i,j;
+    
+	int aAlpha[4];
+	int aPalette[4];
+	/*  update Alpha */                                                                                                                
+	aAlpha[0] = ((subtitle_alpha>>8) >> 4)&0xf;                                                                                                   
+	aAlpha[1] = (subtitle_alpha>>8) & 0xf;                                                                                              
+	aAlpha[2] = (subtitle_alpha>>4)&0xf;                                                                                                    
+    aAlpha[3] = subtitle_alpha & 0xf;     
+    /* update Palette*/
+	aPalette[0]=  ((vobsubdata->VobSPU.spu_color>>8) >> 4)&0xf;  
+	aPalette[1] = (vobsubdata->VobSPU.spu_color>>8) & 0xf;                                                                                              
+	aPalette[2] = (vobsubdata->VobSPU.spu_color>>4)&0xf;                                                                                                    
+	aPalette[3] = vobsubdata->VobSPU.spu_color & 0xf;    	
+	
+	RGBA_Pal[0] =vobsubdata->vobsub->palette[aPalette[0]];
+	RGBA_Pal[1] =( (aAlpha[1]>0)?0xff000000:0x0)+vobsubdata->vobsub->palette[aPalette[2]];
+	RGBA_Pal[2] =( (aAlpha[2]>0)?0xff000000:0x0)+vobsubdata->vobsub->palette[aPalette[1]];
+	RGBA_Pal[3] = ((aAlpha[3]>0)?0xff000000:0x0)+vobsubdata->vobsub->palette[aPalette[3]];
+
+	int i,j;
     unsigned char a,b;
 	unsigned char * sourcemodify;
 
