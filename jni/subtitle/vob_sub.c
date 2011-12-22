@@ -1378,9 +1378,9 @@ static int do_vob_sub_cmd(subtitlevobsub_t* subtitlevobsub, unsigned char *packe
             	break;
             case SET_COLOR:
                 temp = *pCmdData++;
-                //subtitlevobsub->VobSPU.spu_color = temp<<8;
+                subtitlevobsub->VobSPU.spu_color = temp<<8;
                 temp = *pCmdData++;
-                //subtitlevobsub->VobSPU.spu_color += temp;
+                subtitlevobsub->VobSPU.spu_color += temp;
             	break;
             case SET_CONTR:
                 temp = *pCmdData++;
