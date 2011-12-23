@@ -112,10 +112,10 @@ public class SubtitleView extends FrameLayout {
 		this.removeAllViews();
 		if(data != null) {
 			if(data.gettype() == 1) {	
-				evaluteScale();
+				evaluteScale(data.getSubBitmap());
 				Bitmap inter_bitmap = creatBitmapByScale(data.getSubBitmap(), 
-						wscale, hscale);
-				if((inter_bitmap != null) && (mTextView != null)) {
+						wscale, wscale);
+				if((inter_bitmap != null) && (mImageView != null)) {
 					mImageView.setImageBitmap(inter_bitmap);
 					this.addView(mImageView);
 				}
@@ -143,14 +143,18 @@ public class SubtitleView extends FrameLayout {
 		SubManager.getinstance().setVideoResolution(width, height);
 	}
 
-	public void evaluteScale() {
+	public void evaluteScale(Bitmap bitmap) {
 		float w_scale = 1.000f;
 		float h_scale = 1.000f;
 		int display_width = 0;
 		int display_height = 0;
 		int video_width = 0;
 		int video_height = 0;
-
+		int bitmap_width = 0;
+		int bitmap_height = 0;
+		int max_width = 0;
+		int max_height = 0;
+		
 		wscale = 1.000f;
 		hscale = 1.000f;
 		
@@ -159,25 +163,33 @@ public class SubtitleView extends FrameLayout {
 		video_width = SubManager.getinstance().getVideoWidth();
 		video_height = SubManager.getinstance().getVideoHeight();
 		
-		Log.d(TAG, "disply width: " + display_width + ", height: " + display_height);
-		Log.d(TAG, "video width: " + video_width + ", height: " + video_height);
+		if(bitmap != null) {
+			bitmap_width = bitmap.getWidth();
+			bitmap_height = bitmap.getHeight(); 
+		}
+		//Log.d(TAG, "disply width: " + display_width + ", height: " + display_height);
+		//Log.d(TAG, "video width: " + video_width + ", height: " + video_height);
+		//Log.d(TAG, "bitmap width: " + bitmap_width + ", height: " + bitmap_height);
+		
+		max_width = (video_width > bitmap_width) ? video_width : bitmap_width;
+		max_height = (video_height > max_height) ? video_height : max_height;
 		
 		if((display_width <= 0) || (display_height <= 0) 
-				|| (video_width <= 0) || (video_height <= 0)) {
+				|| (max_width <= 0) || (max_height <= 0)) {
 			return;
 		}
 
-		if((video_width <= display_width) && (video_height <= display_height)) {
+		if((max_width <= display_width) && (max_height <= display_height)) {
 			return; 
 		}
 		
 		if(this.getWidth() == display_width) {
-			w_scale = ((float)display_width)/video_width;
-			h_scale = ((float)display_height)/video_height;
+			w_scale = ((float)display_width)/max_width;
+			h_scale = ((float)display_height)/max_height;
 		}
 		else if(this.getWidth() == display_height){
-			w_scale = ((float)display_height)/video_width;
-			h_scale = ((float)display_width)/video_height;
+			w_scale = ((float)display_height)/max_width;
+			h_scale = ((float)display_width)/max_height;
 		}
 		
 		//Log.d(TAG, "w_scale: " + Float.toString(w_scale));
