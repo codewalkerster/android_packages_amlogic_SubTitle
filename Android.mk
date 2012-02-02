@@ -22,7 +22,7 @@ LOCAL_SDK_VERSION := current
 LOCAL_MODULE:= amlogic.subtitle
 #LOCAL_JAVA_LIBRARIES := 
 
-#LOCAL_PROGUARD_ENABLED := disabled
+LOCAL_PROGUARD_ENABLED := disabled
 LOCAL_PROGUARD_FLAGS := -include $(LOCAL_PATH)/proguard.flags
 
 # Generate a checksum that will be used in the app to determine whether the
