@@ -16,8 +16,9 @@ public class RawData
 		rawdata=data;type=t;width=w;height=h;sub_delay=delay;codec=st;subtitlestring=null;
 	}
 	public RawData(byte[] data,int delay,String st)
-	{
+	{ 
 		type=0;
+		sub_delay=delay;
 		try {
 			subtitlestring=new String((byte[])data,"UTF8");
 			subtitlestring=subtitlestring.replaceAll( "Dialogue:[^,]*,\\s*\\d:\\d\\d:\\d\\d.\\d\\d\\s*,\\s*\\d:\\d\\d:\\d\\d.\\d\\d[^,]*,[^,]*,[^,]*,[^,]*,[^,]*,[^,]*,[^,]*,", "" );
