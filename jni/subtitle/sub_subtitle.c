@@ -663,7 +663,7 @@ int write_subtitle_file(AML_SPUVAR *spu)
 //	inter_subtitle_data[file_position].data_size = VOB_SUBTITLE_FRAMW_SIZE;    //?? need change for text sub
 	inter_subtitle_data[file_position].data_size = spu->buffer_size;    //?? need change for text sub
 	inter_subtitle_data[file_position].subtitle_pts = spu->pts;
-	inter_subtitle_data[file_position].subtitle_delay_pts = spu->m_delay;
+	inter_subtitle_data[file_position].subtitle_delay_pts = spu->pts + spu->m_delay;//wxl
 	inter_subtitle_data[file_position].sub_alpha = spu->spu_alpha;
 	inter_subtitle_data[file_position].subtitle_width = spu->spu_width;
 	inter_subtitle_data[file_position].subtitle_height = spu->spu_height;
