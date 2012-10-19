@@ -159,19 +159,19 @@ int get_ass_spu(char *spu_buf, unsigned length, AML_SPUVAR *spu)
 	 unsigned hour,min,sec,mills,startmills,endmills;
 	 if(length>33&&strncmp(spu_buf,"Dialogue:",9)==0) //ass Events match
 	 {
-	       hour=spu_buf[12]-0x30;
-	       min=(spu_buf[14]-0x30)*10 + (spu_buf[15]-0x30);
-	       sec=(spu_buf[17]-0x30)*10 + (spu_buf[18]-0x30);
-	       mills=(spu_buf[20]-0x30)*10 + (spu_buf[21]-0x30);
+	       hour=spu_buf[11]-0x30;
+	       min=(spu_buf[13]-0x30)*10 + (spu_buf[14]-0x30);
+	       sec=(spu_buf[16]-0x30)*10 + (spu_buf[17]-0x30);
+	       mills=(spu_buf[19]-0x30)*10 + (spu_buf[20]-0x30);
 	       startmills=(hour*60*60+min*60+sec)*1000+mills*10;
-	       LOGE("start mills0x%x\n", startmills);
-	       hour=spu_buf[23]-0x30;
-	       min=(spu_buf[25]-0x30)*10 + (spu_buf[26]-0x30);
-	       sec=(spu_buf[28]-0x30)*10 + (spu_buf[29]-0x30);
-	       mills=(spu_buf[31]-0x30)*10 + (spu_buf[32]-0x30);
+	       LOGE("%d:%d:%d:%d, start mills=0x%x\n", hour,min,sec,mills,startmills);
+	       hour=spu_buf[22]-0x30;
+	       min=(spu_buf[24]-0x30)*10 + (spu_buf[25]-0x30);
+	       sec=(spu_buf[27]-0x30)*10 + (spu_buf[28]-0x30);
+	       mills=(spu_buf[30]-0x30)*10 + (spu_buf[31]-0x30);
 	       endmills=(hour*60*60+min*60+sec)*1000+mills*10;   
 	       spu->m_delay=(endmills- startmills)*90+spu->pts;
-	       LOGE("end mills0x%x m-delay0x%x\n", endmills,spu->m_delay);
+	       LOGE("%d:%d:%d:%d, end mills=0x%x m-delay=0x%x\n", hour,min,sec,mills,endmills,spu->m_delay);
 	  }
 	return ret;
 }
@@ -568,7 +568,7 @@ error:
 		free(spu_buf);
 		
 	return ret;
-}
+}
 
 
 int release_spu(AML_SPUVAR *spu)
@@ -662,7 +662,7 @@ int write_subtitle_file(AML_SPUVAR *spu)
 	inter_subtitle_data[file_position].data = spu->spu_data;
 //	inter_subtitle_data[file_position].data_size = VOB_SUBTITLE_FRAMW_SIZE;    //?? need change for text sub
 	inter_subtitle_data[file_position].data_size = spu->buffer_size;    //?? need change for text sub
-	inter_subtitle_data[file_position].subtitle_pts = spu->pts;
+	inter_subtitle_data[file_position].subtitle_pts = spu->pts;
 	inter_subtitle_data[file_position].subtitle_delay_pts = spu->pts + spu->m_delay;//wxl
 	inter_subtitle_data[file_position].sub_alpha = spu->spu_alpha;
 	inter_subtitle_data[file_position].subtitle_width = spu->spu_width;
