@@ -545,6 +545,9 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 				memset(spu->spu_data,0,spu->buffer_size);
 				spu->pts = current_pts;
 				spu->m_delay = duration_pts;
+				if (duration_pts != 0) {
+					spu->m_delay += current_pts;
+				}
 				memcpy( spu->spu_data,spu_buf_piece+rd_oft, current_length );
 				get_ass_spu(spu->spu_data,spu->buffer_size,spu);
 				LOGI("CODEC_ID_SSA   size is:    %u ,data is:    %s\n",spu->buffer_size,spu->spu_data);
@@ -663,7 +666,7 @@ int write_subtitle_file(AML_SPUVAR *spu)
 //	inter_subtitle_data[file_position].data_size = VOB_SUBTITLE_FRAMW_SIZE;    //?? need change for text sub
 	inter_subtitle_data[file_position].data_size = spu->buffer_size;    //?? need change for text sub
 	inter_subtitle_data[file_position].subtitle_pts = spu->pts;
-	inter_subtitle_data[file_position].subtitle_delay_pts = spu->pts + spu->m_delay;//wxl
+	inter_subtitle_data[file_position].subtitle_delay_pts = spu->m_delay;
 	inter_subtitle_data[file_position].sub_alpha = spu->spu_alpha;
 	inter_subtitle_data[file_position].subtitle_width = spu->spu_width;
 	inter_subtitle_data[file_position].subtitle_height = spu->spu_height;
