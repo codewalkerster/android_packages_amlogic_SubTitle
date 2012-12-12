@@ -79,9 +79,10 @@ typedef struct _DivXSubPictHdr_HD
 #define SUBTITLE_READ_DEVICE    "/dev/amstream_sub_read"
 #define SUBTITLE_FILE "/tmp/subtitle.db"
 #define VOB_SUBTITLE_FRAMW_SIZE   (4+1+4+4+2+2+2+2+2+4+VOB_SUB_SIZE)
-#define MAX_SUBTITLE_PACKET_WRITE	50
-#define ADD_SUBTITLE_POSITION(x)  (((x+1)<MAX_SUBTITLE_PACKET_WRITE)?(x+1):0)
-#define DEC_SUBTITLE_POSITION(x)  (((x-1)>=0)?(x-1):(MAX_SUBTITLE_PACKET_WRITE-1))
+#define MAX_SUBTITLE_PACKET_WRITE	1000
+static int sublen = MAX_SUBTITLE_PACKET_WRITE;	// if image format sublen=50, if string format sublen=1000
+#define ADD_SUBTITLE_POSITION(x)  (((x+1)<sublen)?(x+1):0)
+#define DEC_SUBTITLE_POSITION(x)  (((x-1)>=0)?(x-1):(sublen-1))
 static off_t file_position=0;
 static off_t read_position=0;
 static int  aml_sub_handle = -1;
@@ -429,7 +430,7 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 				spu->spu_data = malloc(VOB_SUB_SIZE);
 				memset(spu->spu_data,0,VOB_SUB_SIZE);
 	
-	
+				sublen = 50;
 	     		spu->subtitle_type = SUBTITLE_VOB;
 	     		spu->buffer_size  = VOB_SUB_SIZE;
 	     		{
@@ -473,7 +474,7 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 				spu->spu_data = malloc(VOB_SUB_SIZE);
 				memset(spu->spu_data,0,VOB_SUB_SIZE);
 	
-	
+				sublen = 50;
 	     		spu->subtitle_type = SUBTITLE_VOB;
 	     		spu->buffer_size  = VOB_SUB_SIZE;
 	     		{
@@ -522,6 +523,7 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 				duration_pts |= spu_buf_piece[rd_oft++];
 				LOGI("duration_pts is %d\n",duration_pts);
 			case 0x17000://vob internel image
+				sublen = 50;
 	     		spu->subtitle_type = SUBTITLE_VOB;
 	     		spu->buffer_size  = VOB_SUB_SIZE;
 				spu->spu_data = malloc(VOB_SUB_SIZE);
@@ -544,7 +546,7 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 				duration_pts |= spu_buf_piece[rd_oft++]<<8;
 				duration_pts |= spu_buf_piece[rd_oft++];
 	
-				
+				sublen = 1000;
 	      		spu->subtitle_type = SUBTITLE_SSA;
 	      		spu->buffer_size = current_length+1;//256*(current_length/256+1);
 				spu->spu_data = malloc( spu->buffer_size );
@@ -647,7 +649,12 @@ int write_subtitle_file(AML_SPUVAR *spu)
 			DEC_SUBTITLE_POSITION(file_position), inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_pts);
 		close_subtitle();
 	}	
-    
+	
+	while (ADD_SUBTITLE_POSITION(file_position)==read_position) {
+		LOGI("## write_subtitle_file wait file_pos=%d,read_pos=%d,-----------\n",ADD_SUBTITLE_POSITION(file_position),read_position);
+		usleep(100000);
+	}
+
 	if(inter_subtitle_data[file_position].data)
 		free(inter_subtitle_data[file_position].data);
 
@@ -669,7 +676,7 @@ int write_subtitle_file(AML_SPUVAR *spu)
 	inter_subtitle_data[file_position].rgba_pattern2= spu->rgba_pattern2;
 	inter_subtitle_data[file_position].rgba_pattern3= spu->rgba_pattern3;
 	
-	LOGI(" write_subtitle_file[%d] subtitle_type is 0x%x size: %d  subtitle_pts =%u,subtitle_delay_pts=%u \n",file_position,inter_subtitle_data[read_position].subtitle_type,
+	LOGI(" write_subtitle_file[%d], sublen=%d, subtitle_type is 0x%x size: %d  subtitle_pts =%u,subtitle_delay_pts=%u \n",file_position,sublen,inter_subtitle_data[read_position].subtitle_type,
 					inter_subtitle_data[file_position].data_size,inter_subtitle_data[file_position].subtitle_pts,inter_subtitle_data[file_position].subtitle_delay_pts);
 	if(spu->subtitle_type == SUBTITLE_PGS)
 		file_position = ADD_SUBTITLE_POSITION(file_position);
@@ -686,7 +693,7 @@ int get_inter_spu_packet(int pts)
 {
 	LOGI(" search pts %d , s %d \n",pts,pts/90);
 	
-	int storenumber=(file_position>=read_position)?file_position-read_position:MAX_SUBTITLE_PACKET_WRITE+file_position-1-read_position;
+	int storenumber=(file_position>=read_position)?file_position-read_position:sublen+file_position-1-read_position;
 	
 	LOGI("inter_subtitle_data[%d].subtitle_pts is %d storenumber=%d end_time %d\n",
 		read_position,inter_subtitle_data[read_position].subtitle_pts,storenumber,
