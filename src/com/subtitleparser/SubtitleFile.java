@@ -251,7 +251,11 @@ public class SubtitleFile extends LinkedList {
         startTime = new SubtitleTime(start / 3600000, ((start / 1000 ) % 3600) / 60, (start / 1000 ) % 60, start % 1000);
         endTime = new SubtitleTime(end / 3600000, ((end / 1000 ) % 3600) / 60, (end / 1000 ) % 60, end % 1000);
 
-        sl = new SubtitleLine(index, startTime, endTime, text);
+		if(text.startsWith("{\\pos("))
+			sl = new SubtitleLine(index, startTime, endTime, "");
+		else
+        	sl = new SubtitleLine(index, startTime, endTime, text);
+		
         add(sl);
         
         Log.d("subtitleFile", "appendSubtitleFile" + index);
@@ -278,7 +282,11 @@ public class SubtitleFile extends LinkedList {
             startTime = new SubtitleTime(start / 3600000, ((start / 1000 ) % 3600) / 60, (start / 1000 ) % 60, start % 1000);
             endTime = new SubtitleTime(end / 3600000, ((end / 1000 ) % 3600) / 60, (end / 1000 ) % 60, end % 1000);
 
-            sl = new SubtitleLine(index, startTime, endTime, text);
+			if(text.startsWith("{\\pos("))
+            	sl = new SubtitleLine(index, startTime, endTime, "");
+			else
+				sl = new SubtitleLine(index, startTime, endTime, text);
+		
             try {
             	if(size()==0)
             		add(sl);
@@ -290,8 +298,8 @@ public class SubtitleFile extends LinkedList {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-        }    
-    private void addSubtitleLine(SubtitleLine s)
+        } 
+	public void addSubtitleLine(SubtitleLine s)
     {
     	int i=size();
     	while(i>0)

@@ -98,7 +98,8 @@ public class SsaParser implements SubtitleParser{
 				occ++;
 //				String tmp=m.group(9).replaceAll("\\{.*?\\}", "");
 
-				sl=new SubtitleLine(occ,
+				if(m.group(9).startsWith("{\\pos("))
+					sl=new SubtitleLine(occ,
 						new SubtitleTime(Integer.parseInt(m.group(1)), //start time
 								Integer.parseInt(m.group(2)),
 								Integer.parseInt(m.group(3)),
@@ -107,10 +108,27 @@ public class SsaParser implements SubtitleParser{
 								Integer.parseInt(m.group(6)),
 								Integer.parseInt(m.group(7)),
 								Integer.parseInt(m.group(8))),
-								m.group(9) //text
-				);
+								"" //text = null
+					);
+				else
+					sl=new SubtitleLine(occ,
+							new SubtitleTime(Integer.parseInt(m.group(1)), //start time
+									Integer.parseInt(m.group(2)),
+									Integer.parseInt(m.group(3)),
+									Integer.parseInt(m.group(4))),
+							new SubtitleTime(Integer.parseInt(m.group(5)), //end time
+									Integer.parseInt(m.group(6)),
+									Integer.parseInt(m.group(7)),
+									Integer.parseInt(m.group(8))),
+									m.group(9) //text
+					);
 				tmpText="";
-				sf.add(sl);
+				if(sf.size()==0)
+					sf.add(sl);
+				else if(sl.getBegin().getMilValue()>((SubtitleLine)sf.get(sf.size()-1)).getBegin().getMilValue())
+					sf.add(sl);
+				else
+					sf.addSubtitleLine(sl);
 			}
 			Log.i("SsaParser", "find"+sf.size());
 			return new SsaApi(sf);
