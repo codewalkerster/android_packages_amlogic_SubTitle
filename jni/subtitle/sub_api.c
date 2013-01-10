@@ -333,6 +333,10 @@ static char *internal_subf_gets(char *s, int fd)
         }
     }
 
+		//add to avoid overflow
+		if(strlen(s)>=512)
+			s=NULL;
+
     return s;
 }
 
