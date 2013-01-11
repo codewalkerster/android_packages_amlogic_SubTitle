@@ -107,7 +107,7 @@ public class SsaParser implements SubtitleParser{
 						shield = true;
 				}
 
-				if(m.group(9).startsWith("{\\pos("))
+				if((m.group(9).startsWith("{\\pos("))||shield)
 					sl=new SubtitleLine(occ,
 						new SubtitleTime(Integer.parseInt(m.group(1)), //start time
 								Integer.parseInt(m.group(2)),
