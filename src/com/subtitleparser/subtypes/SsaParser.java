@@ -98,7 +98,16 @@ public class SsaParser implements SubtitleParser{
 				occ++;
 //				String tmp=m.group(9).replaceAll("\\{.*?\\}", "");
 
-				if(m.group(9).startsWith("{\\pos("))
+				boolean shield = false;
+				if(m.group(9).indexOf("pos")>=0) {
+					int idx=m.group(9).indexOf("}");
+					String tmp=m.group(9).substring(idx+1);
+					if(tmp.startsWith("m"))
+						shield = true;
+				}
+
+				if((m.group(9).startsWith("{\\pos("))||shield) {
+					shield = false;
 					sl=new SubtitleLine(occ,
 						new SubtitleTime(Integer.parseInt(m.group(1)), //start time
 								Integer.parseInt(m.group(2)),
@@ -110,6 +119,7 @@ public class SsaParser implements SubtitleParser{
 								Integer.parseInt(m.group(8))),
 								"" //text = null
 					);
+				}
 				else
 					sl=new SubtitleLine(occ,
 							new SubtitleTime(Integer.parseInt(m.group(1)), //start time
