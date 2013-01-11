@@ -98,6 +98,15 @@ public class SsaParser implements SubtitleParser{
 				occ++;
 //				String tmp=m.group(9).replaceAll("\\{.*?\\}", "");
 
+				//shield tag for "pos" and start with "m"
+				boolean shield = false;
+				if(m.group(9).indexOf("pos")>=0) {
+					int idx=m.group(9).indexOf("}");
+					String tmp=m.group(9).substring(idx+1);
+					if(tmp.startsWith("m"))
+						shield = true;
+				}
+
 				if(m.group(9).startsWith("{\\pos("))
 					sl=new SubtitleLine(occ,
 						new SubtitleTime(Integer.parseInt(m.group(1)), //start time
