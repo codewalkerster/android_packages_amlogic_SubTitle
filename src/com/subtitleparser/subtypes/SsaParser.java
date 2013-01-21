@@ -120,7 +120,8 @@ public class SsaParser implements SubtitleParser{
 								"" //text = null
 					);
 				}
-				else
+				else {
+					String tmp=m.group(9).replaceAll("\\<font.*?\\>", "");
 					sl=new SubtitleLine(occ,
 							new SubtitleTime(Integer.parseInt(m.group(1)), //start time
 									Integer.parseInt(m.group(2)),
@@ -130,8 +131,9 @@ public class SsaParser implements SubtitleParser{
 									Integer.parseInt(m.group(6)),
 									Integer.parseInt(m.group(7)),
 									Integer.parseInt(m.group(8))),
-									m.group(9) //text
+									tmp //text
 					);
+				}
 				tmpText="";
 				if(sf.size()==0)
 					sf.add(sl);
