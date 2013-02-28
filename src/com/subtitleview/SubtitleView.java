@@ -257,7 +257,9 @@ public class SubtitleView extends FrameLayout {
     }
 
 	public Subtitle.SUBTYPE setFile(SubID file, String enc) throws Exception {
-		return SubManager.getinstance().setFile(file, enc);
+		Subtitle.SUBTYPE tmp =SubManager.getinstance().setFile(file, enc);
+		data = null;
+		return tmp;
 	}
 
 	public SubtitleApi getSubtitleFile() {

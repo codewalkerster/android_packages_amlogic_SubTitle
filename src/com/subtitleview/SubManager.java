@@ -134,14 +134,17 @@ public class SubManager{
 	
 	public SubData getSubData(int ms) {
 		if(subapi != null) {
+			/*
+			//this has been detected in subtitleview,so remove this.
 			if(data != null) {
 				if((ms < data.beginTime()) || (ms > data.endTime())) {
 					data = subapi.getdata(ms);
 				}
 			}
 			else {
+			*/
 				data = subapi.getdata(ms);
-			}
+			//}
 			return data;
 		}
 		return null;
