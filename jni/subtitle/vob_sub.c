@@ -1912,10 +1912,11 @@ void idxsub_parser_data( const unsigned char * source,long length,int linewidth,
 	aPalette[2] = (vobsubdata->VobSPU.spu_color>>4)&0xf;                                                                                                    
 	aPalette[3] = vobsubdata->VobSPU.spu_color & 0xf;    	
 	
-	RGBA_Pal[0] =vobsubdata->vobsub->palette[aPalette[0]];
-	RGBA_Pal[1] =( (aAlpha[1]>0)?0xff000000:0x0)+vobsubdata->vobsub->palette[aPalette[2]];
-	RGBA_Pal[2] =( (aAlpha[2]>0)?0xff000000:0x0)+vobsubdata->vobsub->palette[aPalette[1]];
-	RGBA_Pal[3] = ((aAlpha[3]>0)?0xff000000:0x0)+vobsubdata->vobsub->palette[aPalette[3]];
+	RGBA_Pal[0] =( (aAlpha[0]==0)?0xff000000:0x0)+vobsubdata->vobsub->palette[aPalette[0]];
+	RGBA_Pal[1] =( (aAlpha[1]==0)?0xff000000:0x0)+vobsubdata->vobsub->palette[aPalette[1]];
+	RGBA_Pal[2] =( (aAlpha[2]==0)?0xff000000:0x0)+vobsubdata->vobsub->palette[aPalette[2]];
+	RGBA_Pal[3] = ((aAlpha[3]==0)?0xff000000:0x0)+vobsubdata->vobsub->palette[aPalette[3]];
+
 
 	int i,j;
     unsigned char a,b;
