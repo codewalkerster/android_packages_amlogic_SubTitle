@@ -251,6 +251,9 @@ public class SubtitleFile extends LinkedList {
         startTime = new SubtitleTime(start / 3600000, ((start / 1000 ) % 3600) / 60, (start / 1000 ) % 60, start % 1000);
         endTime = new SubtitleTime(end / 3600000, ((end / 1000 ) % 3600) / 60, (end / 1000 ) % 60, end % 1000);
 
+        text=text.replaceAll( "\\{\\\\fn.*?\\}","" );
+        text=text.replaceAll( "\\{\\\\r\\}","" );
+        text=text.replaceAll( "\\{\\\\fs.*?\\}","" );
 		if(text.startsWith("{\\pos("))
 			sl = new SubtitleLine(index, startTime, endTime, "");
 		else
@@ -281,6 +284,10 @@ public class SubtitleFile extends LinkedList {
 
             startTime = new SubtitleTime(start / 3600000, ((start / 1000 ) % 3600) / 60, (start / 1000 ) % 60, start % 1000);
             endTime = new SubtitleTime(end / 3600000, ((end / 1000 ) % 3600) / 60, (end / 1000 ) % 60, end % 1000);
+
+            text=text.replaceAll( "\\{\\\\fn.*?\\}","" );
+            text=text.replaceAll( "\\{\\\\r\\}","" );
+            text=text.replaceAll( "\\{\\\\fs.*?\\}","" );
 
 			if(text.startsWith("{\\pos("))
             	sl = new SubtitleLine(index, startTime, endTime, "");
