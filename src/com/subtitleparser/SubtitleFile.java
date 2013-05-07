@@ -4,6 +4,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.LinkedList;
 import android.util.Log;
 import com.subtitleparser.Subtitle;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * an subtitle file.
@@ -155,7 +157,9 @@ public class SubtitleFile extends LinkedList {
 		return (SubtitleLine) get(curIndex);
 	}
 
-	
+	public SubtitleLine getSubtitle(int idx) {
+		return (SubtitleLine) get(idx);
+	}
 
 	public void setCurSubtitleIndex(int index) {
 		if (index >= 0 && index < size() - 1) {
@@ -235,10 +239,46 @@ public class SubtitleFile extends LinkedList {
 
 		return ret;
 	}
-	
-	
 
-	
+    private ArrayList<Integer> idxlist = new ArrayList<Integer>();
+    public void findSubtitles(int idx,int millisec) {
+        //SubtitleLine n = null;
+        SubtitleLine sl = null;
+        int startTime = -1;
+        int endTime = -1;
+
+        idxlist.clear();
+        try {
+            while(idx < size()) {
+                sl = (SubtitleLine) get(idx);
+                startTime = sl.getBegin().getMilValue();
+                endTime= sl.getEnd().getMilValue();
+                if((millisec >= startTime)&&(millisec <= endTime)) {
+                    idxlist.add(idx);
+                }
+                idx ++;
+            }
+        }catch (Exception e) {
+			e.printStackTrace();
+		}
+    }
+    
+    public void matchSubtitles(int millisec) {
+        findSubtitles(curIndex, millisec);
+        if(idxlist.get(0) < size())
+            setCurSubtitleIndex(idxlist.get(0));
+    }
+
+    public int idxlistSize() {
+        return idxlist.size();
+    }
+
+    public int getIdx(int i) {
+        if(i <= idxlist.size()-1)
+            return idxlist.get(i);
+        else
+            return -1;
+    }
 	
     public void appendSubtitle(int index, int start, int end, String text) {
     //public int appendSubtitle(int index) {
