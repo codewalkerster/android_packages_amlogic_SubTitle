@@ -17,9 +17,11 @@
 #include "log_print.h"
 
 #include "vob_sub.h"
-#define MAX_EXTNAME_LEN 8
-
+#include <cutils/properties.h>
 #include <android/log.h>
+
+
+#define MAX_EXTNAME_LEN 8
 
 #define  LOG_TAG    "sub_jni"
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
@@ -1876,31 +1878,16 @@ void idxsub_parser_data( const unsigned char * source,long length,int linewidth,
         return ;
     }
     
+	char value[PROPERTY_VALUE_MAX]={0};
     unsigned int RGBA_Pal[4];
 	RGBA_Pal[0] = RGBA_Pal[1] = RGBA_Pal[2] = RGBA_Pal[3] = 0;
-
-/*  	if(subtitle_alpha&0xf000 && subtitle_alpha&0x0f00 &&\
-		subtitle_alpha&0x00f0){
-        RGBA_Pal[1] = 0xffffffff;
-		RGBA_Pal[2] = 0xff000000; 
-		RGBA_Pal[3] = 0xff000000;
-    }else if(subtitle_alpha == 0xfe0||subtitle_alpha == 0xff0)
-    {
-		RGBA_Pal[1] = 0xffffffff;
-		RGBA_Pal[2] = 0xff000000; 
-		RGBA_Pal[3] = 0;   	
-    }
-	else{
-		RGBA_Pal[1] = 0xffffffff;
-		RGBA_Pal[3] = 0xff000000;
-	}*/
-	
-	
-	
-    
-    
 	int aAlpha[4];
 	int aPalette[4];
+	int rgb0 = 0;
+	int rgb1 = 0xffffff;
+	int rgb2 = 0;
+	int rgb3 = 0;
+	int set_rgb = 0;
 	/*  update Alpha */                                                                                                                
 	aAlpha[0] = ((subtitle_alpha>>8) >> 4)&0xf;                                                                                                   
 	aAlpha[1] = (subtitle_alpha>>8) & 0xf;                                                                                              
@@ -1911,11 +1898,57 @@ void idxsub_parser_data( const unsigned char * source,long length,int linewidth,
 	aPalette[1] = (vobsubdata->VobSPU.spu_color>>8) & 0xf;                                                                                              
 	aPalette[2] = (vobsubdata->VobSPU.spu_color>>4)&0xf;                                                                                                    
 	aPalette[3] = vobsubdata->VobSPU.spu_color & 0xf;    	
+
+	if (property_get("media.vobsub.setrgb.enable",value,NULL) > 0){
+	  if (!strcmp(value,"1")||!strcmp(value,"true")){
+			set_rgb = 1;
+            LOGI("aAlpha[0] = 0x%x \n", aAlpha[0]);
+            LOGI("aAlpha[1] = 0x%x \n", aAlpha[1]);
+            LOGI("aAlpha[2] = 0x%x \n", aAlpha[2]);
+            LOGI("aAlpha[3] = 0x%x \n", aAlpha[3]);
+
+            LOGI("aPalette[0] = 0x%x \n", aPalette[0]);
+            LOGI("aPalette[1] = 0x%x \n", aPalette[1]);
+            LOGI("aPalette[2] = 0x%x \n", aPalette[2]);
+            LOGI("aPalette[3] = 0x%x \n", aPalette[3]);
+
+            LOGI("vobsubdata->vobsub->palette[aPalette[0]] = 0x%x \n", vobsubdata->vobsub->palette[aPalette[0]]);
+            LOGI("vobsubdata->vobsub->palette[aPalette[1]] = 0x%x \n", vobsubdata->vobsub->palette[aPalette[1]]);
+            LOGI("vobsubdata->vobsub->palette[aPalette[2]] = 0x%x \n", vobsubdata->vobsub->palette[aPalette[2]]);
+            LOGI("vobsubdata->vobsub->palette[aPalette[3]] = 0x%x \n", vobsubdata->vobsub->palette[aPalette[3]]);
+		}
+	}
 	
-	RGBA_Pal[0] =( (aAlpha[0]==0)?0xff000000:0x0)+vobsubdata->vobsub->palette[aPalette[0]];
-	RGBA_Pal[1] =( (aAlpha[1]==0)?0xff000000:0x0)+vobsubdata->vobsub->palette[aPalette[1]];
-	RGBA_Pal[2] =( (aAlpha[2]==0)?0xff000000:0x0)+vobsubdata->vobsub->palette[aPalette[2]];
-	RGBA_Pal[3] = ((aAlpha[3]==0)?0xff000000:0x0)+vobsubdata->vobsub->palette[aPalette[3]];
+	if (set_rgb){	
+		if(property_get("media.vobsub.rgb0",value,NULL) > 0){
+			rgb0 = atoi(value);			
+			LOGI("rgb0 = 0x%x \n", rgb0);
+		}	
+		if(property_get("media.vobsub.rgb1",value,NULL) > 0){
+			rgb1 = atoi(value);
+			LOGI("rgb1 = 0x%x \n", rgb1);
+		}	
+		if(property_get("media.vobsub.rgb2",value,NULL) > 0){
+			rgb2 = atoi(value);
+			LOGI("rgb2 = 0x%x \n", rgb2);
+		}	
+		if(property_get("media.vobsub.rgb3",value,NULL) > 0){
+			rgb3 = atoi(value);
+			LOGI("rgb3 = 0x%x \n", rgb3);
+		}	
+				
+		RGBA_Pal[0] =( (aAlpha[0]==0)?0xff000000:0x0)+rgb0;
+		RGBA_Pal[1] =( (aAlpha[1]==0)?0xff000000:0x0)+rgb1;
+		RGBA_Pal[2] =( (aAlpha[2]==0)?0xff000000:0x0)+rgb2;
+		RGBA_Pal[3] = ((aAlpha[3]==0)?0xff000000:0x0)+rgb3;
+	}
+	else {
+		RGBA_Pal[0] =( (aAlpha[0]==0)?0xff000000:0x0)+vobsubdata->vobsub->palette[aPalette[0]];
+		RGBA_Pal[1] =( (aAlpha[1]==0)?0xff000000:0x0)+vobsubdata->vobsub->palette[aPalette[1]];
+		RGBA_Pal[2] =( (aAlpha[2]==0)?0xff000000:0x0)+vobsubdata->vobsub->palette[aPalette[2]];
+		RGBA_Pal[3] = ((aAlpha[3]==0)?0xff000000:0x0)+vobsubdata->vobsub->palette[aPalette[3]];
+	}
+
 
 
 	int i,j;
@@ -1935,7 +1968,7 @@ void idxsub_parser_data( const unsigned char * source,long length,int linewidth,
 
     for( i=0; i< length; i+=2)
     {
-   	int linenumber = i/bytesPerLine;
+   	  int linenumber = i/bytesPerLine;
     	if(linenumber&1)
     	{
     		//sourcemodify=source+(720*576/8);

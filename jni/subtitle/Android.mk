@@ -8,7 +8,7 @@ LOCAL_SRC_FILES := sub_jni.c sub_api.c log_print.c sub_subtitle.c sub_vob_sub.c 
 LOCAL_ARM_MODE := arm
 LOCAL_C_INCLUDES := $(JNI_H_INCLUDE) 
 
-LOCAL_SHARED_LIBRARIES += libutils libmedia
+LOCAL_SHARED_LIBRARIES += libutils libmedia libcutils
 
 LOCAL_PRELINK_MODULE := false
 
