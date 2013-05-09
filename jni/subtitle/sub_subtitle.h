@@ -2,7 +2,9 @@
 #define SUBTITLE_H
 
 
-#define VOB_SUB_SIZE 1440*1080/4
+#define VOB_SUB_WIDTH 1920
+#define VOB_SUB_HEIGHT 1280
+#define VOB_SUB_SIZE VOB_SUB_WIDTH*VOB_SUB_HEIGHT/4
 
 #define SUBTITLE_VOB      1
 #define SUBTITLE_PGS      2

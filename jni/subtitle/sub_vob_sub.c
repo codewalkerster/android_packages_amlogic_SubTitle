@@ -141,23 +141,24 @@ static int get_spu_cmd(AML_SPUVAR *sub_frame)
             	data_byte1 = *pCmdData++;
                 sub_frame->spu_start_x = ((data_byte0 & 0x3f) << 4)|(data_byte1 >> 4);
     	        data_byte0 = *pCmdData++;
-                sub_frame->spu_width = ((data_byte1 & 0x03) << 8)|(data_byte0);
+                sub_frame->spu_width = ((data_byte1 & 0x0f) << 8)|(data_byte0);
                 sub_frame->spu_width = sub_frame->spu_width - sub_frame->spu_start_x+1;
             	data_byte0 = *pCmdData++;
             	data_byte1 = *pCmdData++;
                 sub_frame->spu_start_y = ((data_byte0 & 0x3f) << 4)|(data_byte1 >> 4);
     	        data_byte0 = *pCmdData++;
-                sub_frame->spu_height= ((data_byte1 & 0x03) << 8) |(data_byte0);
+                sub_frame->spu_height= ((data_byte1 & 0x0f) << 8) |(data_byte0);
                 sub_frame->spu_height = sub_frame->spu_height - sub_frame->spu_start_y+1;
             
-            	if((sub_frame->spu_width > 1440) ||
-                    (sub_frame->spu_height > 1080)
-                    )
-            	{
-                    sub_frame->spu_width = 1440;
-                    sub_frame->spu_height = 1080;
+            	if (sub_frame->spu_width > VOB_SUB_WIDTH) 
+				{
+                    sub_frame->spu_width = VOB_SUB_WIDTH;
             	}
-             
+         		if (sub_frame->spu_height > VOB_SUB_HEIGHT) 
+				{
+                    sub_frame->spu_height = VOB_SUB_HEIGHT;
+            	}      
+			 	LOGI("sub_frame->spu_width = %d, sub_frame->spu_height = %d \n", sub_frame->spu_width, sub_frame->spu_height);
             	break;
             case SET_DSPXA:
                 temp = *pCmdData++;

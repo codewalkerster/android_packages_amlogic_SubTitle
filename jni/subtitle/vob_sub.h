@@ -18,7 +18,7 @@
 /*@{*/
 
 //#define OSD_HALF_SIZE 720*480/8
-#define OSD_HALF_SIZE 1440*1080/8
+#define OSD_HALF_SIZE 1920*1280/8
 
 // Command enum
 typedef enum
