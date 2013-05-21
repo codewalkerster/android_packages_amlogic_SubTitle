@@ -333,11 +333,13 @@ public class SubtitleFile extends LinkedList {
             endTime = new SubtitleTime(end / 3600000, ((end / 1000 ) % 3600) / 60, (end / 1000 ) % 60, end % 1000);
 
 
+
             text=text.replaceAll( "\\{\\\\fn.*?\\}","" );
             text=text.replaceAll( "\\{\\\\r\\}","" );
             text=text.replaceAll( "\\{\\\\fs.*?\\}","" );
 
 			sl = new SubtitleLine(index, startTime, endTime, text);
+
 		
             try {
             	if(size()==0)
