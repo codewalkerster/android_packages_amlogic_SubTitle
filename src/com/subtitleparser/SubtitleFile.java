@@ -209,18 +209,21 @@ public class SubtitleFile extends LinkedList {
 			{
 				while( curIndex >0 )
 				{
-					n = (SubtitleLine) get(curIndex - 1);
+					n = (SubtitleLine) get(curIndex - preOffset);
 					if(millisec >=n.getBegin().getMilValue())
 					{
-						ret=curIndex-1;
+						ret=curIndex-preOffset;
 						break;
 
 					}
 					else
 					{
-						curIndex-=1;
+						curIndex-=preOffset;
 					}	
 				}
+
+                if(curIndex <= 0)
+                    curIndex = 0;
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -240,12 +243,16 @@ public class SubtitleFile extends LinkedList {
 		return ret;
 	}
 
+    private final int preOffset = 2;
     private ArrayList<Integer> idxlist = new ArrayList<Integer>();
     public void findSubtitles(int idx,int millisec) {
         //SubtitleLine n = null;
         SubtitleLine sl = null;
         int startTime = -1;
         int endTime = -1;
+
+        //reset curIndex for backward seeking
+        findSubtitle(millisec);
 
         idxlist.clear();
         try {
@@ -263,7 +270,9 @@ public class SubtitleFile extends LinkedList {
 		}
     }
     
-    public void matchSubtitles(int millisec) {
+    public void matchSubtitles(int millisec) {
+        if(idxlist==null || idxlist.size()==0)
+            return;
         findSubtitles(curIndex, millisec);
         if(idxlist.get(0) < size())
             setCurSubtitleIndex(idxlist.get(0));
@@ -294,10 +303,8 @@ public class SubtitleFile extends LinkedList {
         text=text.replaceAll( "\\{\\\\fn.*?\\}","" );
         text=text.replaceAll( "\\{\\\\r\\}","" );
         text=text.replaceAll( "\\{\\\\fs.*?\\}","" );
-		if(text.startsWith("{\\pos("))
-			sl = new SubtitleLine(index, startTime, endTime, "");
-		else
-        	sl = new SubtitleLine(index, startTime, endTime, text);
+
+        sl = new SubtitleLine(index, startTime, endTime, text);
 		
         add(sl);
         
@@ -325,14 +332,12 @@ public class SubtitleFile extends LinkedList {
             startTime = new SubtitleTime(start / 3600000, ((start / 1000 ) % 3600) / 60, (start / 1000 ) % 60, start % 1000);
             endTime = new SubtitleTime(end / 3600000, ((end / 1000 ) % 3600) / 60, (end / 1000 ) % 60, end % 1000);
 
+
             text=text.replaceAll( "\\{\\\\fn.*?\\}","" );
             text=text.replaceAll( "\\{\\\\r\\}","" );
             text=text.replaceAll( "\\{\\\\fs.*?\\}","" );
 
-			if(text.startsWith("{\\pos("))
-            	sl = new SubtitleLine(index, startTime, endTime, "");
-			else
-				sl = new SubtitleLine(index, startTime, endTime, text);
+			sl = new SubtitleLine(index, startTime, endTime, text);
 		
             try {
             	if(size()==0)

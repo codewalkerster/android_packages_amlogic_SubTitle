@@ -94,6 +94,7 @@ JNIEXPORT jobject JNICALL parseSubtitleFile
 		(*env)->CallVoidMethod(env, obj, mid, i, subt->start/90, subt->end/90, array,encode);
 		(*env)->DeleteLocalRef (env,array );
 		free(textBuf);
+		usleep(100);
 	}
 	internal_sub_close(subdata);
 	(*env)->ReleaseStringUTFChars(env,filename, nm);
