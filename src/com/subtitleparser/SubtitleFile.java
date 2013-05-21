@@ -338,7 +338,15 @@ public class SubtitleFile extends LinkedList {
             text=text.replaceAll( "\\{\\\\r\\}","" );
             text=text.replaceAll( "\\{\\\\fs.*?\\}","" );
 
-			sl = new SubtitleLine(index, startTime, endTime, text);
+            if(text.startsWith("{\\pos(")) {
+                int idx = text.indexOf(")}m");
+                if((text.substring(idx+3)).startsWith(" "))
+                    sl = new SubtitleLine(index, startTime, endTime, "");
+                else
+                    sl = new SubtitleLine(index, startTime, endTime, text);
+            }
+            else
+                sl = new SubtitleLine(index, startTime, endTime, text);
 
 		
             try {
