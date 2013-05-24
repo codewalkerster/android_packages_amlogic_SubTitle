@@ -227,7 +227,7 @@ JNIEXPORT jobject JNICALL getrawdata
 	else if(get_inter_spu_type()==SUBTITLE_PGS)
 	{
 		int sub_size = get_inter_spu_size();
-		LOGE("getrawdata: get_inter_spu_type()=SUBTITLE_PGS size  %d ",sub_size);
+		LOGE("getrawdata: get_inter_spu_type()=SUBTITLE_PGS size %d,sub_pkt=%d,-----\n",sub_size, sub_pkt);
 		if(sub_size <= 0){
 			return NULL;
 		}	

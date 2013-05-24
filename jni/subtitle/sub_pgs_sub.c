@@ -71,11 +71,14 @@ static int read_spu_byte(int read_handle, char* byte)
 static int read_spu_buf(int read_handle, char* buf, int len)
 {
     int i;
+#if 0
     for(i=0;i<len;i++){
         if(read_spu_byte(read_handle,buf+i)==0)
             break;
     }
-    return i;
+#endif
+    subtitle_read_sub_data_fd(read_handle, buf, len);
+    return len;
 }   
 
 
@@ -453,6 +456,16 @@ static int pgs_decode(AML_SPUVAR *spu, unsigned char* buf)
 
 int get_pgs_spu(AML_SPUVAR *spu, int read_handle)
 {
+    int read_data_len = 0;       
+    char tmpbuf[256];
+    unsigned int pgs_pts=0, pgs_dts=0, pgs_pts_end;
+    unsigned int pgs_temp_pts, pgs_temp_dts;
+    int pgs_packet_length=0,pgs_pes_header_length=0,data_len=0;
+    int64_t packet_header=0;
+    char skip_packet_flag=0;
+    int pgs_packet_type = 0;
+    char *data=NULL;
+    char *pdata=NULL;
 	read_pgs_byte = 0;
 	LOGI("enter get_pgs_spu\n");
 	int pgs_ret = 0;
@@ -461,141 +474,117 @@ int get_pgs_spu(AML_SPUVAR *spu, int read_handle)
 		return 0;
 	}
 		
-    while(1){
-        char tmpbuf[256];
-        unsigned int pgs_pts=0, pgs_dts=0;
-        unsigned int pgs_temp_pts, pgs_temp_dts;
-        int pgs_packet_length=0,pgs_pes_header_length=0;
-        unsigned packet_header=0;
-        char skip_packet_flag=0;
+    if((subtitle_get_sub_size_fd(read_handle)) < SPU_RD_HOLD_SIZE){
+        LOGI("current pgs sub buffer size %d\n", (subtitle_get_sub_size_fd(read_handle)));
+        return 0;
+    }
+
+    uVobSPU.spu_cache_pos=0; 
+    while(read_spu_buf(read_handle,tmpbuf, 1)==1){
+        packet_header=(packet_header<<8)|tmpbuf[0];
+        //LOGI("## get_pgs_spu %x,%x,%x,%x,%llx,-------------\n",tmpbuf[0],tmpbuf[1],tmpbuf[2],tmpbuf[3],packet_header);
+        if((packet_header&0xffffffffff)==0x414d4c55aa){
+            LOGI("## 222  get_pgs_spu %x,%llx,-----------\n",tmpbuf[0],packet_header&0xffffffffff);
+            break;
+        }
+    }
+    LOGI("## 333 get_pgs_spu %x,%x,%x,%x,%x,-------------\n",tmpbuf[0],tmpbuf[1],tmpbuf[2],tmpbuf[3]);
+
+    if(read_spu_buf(read_handle, tmpbuf, 15)==15){
+        data_len = tmpbuf[3]<<24;
+        data_len |= tmpbuf[4]<<16;
+        data_len |= tmpbuf[5]<<8;
+        data_len |= tmpbuf[6];
+
+        pgs_temp_pts = tmpbuf[7]<<24;
+        pgs_temp_pts |= tmpbuf[8]<<16;
+        pgs_temp_pts |= tmpbuf[9]<<8;
+        pgs_temp_pts |= tmpbuf[10];
+
+        pgs_pts = pgs_temp_pts;
+
+        pgs_temp_pts = 0;
+        pgs_temp_pts = tmpbuf[11]<<24;
+        pgs_temp_pts |= tmpbuf[12]<<16;
+        pgs_temp_pts |= tmpbuf[13]<<8;
+        pgs_temp_pts |= tmpbuf[14];
+
+        spu->m_delay = pgs_temp_pts;
+        if (pgs_temp_pts != 0) {
+            spu->m_delay += pgs_pts;
+        }
+        pgs_pts_end = pgs_pts + pgs_temp_pts;
+        pgs_dts = pgs_pts;
 		
-		if((subtitle_get_sub_size_fd(read_handle)) < SPU_RD_HOLD_SIZE){
-			LOGI("current pgs sub buffer size %d\n", (subtitle_get_sub_size_fd(read_handle)));
+		spu->subtitle_type = SUBTITLE_PGS;
+		spu->pts = pgs_pts;
+        LOGI("## 4444 %x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,--%d,%x,%x,-------------\n",
+            tmpbuf[0],tmpbuf[1],tmpbuf[2],tmpbuf[3],tmpbuf[4],tmpbuf[5],tmpbuf[6],
+            tmpbuf[7],tmpbuf[8],tmpbuf[9],tmpbuf[10],tmpbuf[11],tmpbuf[12],tmpbuf[13],tmpbuf[14],
+            data_len, pgs_pts, pgs_pts_end);
+
+        data = malloc(data_len);
+        memset(data, 0x0, data_len);
+        int ret=0;
+
+        ret = read_spu_buf(read_handle, data, data_len);
+        read_pgs_byte += ret;
+        LOGI("## ret=%d,data_len=%d,%x,%x,%x,%x,%x,%x,%x,%x,---------\n",ret,data_len,
+            data[0],data[1],data[2],data[3],data[data_len-4],data[data_len-3],data[data_len-2],data[data_len-1]);
+
+        pdata = data;
+    }
+
+    while(read_data_len < data_len){	
+        LOGI("## %x,%x,%x, \n", data[0],data[1],data[2]);
+        pgs_packet_type = data[0];
+        pgs_packet_length = (data[1]<<8)|data[2];
+        read_data_len += 3;
+        LOGI("## read:%d, data_len:%d, len is %d\n",read_data_len, data_len, pgs_packet_length);
+		if (read_data_len+pgs_packet_length>data_len) {
+			LOGI("## data fault ! ---\n");
 			break;
 		}
-
-        uVobSPU.spu_cache_pos=0; 
-        while(read_spu_buf(read_handle,tmpbuf, 1)==1){
-            packet_header=(packet_header<<8)|tmpbuf[0];
-            if(packet_header==0x000001bd)
+        if((pgs_pts)&&(pgs_packet_length>0)){
+            char* buf=NULL;
+            if((8+2+pgs_packet_length)>(OSD_HALF_SIZE*4)){
+                LOGE("pgs packet is too big\n\n"); 
                 break;
-        }
-        if(packet_header==0x000001bd){  
-			//LOGI("find header 0x000001bd\n");
-            if(read_spu_buf(read_handle, tmpbuf, 2)==2){
-                pgs_packet_length=(tmpbuf[0]<<8)|tmpbuf[1];
-#if 0
-				if((uVobSPU.mem_rp < uVobSPU.mem_wp) && \
-					(uVobSPU.mem_rp2 < uVobSPU.mem_wp) && \
-					(uVobSPU.mem_rp2 + pgs_packet_length > uVobSPU.mem_wp)){
-					uVobSPU.mem_rp = uVobSPU.mem_rp2;
-					break;
-				}
-				else if((uVobSPU.mem_rp > uVobSPU.mem_wp) && \
-					(uVobSPU.mem_rp2 > uVobSPU.mem_wp) && \
-					(uVobSPU.mem_rp2 + pgs_packet_length > uVobSPU.mem_wp + uVobSPU.mem_end - uVobSPU.mem_start)){
-					uVobSPU.mem_rp = uVobSPU.mem_rp2;
-					break;
-				}
-				if((uVobSPU.mem_rp < uVobSPU.mem_wp) && \
-					(uVobSPU.mem_rp2 < uVobSPU.mem_wp) &&\
-					(uVobSPU.mem_rp2 < uVobSPU.mem_rp)){
-					uVobSPU.mem_rp = uVobSPU.mem_rp2;
-					break;
-				}
-				else if((uVobSPU.mem_rp < uVobSPU.mem_wp) && \
-					(uVobSPU.mem_rp2 > uVobSPU.mem_wp)){
-					uVobSPU.mem_rp2 = uVobSPU.mem_rp;
-					break;
-				}
-#endif
-                if(pgs_packet_length>=3){
-                    if(read_spu_buf(read_handle, tmpbuf, 3)==3){
-                        pgs_packet_length-=3;
-                        pgs_pes_header_length=tmpbuf[2];
-                        if(pgs_packet_length>=pgs_pes_header_length){
-                            if((tmpbuf[1]&0xc0)==0x80){
-                                if(read_spu_buf(read_handle, tmpbuf, pgs_pes_header_length)==pgs_pes_header_length){                            
-                                    pgs_temp_pts = 0;
-                                    pgs_temp_pts = pgs_temp_pts | ((tmpbuf[0] & 0xe) << 29);
-                                    pgs_temp_pts = pgs_temp_pts | ((tmpbuf[1] & 0xff) << 22);
-                                    pgs_temp_pts = pgs_temp_pts | ((tmpbuf[2] & 0xfe) << 14);
-                                    pgs_temp_pts = pgs_temp_pts | ((tmpbuf[3] & 0xff) << 7);
-                                    pgs_temp_pts = pgs_temp_pts | ((tmpbuf[4] & 0xfe) >> 1);
-                                    pgs_pts = pgs_temp_pts; // - pts_aligned;
-                                    pgs_packet_length-=pgs_pes_header_length;
-                                }
-                            }
-                            else if((tmpbuf[1]&0xc0)==0xc0){
-                                if(read_spu_buf(read_handle, tmpbuf, pgs_pes_header_length)==pgs_pes_header_length){                            
-                                    pgs_temp_pts = 0;
-                                    pgs_temp_pts = pgs_temp_pts | ((tmpbuf[0] & 0xe) << 29);
-                                    pgs_temp_pts = pgs_temp_pts | ((tmpbuf[1] & 0xff) << 22);
-                                    pgs_temp_pts = pgs_temp_pts | ((tmpbuf[2] & 0xfe) << 14);
-                                    pgs_temp_pts = pgs_temp_pts | ((tmpbuf[3] & 0xff) << 7);
-                                    pgs_temp_pts = pgs_temp_pts | ((tmpbuf[4] & 0xfe) >> 1);
-                                    pgs_pts = pgs_temp_pts; //- pts_aligned;
-                                    pgs_temp_dts = 0;
-                                    pgs_temp_dts = pgs_temp_dts | ((tmpbuf[5] & 0xe) << 29);
-                                    pgs_temp_dts = pgs_temp_dts | ((tmpbuf[6] & 0xff) << 22);
-                                    pgs_temp_dts = pgs_temp_dts | ((tmpbuf[7] & 0xfe) << 14);
-                                    pgs_temp_dts = pgs_temp_dts | ((tmpbuf[8] & 0xff) << 7);
-                                    pgs_temp_dts = pgs_temp_dts | ((tmpbuf[9] & 0xfe) >> 1);
-                                    pgs_dts = pgs_temp_dts; // - pts_aligned;
-                                    pgs_packet_length-=pgs_pes_header_length;
-                                }
-                            }
-                            else{
-                                skip_packet_flag=1;
-                            }
-                        }
-                        else{
-                            skip_packet_flag=1;
-                        }
-                    }
-                }
-                else{
-                    skip_packet_flag=1;
-                }
-                if(skip_packet_flag){
-                    int iii;
-                    char tmp;
-                    for(iii=0;iii<pgs_packet_length;iii++){
-                        if(read_spu_byte(read_handle,&tmp)==0)
-                            break;
-                    }                                                       
-                }
-                else if((pgs_pts)&&(pgs_packet_length>0)){
-                    char* buf=NULL;
-                    if((8+2+pgs_packet_length)>(OSD_HALF_SIZE*4)){
-                        LOGE("pgs packet is too big\n\n"); 
-                        break;
-                    }
-                    else if((uVobSPU.spu_decoding_start_pos+8+2+pgs_packet_length)>(OSD_HALF_SIZE*4)){
-                        uVobSPU.spu_decoding_start_pos=0;
-                    }
-                    buf = malloc(8+2+pgs_packet_length);
-					LOGI("pgs_packet_length is %d\n",pgs_packet_length);
-					subtitle_pgs.showdata.pts = pgs_dts;
-                    if(buf){                   
-						memset(buf, 0x0, 8+2+pgs_packet_length);
-                        buf[0]='P';buf[1]='G';
-                        buf[2]=(pgs_pts>>24)&0xff; buf[3]=(pgs_pts>>16)&0xff; buf[4]=(pgs_pts>>8)&0xff; buf[5]=pgs_pts&0xff;
-                        buf[6]=(pgs_pts>>24)&0xff; buf[7]=(pgs_pts>>16)&0xff; buf[8]=(pgs_pts>>8)&0xff; buf[9]=pgs_pts&0xff;
-                        if(read_spu_buf(read_handle, buf+10, pgs_packet_length)==pgs_packet_length){
-							LOGI("start decode pgs subtitle\n\n");
-							pgs_ret = pgs_decode(spu,buf);
-                        }
-						free(buf);                        
-                    }
-					continue;
-                }
+            }
+            else if((uVobSPU.spu_decoding_start_pos+8+2+pgs_packet_length)>(OSD_HALF_SIZE*4)){
+                uVobSPU.spu_decoding_start_pos=0;
+            }
+            buf = malloc(8+2+3+pgs_packet_length);
+            LOGI("pgs_packet_length is %d, %x,\n",pgs_packet_length, buf);
+            subtitle_pgs.showdata.pts = pgs_dts;
+            if(buf){
+                LOGI("## 555 get_pgs_spu ------------\n");
+                memset(buf, 0x0, 8+2+3+pgs_packet_length);
+                buf[0]='P';buf[1]='G';
+                buf[2]=(pgs_pts>>24)&0xff; buf[3]=(pgs_pts>>16)&0xff; buf[4]=(pgs_pts>>8)&0xff; buf[5]=pgs_pts&0xff;
+                buf[6]=(pgs_pts_end>>24)&0xff; buf[7]=(pgs_pts_end>>16)&0xff; buf[8]=(pgs_pts_end>>8)&0xff; buf[9]=pgs_pts_end&0xff;
+                buf[10]=pgs_packet_type&0xff, buf[11]=(pgs_packet_length>>8)&0xff,buf[12]=pgs_packet_length&0xff;
+
+                memcpy(buf+13, data+3, pgs_packet_length);
+                LOGI("## start decode pgs subtitle %x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,\n\n",
+                    buf[0],buf[1],buf[2],buf[3],buf[4],buf[5],buf[6],buf[7],buf[8],buf[9],buf[10],
+                    buf[11],buf[12],buf[13],buf[14]);
+                pgs_ret = pgs_decode(spu,buf);
+                read_data_len += pgs_packet_length;
+                data+=pgs_packet_length+3;
+				
+                free(buf);
+                buf=NULL;
             }
         }
-		else{
-			LOGI("header is not 0x000001bd\n");
-        	break;
-		}
     }
+
+    LOGI("## break, get_pgs_spu read_data_len=%d,data_len=%d,spu->spu_data=%x,------------\n\n",read_data_len,data_len,spu->spu_data);
+
+    if(pdata) {
+        free(pdata);
+        pdata = NULL;
+    }
+ 
     return pgs_ret;
 }

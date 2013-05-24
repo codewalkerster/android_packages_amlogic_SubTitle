@@ -74,7 +74,7 @@ class InSubApi extends SubtitleApi
 				if(inter_data.sub_delay>millisec)
 					return new SubData( bf_show, millisec,inter_data.sub_delay);
 				else
-				    return new SubData( bf_show, millisec,millisec+1000);					 
+				    return new SubData( bf_show, millisec,millisec+1500);					 
 			 }
 			 else 
 			 {
@@ -82,7 +82,7 @@ class InSubApi extends SubtitleApi
 				if(inter_data.sub_delay>millisec)
 					return new SubData( inter_data.subtitlestring, millisec,inter_data.sub_delay);		
 				else
-					return new SubData( inter_data.subtitlestring, millisec,millisec+1000);				 
+					return new SubData( inter_data.subtitlestring, millisec,millisec+1500);				 
 			 }
 		 }else
 		 {
