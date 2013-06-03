@@ -149,31 +149,37 @@ static unsigned short GetWordFromPixBuffer(unsigned short bitpos, unsigned short
 }
 int get_ass_spu(char *spu_buf, unsigned length, AML_SPUVAR *spu)
 {     
-   int ret=0;
+    int ret=0;
+    int i=0;
 	//LOGE("spubuf  %c %c %c %c %c %c %c %c   %c %c %c %c %c %c %c %c  \n %c %c %c %c %c %c %c %c %c %c %c %c %c %c %c %c %c\n",
 	//    spu_buf[0], spu_buf[1],spu_buf[2],spu_buf[3],spu_buf[4],spu_buf[5],spu_buf[6],spu_buf[7],
 	//    spu_buf[8],spu_buf[9],spu_buf[10],spu_buf[11],spu_buf[12],spu_buf[13],spu_buf[14],spu_buf[15],
 	 //   spu_buf[16],spu_buf[17],spu_buf[18],spu_buf[19],spu_buf[20],spu_buf[21],spu_buf[22],spu_buf[23],
 	 //   spu_buf[24],spu_buf[25],spu_buf[26],spu_buf[27],spu_buf[28],spu_buf[29],spu_buf[30],spu_buf[31] ,spu_buf[32] );
 
-	 unsigned hour,min,sec,mills,startmills,endmills;
-	 if(length>33&&strncmp(spu_buf,"Dialogue:",9)==0) //ass Events match
-	 {
-	       hour=spu_buf[11]-0x30;
-	       min=(spu_buf[13]-0x30)*10 + (spu_buf[14]-0x30);
-	       sec=(spu_buf[16]-0x30)*10 + (spu_buf[17]-0x30);
-	       mills=(spu_buf[19]-0x30)*10 + (spu_buf[20]-0x30);
-	       startmills=(hour*60*60+min*60+sec)*1000+mills*10;
-	       LOGE("%d:%d:%d:%d, start mills=0x%x\n", hour,min,sec,mills,startmills);
-	       hour=spu_buf[22]-0x30;
-	       min=(spu_buf[24]-0x30)*10 + (spu_buf[25]-0x30);
-	       sec=(spu_buf[27]-0x30)*10 + (spu_buf[28]-0x30);
-	       mills=(spu_buf[30]-0x30)*10 + (spu_buf[31]-0x30);
-	       endmills=(hour*60*60+min*60+sec)*1000+mills*10;   
-	       spu->m_delay=(endmills- startmills)*90+spu->pts;
-	       LOGE("%d:%d:%d:%d, end mills=0x%x m-delay=0x%x\n", hour,min,sec,mills,endmills,spu->m_delay);
-	  }
-	return ret;
+    unsigned hour,min,sec,mills,startmills,endmills;
+    if(length>33&&strncmp(spu_buf,"Dialogue:",9)==0) //ass Events match
+    {
+        i = 9;
+        while (((spu_buf[i]!=':') || (spu_buf[i+3]!=':')) && (i<length)) 
+            i++;
+        i--;
+        hour=spu_buf[i]-0x30;
+        min=(spu_buf[i+2]-0x30)*10 + (spu_buf[i+3]-0x30);
+        sec=(spu_buf[i+5]-0x30)*10 + (spu_buf[i+6]-0x30);
+        mills=(spu_buf[i+8]-0x30)*10 + (spu_buf[i+9]-0x30);
+        startmills=(hour*60*60+min*60+sec)*1000+mills*10;
+        spu->pts=startmills*90;
+        LOGE("%d:%d:%d:%d, start mills=0x%x\n", hour,min,sec,mills,startmills);
+        hour=spu_buf[i+11]-0x30;
+        min=(spu_buf[i+13]-0x30)*10 + (spu_buf[i+14]-0x30);
+        sec=(spu_buf[i+16]-0x30)*10 + (spu_buf[i+17]-0x30);
+        mills=(spu_buf[i+19]-0x30)*10 + (spu_buf[i+20]-0x30);
+        endmills=(hour*60*60+min*60+sec)*1000+mills*10;   
+        spu->m_delay=endmills*90;
+        LOGE("%d:%d:%d:%d, end mills=0x%x m-delay=0x%x\n", hour,min,sec,mills,endmills,spu->m_delay);
+    }
+    return ret;
 }
 
 unsigned char spu_fill_pixel(unsigned short *pixelIn, char *pixelOut, AML_SPUVAR *sub_frame, int n)
@@ -635,22 +641,6 @@ next  n bytes are subtitle data
 */
 int write_subtitle_file(AML_SPUVAR *spu)
 {
-	//for mkv string subtitle
-    if(spu->m_delay==0)
-	{
-		spu->m_delay=spu->pts+1000*90;
-		if(read_position!=file_position)
-		{
-			if(spu->pts<inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_delay_pts)
-			{
-				inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_delay_pts=spu->pts-100;
-			}
-			else if(spu->pts>(inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_delay_pts+3000*90))
-			{
-				inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_delay_pts += 1500*90;
-			}
-		}		
-	}
 	if( spu->pts < inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_pts )
 	{
 		LOGI("inter_subtitle_data[%d].subtitle_pts %d",
