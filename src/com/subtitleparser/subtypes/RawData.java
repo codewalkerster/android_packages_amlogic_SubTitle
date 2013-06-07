@@ -25,6 +25,7 @@ public class RawData
 			subtitlestring=subtitlestring.replaceAll( "<(.*?)>","" );
 			subtitlestring=subtitlestring.replaceAll( "\\{(.*?)\\}","" );
 			subtitlestring=subtitlestring.replaceAll( "\\\\N","\\\n" );
+                        subtitlestring=subtitlestring.replaceAll( "\\\\n","" );
 		}catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}	
