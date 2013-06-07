@@ -159,20 +159,19 @@ int get_ass_spu(char *spu_buf, unsigned length, AML_SPUVAR *spu)
 	 unsigned hour,min,sec,mills,startmills,endmills;
 	 if(length>33&&strncmp(spu_buf,"Dialogue:",9)==0) //ass Events match
 	 {
-		  hour=spu_buf[12]-0x30;
-		  min=(spu_buf[14]-0x30)*10 + (spu_buf[15]-0x30);
-		  sec=(spu_buf[17]-0x30)*10 + (spu_buf[18]-0x30);
-		  mills=(spu_buf[20]-0x30)*10 + (spu_buf[21]-0x30);
-		  startmills=(hour*60*60+min*60+sec)*1000+mills*10;
-		  spu->pts=startmills*90;
-		  LOGE("%d:%d:%d:%d, start mills=0x%x\n", hour,min,sec,mills,startmills);
-		  hour=spu_buf[23]-0x30;
-		  min=(spu_buf[25]-0x30)*10 + (spu_buf[26]-0x30);
-		  sec=(spu_buf[28]-0x30)*10 + (spu_buf[29]-0x30);
-		  mills=(spu_buf[31]-0x30)*10 + (spu_buf[32]-0x30);
-		  endmills=(hour*60*60+min*60+sec)*1000+mills*10;	
-		  spu->m_delay=endmills*90;
-		  LOGE("%d:%d:%d:%d, end mills=0x%x m-delay=0x%x\n", hour,min,sec,mills,endmills,spu->m_delay);
+	       hour=spu_buf[11]-0x30;
+	       min=(spu_buf[13]-0x30)*10 + (spu_buf[14]-0x30);
+	       sec=(spu_buf[16]-0x30)*10 + (spu_buf[17]-0x30);
+	       mills=(spu_buf[19]-0x30)*10 + (spu_buf[20]-0x30);
+	       startmills=(hour*60*60+min*60+sec)*1000+mills*10;
+	       LOGE("%d:%d:%d:%d, start mills=0x%x\n", hour,min,sec,mills,startmills);
+	       hour=spu_buf[22]-0x30;
+	       min=(spu_buf[24]-0x30)*10 + (spu_buf[25]-0x30);
+	       sec=(spu_buf[27]-0x30)*10 + (spu_buf[28]-0x30);
+	       mills=(spu_buf[30]-0x30)*10 + (spu_buf[31]-0x30);
+	       endmills=(hour*60*60+min*60+sec)*1000+mills*10;   
+	       spu->m_delay=(endmills- startmills)*90+spu->pts;
+	       LOGE("%d:%d:%d:%d, end mills=0x%x m-delay=0x%x\n", hour,min,sec,mills,endmills,spu->m_delay);
 	  }
 	return ret;
 }
@@ -636,6 +635,22 @@ next  n bytes are subtitle data
 */
 int write_subtitle_file(AML_SPUVAR *spu)
 {
+	//for mkv string subtitle
+    if(spu->m_delay==0)
+	{
+		spu->m_delay=spu->pts+1000*90;
+		if(read_position!=file_position)
+		{
+			if(spu->pts<inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_delay_pts)
+			{
+				inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_delay_pts=spu->pts-100;
+			}
+			else if(spu->pts>(inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_delay_pts+3000*90))
+			{
+				inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_delay_pts += 1500*90;
+			}
+		}		
+	}
 	if( spu->pts < inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_pts )
 	{
 		LOGI("inter_subtitle_data[%d].subtitle_pts %d",
