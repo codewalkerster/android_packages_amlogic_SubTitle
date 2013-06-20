@@ -98,7 +98,7 @@ class SsaApi extends SubtitleApi
                 cur = SubFile.curSubtitle();
                 SubFile.matchSubtitles(millisec);
                 String str = null;
-                st = null;
+                st = "";
                 for(int i=0;i<SubFile.idxlistSize();i++) {
                     int idx = SubFile.getIdx(i);
                     str = SubFile.getSubtitle(idx).getText();

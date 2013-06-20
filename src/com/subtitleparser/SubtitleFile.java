@@ -271,11 +271,11 @@ public class SubtitleFile extends LinkedList {
     }
     
     public void matchSubtitles(int millisec) {
-        if(idxlist==null || idxlist.size()==0)
-            return;
         findSubtitles(curIndex, millisec);
-        if(idxlist.get(0) < size())
-            setCurSubtitleIndex(idxlist.get(0));
+        if(idxlist.size()!=0) {
+            if(idxlist.get(0) < size())
+                setCurSubtitleIndex(idxlist.get(0));
+        }
     }
 
     public int idxlistSize() {
