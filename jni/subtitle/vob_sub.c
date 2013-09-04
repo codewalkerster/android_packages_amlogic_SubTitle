@@ -892,8 +892,8 @@ vobsub_parse_palette(vobsub_t *vob, const char *line)
 	y = MIN(MAX((int)(0.1494 * r + 0.6061 * g + 0.2445 * b), 0), 0xff);
 	u = MIN(MAX((int)(0.6066 * r - 0.4322 * g - 0.1744 * b) + 128, 0), 0xff);
 	v = MIN(MAX((int)(-0.08435 * r - 0.3422 * g + 0.4266 * b) + 128, 0), 0xff);
-	//vob->palette[n++] = y << 16 | u << 8 | v;
-	vob->palette[n++]=tmp;
+	vob->palette[n++] = y << 16 | u << 8 | v;
+	//vob->palette[n++]=tmp;
 	if (n == 16)
         break;
 	if (*p == ',')
@@ -1889,10 +1889,10 @@ void idxsub_parser_data( const unsigned char * source,long length,int linewidth,
 	int rgb3 = 0;
 	int set_rgb = 0;
 	/*  update Alpha */                                                                                                                
-	aAlpha[0] = ((subtitle_alpha>>8) >> 4)&0xf;                                                                                                   
-	aAlpha[1] = (subtitle_alpha>>8) & 0xf;                                                                                              
-	aAlpha[2] = (subtitle_alpha>>4)&0xf;                                                                                                    
-    aAlpha[3] = subtitle_alpha & 0xf;     
+	aAlpha[1] = ((subtitle_alpha>>8) >> 4)&0xf;
+	aAlpha[0] = (subtitle_alpha>>8) & 0xf;   
+	aAlpha[3] = (subtitle_alpha>>4)&0xf;                                                                                                    
+    aAlpha[2] = subtitle_alpha & 0xf;     
     /* update Palette*/
 	aPalette[0]=  ((vobsubdata->VobSPU.spu_color>>8) >> 4)&0xf;  
 	aPalette[1] = (vobsubdata->VobSPU.spu_color>>8) & 0xf;                                                                                              
