@@ -27,6 +27,9 @@ class SsaApi extends SubtitleApi
         isSubOverlap = checkSubOverlap(sf);
     }
     public void closeSubtitle( ){}
+    public int getSubTypeDetial() {
+        return -1;
+    }
     public Subtitle.SUBTYPE type()
     {
         return Subtitle.SUBTYPE.SUB_SSA;

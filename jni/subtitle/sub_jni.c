@@ -24,6 +24,8 @@
 #include "sub_api.h"
 #include <string.h>
 #include "sub_subtitle.h"
+int sub_thread = 0;
+int subThreadRunning = 0;
 
 JNIEXPORT jobject JNICALL parseSubtitleFile
   (JNIEnv *env, jclass cl, jstring filename, jstring encode)
@@ -168,8 +170,14 @@ JNIEXPORT void JNICALL closeInSubView (JNIEnv *env, jclass cl )
 	LOGE("jni closeInSubView!");
 	set_subtitle_enable(0);
 	close_subtitle();
+	sub_thread = 0;
+	subThreadRunning = 0;
 }
 
+JNIEXPORT jint JNICALL getInSubType(JNIEnv *env, jclass cl )  
+{
+	return get_sub_type_for_pgs();
+}
 
 JNIEXPORT jobject JNICALL getrawdata
 	  (JNIEnv *env, jclass cl, jint msec )  
@@ -191,6 +199,11 @@ JNIEXPORT jobject JNICALL getrawdata
 		LOGE("com/subtitleparser/subtypes/RawData: failed to get  constructor method2's ID");
 	  return NULL;
 	}	
+	jmethodID constrforpgs = (*env)->GetMethodID(env, cls, "<init>", "([IIIIIIILjava/lang/String;)V");
+	if(!constrforpgs){
+		LOGE("com/subtitleparser/subtypes/RawData: failed to get  constructor method's ID");
+	  return NULL;
+	}
 	
 	LOGE("start get packet\n\n");
 	int sub_pkt = get_inter_spu_packet(msec*90+get_subtitle_startpts());
@@ -228,20 +241,22 @@ JNIEXPORT jobject JNICALL getrawdata
 	{
 		int sub_size = get_inter_spu_size();
 		LOGE("getrawdata: get_inter_spu_type()=SUBTITLE_PGS size %d,sub_pkt=%d,-----\n",sub_size, sub_pkt);
-		if(sub_size <= 0){
-			return NULL;
-		}	
+		//shield for pgs check out
+		//if(sub_size <= 0){
+			//return NULL;
+		//}	
 		jintArray array= (*env)->NewIntArray(env,sub_size);
 		(*env)->SetIntArrayRegion(env,array,0, sub_size, get_inter_spu_data() );	 
 		
 		LOGE("getrawdata: SetByteArrayRegion finish");
+		int sub_start_pts= (get_inter_spu_pts()- get_subtitle_startpts())/90 ;//- get_subtitle_startpts() adjust offset for pgs showing
 		int delay_pts = get_inter_spu_delay();
 		if(delay_pts <= 0)
 			delay_pts = 0;
 		else
 			delay_pts = (get_inter_spu_delay()-get_subtitle_startpts())/90;
-		jobject obj =  (*env)->NewObject(env, cls, constr,array,1,get_inter_spu_width(),
-			get_inter_spu_height(),delay_pts,0);
+		jobject obj =  (*env)->NewObject(env, cls, constrforpgs,array,1,get_inter_spu_width(),
+			get_inter_spu_height(),sub_size,sub_start_pts,delay_pts,0);
 		LOGE("getrawdata: NewObject  finish");
 
 		add_read_position();
@@ -250,6 +265,52 @@ JNIEXPORT jobject JNICALL getrawdata
 		  return NULL;
 		}
 		return obj;
+	}
+	else if (get_inter_spu_type()==SUBTITLE_DVB) {
+		LOGE("getrawdata: get_inter_spu_type()=SUBTITLE_DVB");
+
+		int sub_size = get_inter_spu_size();
+		if(sub_size <= 0){
+			LOGE("sub_size invalid \n\n");
+			return NULL;
+		}	
+		LOGI("sub_size is %d, \n\n",sub_size);
+		int *inter_sub_data = NULL;
+		inter_sub_data = malloc(sub_size*4);
+		if(inter_sub_data == NULL){
+			LOGE("malloc sub_size fail \n\n");
+			return NULL;
+		}
+		memset(inter_sub_data, 0x0, sub_size*4);
+		LOGI("start get new array\n\n");
+		jintArray array= (*env)->NewIntArray(env,sub_size);
+		if(!array){
+			LOGE("new int array fail \n\n");
+			return NULL;
+		}
+		
+		parser_inter_spu2(inter_sub_data);
+		int *resize_data = malloc(get_inter_spu_resize_size()*4);
+		if(resize_data == NULL){
+			free(inter_sub_data);
+			return NULL;
+		}
+		fill_resize_data(resize_data, inter_sub_data);		
+		LOGE("end parser_inter_spu\n\n");
+		(*env)->SetIntArrayRegion(env,array,0,get_inter_spu_resize_size(), resize_data);	 
+		LOGE("start get new object resize_data=%x, \n\n", resize_data);
+		free(inter_sub_data);
+		free(resize_data);
+		LOGE("## after free resize_data \n\n");
+		jobject obj =  (*env)->NewObject(env, cls, constr,array,1,get_inter_spu_width(),
+			get_inter_spu_height(),(get_inter_spu_delay()-get_subtitle_startpts())/90,0);
+		add_read_position();
+		if(!obj){
+		  LOGE("parseSubtitleFile: failed to create an object");
+		  return NULL;
+		}
+		return obj;
+
 	}
 	else //if(get_inter_spu_type()==SUBTITLE_VOB) //SUBTITLE_VOB
 	{
@@ -316,6 +377,9 @@ JNIEXPORT void JNICALL  closeIdxSubFile(JNIEnv *env, jclass cl )
 {
 	LOGE("jni closeIdxSubFile");
 	idxsub_close_subtitle();
+
+	sub_thread = 0;
+	subThreadRunning = 0;
 }
 
 
@@ -395,7 +459,9 @@ void inter_subtitle_parser()
 #else
 void *inter_subtitle_parser()
 {
-	while(1){
+    //sub_thread = 1;
+	while(sub_thread){
+		LOGI("[inter_subtitle_parser]get_subtitle_num():%d\n", get_subtitle_num());
 		if(get_subtitle_num())
 			get_inter_spu();
 		usleep(500000);
@@ -453,10 +519,39 @@ int subtitle_thread_create()
 
 }
 
+/*void set_subthread(int runing)
+{
+    sub_thread = runing;
+    LOGI("[%s::%d] runing=%d, \n",__FUNCTION__,__LINE__, runing);
+}*/
+
+JNIEXPORT void JNICALL  startSubThread(JNIEnv *env, jclass cl)
+{
+	LOGI("[startSubThread]subThreadRunning%d\n",subThreadRunning);
+	if(subThreadRunning == 0) 
+	{
+		subThreadRunning = 1;
+		sub_thread = 1;
+		subtitle_thread_create();
+		init_subtitle_file();
+	}
+}
+
+JNIEXPORT void JNICALL  stopSubThread(JNIEnv *env, jclass cl)
+{
+	if(subThreadRunning == 1) 
+	{
+		subThreadRunning = 0;
+		sub_thread = 0;
+	}
+}
+
 static JNINativeMethod gMethods[] = {
     /* name, signature, funcPtr */
     { "parseSubtitleFileByJni", "(Ljava/lang/String;Ljava/lang/String;)Lcom/subtitleparser/SubtitleFile;",
             (void*) parseSubtitleFile},
+    { "startSubThreadByJni", "()V",(void*) startSubThread},
+    { "stopSubThreadByJni", "()V",(void*) stopSubThread},
     };
 
 static JNINativeMethod insubMethods[] = {
@@ -471,6 +566,7 @@ static JNINativeMethod insubdataMethods[] = {
     /* name, signature, funcPtr */
     	{ "getrawdata", "(I)Lcom/subtitleparser/subtypes/RawData;", (void*)getrawdata},
 		{ "setInSubtitleNumberByJni", "(ILjava/lang/String;)I",                               (void*)setInSubtitleNumber},
+		{ "getInSubType", "()I", (void*)getInSubType},
 		{ "closeInSub", "()V", (void*)closeInSubView},
 
     };    
@@ -529,7 +625,13 @@ JNI_OnLoad(JavaVM* vm, void* reserved)
 		LOGE("registerNativeMethods failed!");
 		return -1;
     } 
-	subtitle_thread_create();
-	init_subtitle_file();
+
+	if(subThreadRunning == 0) 
+	{
+		subThreadRunning = 1;
+		sub_thread = 1;
+		subtitle_thread_create();
+		init_subtitle_file();
+	}
     return JNI_VERSION_1_4;
 }

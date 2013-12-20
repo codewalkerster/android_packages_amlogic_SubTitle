@@ -203,7 +203,7 @@ static int get_spu_cmd(AML_SPUVAR *sub_frame)
     return -1;
 }
 
-int get_vob_spu(char *spu_buf, unsigned length, AML_SPUVAR *spu)
+int get_vob_spu(char *spu_buf, int *bufsize, unsigned length, AML_SPUVAR *spu)
 {
 //	LOGI("spubuf  %x %x %x %x %x %x %x %x   %x %x %x %x %x %x %x %x  \n %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n",
 //	    spu_buf[0], spu_buf[1],spu_buf[2],spu_buf[3],spu_buf[4],spu_buf[5],spu_buf[6],spu_buf[7],
@@ -226,12 +226,14 @@ int get_vob_spu(char *spu_buf, unsigned length, AML_SPUVAR *spu)
 	memset(spu->spu_data, 0, VOB_SUB_SIZE);
 	wr_oft = 0;
 	
-	while (spu->length-rd_oft > 0){
+	while (spu->length-wr_oft > 0){
 		if (!current_length) {
       		LOGI("current_length is zero\n\n");
 			if ((spu_buf[rd_oft++]!=0x41)||(spu_buf[rd_oft++]!=0x4d)||
-				(spu_buf[rd_oft++]!=0x4c)||(spu_buf[rd_oft++]!=0x55)|| (spu_buf[rd_oft++]!=0xaa))
+				(spu_buf[rd_oft++]!=0x4c)||(spu_buf[rd_oft++]!=0x55)|| (spu_buf[rd_oft++]!=0xaa)) {
+                LOGI("## goto error ---------\n");
 				goto error; 		// wrong head				
+            }
 
 				rd_oft += 3; 			// 3 bytes for type				
 				current_length = spu_buf[rd_oft++]<<24;
@@ -254,7 +256,7 @@ int get_vob_spu(char *spu_buf, unsigned length, AML_SPUVAR *spu)
 		}			
 	}
 
-
+    *bufsize -= rd_oft;
 	// if one frame data is ready, decode it.
 	LOGI("spu->frame_rdy is %d\n\n",spu->frame_rdy);
 	if (spu->frame_rdy == 1){
@@ -300,7 +302,7 @@ error:
 		free(pixDataEven);
 		LOGI("end free pixDataEven\n\n");
 	}
-	return ret;
+	return rd_oft;
 }
 
 

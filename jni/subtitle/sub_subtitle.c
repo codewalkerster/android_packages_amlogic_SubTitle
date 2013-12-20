@@ -86,6 +86,10 @@ static int sublen = MAX_SUBTITLE_PACKET_WRITE;	// if image format sublen=50, if 
 static off_t file_position=0;
 static off_t read_position=0;
 static int  aml_sub_handle = -1;
+char *restbuf = NULL;
+int restlen = 0;
+//extern int sub_thread;
+
 typedef struct{
 	int subtitle_type;        //add yjf 
 	int subtitle_size;
@@ -108,6 +112,8 @@ typedef struct{
 	char * data;
 }subtitle_data_t;
 static subtitle_data_t inter_subtitle_data[MAX_SUBTITLE_PACKET_WRITE];
+
+static int subtitle_type_for_pgs = 0;
 
 static unsigned short DecodeRL(unsigned short RLData,unsigned short *pixelnum,unsigned short *pixeldata)
 {
@@ -313,6 +319,15 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 		size = subtitle_get_sub_size_fd(read_sub_fd);
 		LOGI("end pgs sub buffer size %d\n", size);
 		return 0;
+	} else if (get_subtitle_subtype() == 5) {
+		size = subtitle_get_sub_size_fd(read_sub_fd);
+		LOGI("start dvb sub buffer size %d\n", size);
+
+		int ret_spu = get_dvb_spu(spu,read_sub_fd);	
+		
+		size = subtitle_get_sub_size_fd(read_sub_fd);
+		LOGI("end dvb buffer size %d\n", size);
+		return 0;
 	}
 	
 	size = subtitle_get_sub_size_fd(read_sub_fd);
@@ -324,7 +339,8 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 		goto error; 
 	}
 	else{
-    	LOGI("\n malloc subtitle size %d \n\n",size);
+        size += restlen;
+    	LOGI("\n malloc subtitle size %d, restlen=%d, \n\n",size, restlen);
 		spu_buf = malloc(size);	
 	}
 	int sizeflag=size;
@@ -332,7 +348,7 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 	char* spu_buf_piece=spu_buf_piece;
 	while(sizeflag>30)
 	{
-		LOGI("\n sizeflag =%u  \n\n",sizeflag);
+		LOGI("\n sizeflag =%u  restlen=%d, \n\n",sizeflag, restlen);
 
 		if (sizeflag <= 16){
 	    	ret = -1;
@@ -340,8 +356,11 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 			goto error; 
 		}
 	    char* spu_buf_piece= spu_buf_tmp;
-	
-		ret = subtitle_read_sub_data_fd(read_sub_fd, spu_buf_piece, 16);
+
+        if (restlen)
+            memcpy(spu_buf_piece, restbuf, restlen);
+		
+		ret = subtitle_read_sub_data_fd(read_sub_fd, spu_buf_piece+restlen, 16);
 		sizeflag-=16;spu_buf_tmp+=16;
 	
 		rd_oft = 0;
@@ -371,7 +390,7 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 		current_pts |= spu_buf_piece[rd_oft++]<<16;
 		current_pts |= spu_buf_piece[rd_oft++]<<8;
 		current_pts |= spu_buf_piece[rd_oft++];
-	  	LOGI("current_pts is %d\n",current_pts);
+	  	LOGI("current_pts is %x\n",current_pts);
 		LOGI("current_length is %d\n",current_length);
 		
 
@@ -390,8 +409,8 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 		{
 			LOGI("current_type=0x17000\n");
 //			ret = subtitle_read_sub_data_fd(read_sub_fd, spu_buf_piece+16, current_length);
-			ret = subtitle_read_sub_data_fd(read_sub_fd, spu_buf_piece+16, sizeflag);
-
+			ret = subtitle_read_sub_data_fd(read_sub_fd, spu_buf_piece+restlen+16, sizeflag-restlen);
+			restlen = sizeflag;
 			sizeflag=0;
 			spu_buf_tmp+=current_length;
 	
@@ -402,6 +421,7 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 	        ret = subtitle_read_sub_data_fd(read_sub_fd, spu_buf_piece+16, current_length+4);
 		 	sizeflag-=(current_length+4);
 		    spu_buf_tmp+=(current_length+4);
+			restlen = 0;
 		}
 
 		//FFT: i dont know why we throw the first sub, when pts == 0. remove these codes first. 
@@ -528,7 +548,33 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 	     		spu->buffer_size  = VOB_SUB_SIZE;
 				spu->spu_data = malloc(VOB_SUB_SIZE);
 				spu->pts = current_pts;
-				ret = get_vob_spu(spu_buf_piece+rd_oft, current_length, spu); 
+				ret = get_vob_spu(spu_buf_piece+rd_oft, &restlen, current_length, spu); 
+                if (current_type==0x17000) {
+                    LOGI("## ret=%d, restlen=%d, sizeflag=%d,---\n", ret, restlen, sizeflag);
+                    if (restlen) {
+                        if (restbuf) {
+                            free(restbuf);
+                            restbuf = NULL;
+                        }
+                        restbuf = malloc(restlen);
+                        memcpy(restbuf, spu_buf_piece+rd_oft+ret, restlen);
+                        //LOGI("## %x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,%x,-----\n", 
+                        //    restbuf[0],restbuf[1],restbuf[2],restbuf[3],restbuf[4],restbuf[5],restbuf[6],restbuf[7],
+                        //    restbuf[8],restbuf[9],restbuf[10],restbuf[11],restbuf[12],restbuf[13],restbuf[14],restbuf[15],
+                        //    restbuf[16],restbuf[17],restbuf[18],restbuf[19],restbuf[20],restbuf[21],restbuf[22],restbuf[23]);
+
+                        if ((restbuf[0]==0x41) && (restbuf[1]==0x4d) &&
+                            (restbuf[2]==0x4c) && (restbuf[3]==0x55) && (restbuf[4]==0xaa)) {
+                            LOGI("## sub header found ! ---\n");
+                        } else {
+                            free(restbuf);
+                            restbuf = NULL;
+                            restlen = 0;
+                        }
+                    }
+                }else {
+                    restlen = 0;
+                }
 //				{
 //					int fd =open("/sdcard/subtitle.rawdata", O_RDWR|O_CREAT );
 //					if(fd!=-1)
@@ -612,10 +658,13 @@ int init_subtitle_file()
 {
 	close_subtitle();
 	init_pgs_subtitle();
+	dvbsub_init_decoder();
+	
+	restlen = 0;
 	return 0;
 }
 
-int add_pgs_end_time(int end_time)
+int add_sub_end_time(int end_time)
 {
 	if(DEC_SUBTITLE_POSITION(file_position) >= 0 && inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].data){
 		inter_subtitle_data[DEC_SUBTITLE_POSITION(file_position)].subtitle_delay_pts = end_time;
@@ -676,10 +725,16 @@ int write_subtitle_file(AML_SPUVAR *spu)
 	inter_subtitle_data[file_position].rgba_pattern2= spu->rgba_pattern2;
 	inter_subtitle_data[file_position].rgba_pattern3= spu->rgba_pattern3;
 	
+
 	LOGI(" write_subtitle_file[%d], sublen=%d, subtitle_type is 0x%x size: %d  subtitle_pts =%u,subtitle_delay_pts=%u \n",file_position,sublen,inter_subtitle_data[read_position].subtitle_type,
 					inter_subtitle_data[file_position].data_size,inter_subtitle_data[file_position].subtitle_pts,inter_subtitle_data[file_position].subtitle_delay_pts);
-	if(spu->subtitle_type == SUBTITLE_PGS)
+	if(spu->subtitle_type == SUBTITLE_PGS) {
+		subtitle_type_for_pgs = SUBTITLE_PGS;
 		file_position = ADD_SUBTITLE_POSITION(file_position);
+	}
+	else {
+		subtitle_type_for_pgs = 0;
+	}
 	return 0;
 }
 
@@ -691,11 +746,11 @@ int read_subtitle_file()
 
 int get_inter_spu_packet(int pts)
 {
-	LOGI(" search pts %d , s %d \n",pts,pts/90);
+	LOGI(" search pts %x , s %x \n",pts,pts/90);
 	
 	int storenumber=(file_position>=read_position)?file_position-read_position:sublen+file_position-1-read_position;
 	
-	LOGI("inter_subtitle_data[%d].subtitle_pts is %d storenumber=%d end_time %d\n",
+	LOGI("inter_subtitle_data[%d].subtitle_pts is %x storenumber=%d end_time %x\n",
 		read_position,inter_subtitle_data[read_position].subtitle_pts,storenumber,
 		inter_subtitle_data[read_position].subtitle_delay_pts);
 
@@ -708,9 +763,11 @@ int get_inter_spu_packet(int pts)
 		else 
 			break;
 	}
-
-	if(inter_subtitle_data[read_position].subtitle_pts > pts ||	inter_subtitle_data[read_position].subtitle_pts < (pts - 10*90000))
-		return -1;
+	
+	if(get_inter_spu_type() != SUBTITLE_PGS) {
+		if(inter_subtitle_data[read_position].subtitle_pts > pts ||	inter_subtitle_data[read_position].subtitle_pts < (pts - 10*90000))
+			return -1;
+	}
 
 	LOGI("get_inter_spu_packet  read_position is %d  file_position is %d  ,time is %d\n",read_position,file_position,inter_subtitle_data[read_position].subtitle_pts);
 	return read_position;
@@ -720,6 +777,11 @@ int get_inter_spu_type()
 {
 	LOGI(" inter_subtitle_data[%d] subtitle_type is 0x%x\n",read_position,inter_subtitle_data[read_position].subtitle_type);
 	return inter_subtitle_data[read_position].subtitle_type;
+}
+
+int get_sub_type_for_pgs()
+{
+	return subtitle_type_for_pgs;
 }
 
 int get_subtitle_buffer_size()
@@ -749,6 +811,16 @@ int get_inter_spu_size()
 	{
 		LOGI(" inter_subtitle_data[%d] data_size is 0x%x\n",read_position,inter_subtitle_data[read_position].data_size);
 		return inter_subtitle_data[read_position].data_size/4;
+	} 
+	else if (get_inter_spu_type()==SUBTITLE_DVB)
+	{
+		int subtitle_width = inter_subtitle_data[read_position].subtitle_width;
+		int subtitle_height = inter_subtitle_data[read_position].subtitle_height;
+		if(subtitle_width * subtitle_height == 0)
+			return 0;
+		int buffer_width = (subtitle_width+63)&0xffffffc0;
+		LOGI("## subtitle width is %d: subtitle height is %d, buffer width is %d, size=%d,\n",subtitle_width, subtitle_height, buffer_width, buffer_width*subtitle_height);
+		return buffer_width*subtitle_height;
 	}
 	return 0;
 }
@@ -770,6 +842,10 @@ int get_inter_spu_height()
 	//return inter_subtitle_data[read_position].subtitle_height;
 }
 
+int get_inter_spu_pts()
+{
+	return inter_subtitle_data[read_position].subtitle_pts;
+}
 
 int get_inter_spu_delay()
 {
@@ -940,9 +1016,65 @@ int *parser_inter_spu(int *buffer)
 	return NULL;
 }
 
+int *parser_inter_spu2(int *buffer)
+{
+    LOGI("enter parser_inter_sup \n\n");
+	
+    unsigned char *data = NULL;
+    int i=0,j=0;
+    unsigned int *result_buf = (unsigned int *)buffer;
+    unsigned short buffer_width, buffer_height;
+    int start_height = -1, end_height = 0;
+    int x_start = buffer_width, x_end = 0;
+	
+    buffer_width = inter_subtitle_data[read_position].subtitle_width;
+    buffer_height = inter_subtitle_data[read_position].subtitle_height;
+	
+    int buffer_width_size = (buffer_width+63)&0xffffffc0;
+    LOGI("(width=%d,height=%d),buffer_width_size=%d, -----\n",buffer_width, buffer_height, buffer_width_size);
+
+    for (i=0;i<buffer_height;i++){
+        data = inter_subtitle_data[read_position].data+i*buffer_width*4;
+        for (j=0;j<buffer_width;j++){
+            data += 4;
+            if(start_height < 0){
+                start_height = i;
+            }
+            end_height = i;
+            if(j < x_start)
+                x_start = j;
+            
+            result_buf[i*(buffer_width_size)+j] = data[0] << 24;
+            result_buf[i*(buffer_width_size)+j] |= data[1] << 16;
+            result_buf[i*(buffer_width_size)+j] |= data[2] << 8;
+            result_buf[i*(buffer_width_size)+j] |= data[3];
+            //if ((i<2) && (j<8))
+            //    LOGI("##, parser_inter_spu2:[%d][%d] %d, %4x,-- %4x,%4x,%4x,%4x,%4x,%4x,%4x,%4x,---\n",j,i,(i*(buffer_width_size)+j), result_buf[i*(buffer_width_size)+j],data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7]);
+
+            if(j > x_end)
+                x_end = j;		
+        }
+    }
+    LOGI("##, parser_inter_spu2:addr:%4x, %4x,%4x,%4x,%4x,%4x,%4x,%4x,%4x,---\n",result_buf,
+        result_buf[0], result_buf[1],result_buf[2],result_buf[3],result_buf[4],result_buf[5],result_buf[6],result_buf[7]);
+    inter_subtitle_data[read_position].resize_xstart = x_start;
+    inter_subtitle_data[read_position].resize_ystart = start_height;
+    inter_subtitle_data[read_position].resize_width = (x_end - x_start + 1 + 63)&0xffffffc0;
+    inter_subtitle_data[read_position].resize_height = end_height - start_height + 1;
+    inter_subtitle_data[read_position].resize_size = inter_subtitle_data[read_position].resize_height * \
+        inter_subtitle_data[read_position].resize_width;
+    LOGI("resize startx is %d\n\n",inter_subtitle_data[read_position].resize_xstart);
+    LOGI("resize starty is %d\n\n",inter_subtitle_data[read_position].resize_ystart);
+    LOGI("resize height is %d\n\n",inter_subtitle_data[read_position].resize_height);
+    LOGI("resize_width is %d xstart:%d, xend:%d,\n\n",inter_subtitle_data[read_position].resize_width, x_start, x_end);
+    LOGI("start_heigth is %d end_height:%d buffer_width_size=%d, \n\n",start_height, end_height, buffer_width_size);
+
+    return (result_buf+start_height*buffer_width_size);
+}
+
 int get_inter_spu()
 {  
-	LOGI("get_inter_spu\n");
+	LOGI("## get_inter_spu aml_sub_handle=%d, ----------\n", aml_sub_handle);
 	
 	if(aml_sub_handle < 0){
 		aml_sub_handle = open(SUBTITLE_READ_DEVICE,O_RDONLY);
@@ -975,7 +1107,12 @@ int get_inter_spu()
 int close_subtitle()
 {
 	LOGI("----------------------close_subtitle------------------------------");
-
+	dvbsub_close_decoder();
+	if (restbuf) {
+		free(restbuf);
+		restbuf = NULL;
+	}
+	restlen = 0;
 	int i=0;
 	for(i=0; i<MAX_SUBTITLE_PACKET_WRITE; i++){
 		if(inter_subtitle_data[i].data)
@@ -985,5 +1122,12 @@ int close_subtitle()
 	}
 	file_position = 0;
 	read_position = 0;
+    if (aml_sub_handle >= 0) {
+        close(aml_sub_handle);
+        aml_sub_handle = -1;
+    }
+	
 	return 0;
 }
+
+

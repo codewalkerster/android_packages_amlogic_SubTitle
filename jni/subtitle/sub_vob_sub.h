@@ -3,7 +3,7 @@
 
 #include "sub_subtitle.h"
 
-int get_vob_spu(char *input_buf, unsigned length, AML_SPUVAR *spu);
+int get_vob_spu(char *input_buf, int *buf_size, unsigned length, AML_SPUVAR *spu);
 
 typedef enum
 {

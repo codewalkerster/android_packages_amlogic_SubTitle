@@ -20,15 +20,24 @@ import android.graphics.Typeface;
 import android.widget.LinearLayout;
 
 public class SubtitleView extends FrameLayout {
-	private static final String TAG = SubtitleView.class.getSimpleName();
-	private boolean needSubTitleShow = true;
-	private int timeoffset = 400;
-	private SubData data = null;
-	private int graphicViewMode = 0;
-	private float wscale = 1.000f;
-	private float hscale = 1.000f;
-	private ImageView mImageView = null;
-	private TextView mTextView = null;
+    private static final String TAG = SubtitleView.class.getSimpleName();
+    private boolean needSubTitleShow = true;
+    private int timeoffset = 400;
+    private SubData data = null;
+    private int graphicViewMode = 0;
+    private float wscale = 1.000f;
+    private float hscale = 1.000f;
+    private ImageView mImageView = null;
+    private TextView mTextView = null;
+
+    //add for pgs show
+    private SubData dataPgsA = null;
+    private SubData dataPgsB = null;
+    private boolean dataPgsAValid = false;
+    private boolean dataPgsBValid = false;
+    private boolean dataPgsAShowed = false;
+    private boolean dataPgsBShowed = false;
+    private final int SUBTITLE_PGS = 2;
 	
 	public void setGraphicSubViewMode(int flag) {
 		graphicViewMode = flag;
@@ -107,33 +116,61 @@ public class SubtitleView extends FrameLayout {
 		this.removeAllViews();
 		this.requestLayout();
 	}
+
+    public void redraw(SubData data) {
+        this.removeAllViews();
+        if(data != null) {
+            if(data.subSize() > 0) {
+                if(data.gettype() == 1) {	
+                    evaluteScale(data.getSubBitmap());
+                    Bitmap inter_bitmap = creatBitmapByScale(data.getSubBitmap(), wscale, wscale);
+                    if((inter_bitmap != null) && (mImageView != null)) {
+                        mImageView.setImageBitmap(inter_bitmap);
+                        this.addView(mImageView);
+                    }
+                }
+                else {
+                    String sttmp = data.getSubString();		
+                    sttmp=sttmp.replaceAll("\r","");
+                    byte sttmp_2[] = sttmp.getBytes();
+                    if( sttmp_2.length > 0 && 0 == sttmp_2[ sttmp_2.length-1] )
+                        sttmp_2[ sttmp_2.length-1] = 0x20;
+                    if(mTextView != null) {
+                        mTextView.setText( new String( sttmp_2 ) );
+                        this.addView(mTextView);
+                    }
+                }
+            }
+        }
+        this.requestLayout();
+    }
 	
-	public void redraw() {
-		this.removeAllViews();
-		if(data != null) {
-			if(data.gettype() == 1) {	
-				evaluteScale(data.getSubBitmap());
-				Bitmap inter_bitmap = creatBitmapByScale(data.getSubBitmap(), 
-						wscale, wscale);
-				if((inter_bitmap != null) && (mImageView != null)) {
-					mImageView.setImageBitmap(inter_bitmap);
-					this.addView(mImageView);
-				}
-			}
-			else {
-				String sttmp = data.getSubString();		
-				sttmp=sttmp.replaceAll("\r","");
-				byte sttmp_2[] = sttmp.getBytes();
-				if( sttmp_2.length > 0 && 0 == sttmp_2[ sttmp_2.length-1] )
-					sttmp_2[ sttmp_2.length-1] = 0x20;
-				if(mTextView != null) {
-					mTextView.setText( new String( sttmp_2 ) );
-					this.addView(mTextView);
-				}
-		    }
-		}
-		this.requestLayout();
-	}
+    public void redraw() {
+        this.removeAllViews();
+        if(data != null) {
+            if(data.gettype() == 1) {	
+                evaluteScale(data.getSubBitmap());
+                Bitmap inter_bitmap = creatBitmapByScale(data.getSubBitmap(), 
+                wscale, wscale);
+                if((inter_bitmap != null) && (mImageView != null)) {
+                    mImageView.setImageBitmap(inter_bitmap);
+                    this.addView(mImageView);
+                }
+            }
+            else {
+                String sttmp = data.getSubString();		
+                sttmp=sttmp.replaceAll("\r","");
+                byte sttmp_2[] = sttmp.getBytes();
+                if( sttmp_2.length > 0 && 0 == sttmp_2[ sttmp_2.length-1] )
+                    sttmp_2[ sttmp_2.length-1] = 0x20;
+                if(mTextView != null) {
+                    mTextView.setText( new String( sttmp_2 ) );
+                    this.addView(mTextView);
+                }
+            }
+        }
+        this.requestLayout();
+    }
 
 	public void setDisplayResolution(int width, int height) {
 		SubManager.getinstance().setDisplayResolution(width, height);
@@ -220,28 +257,135 @@ public class SubtitleView extends FrameLayout {
 		Bitmap resizedBitmap = Bitmap.createBitmap(bitmap, 0, 0, w, h, matrix, true );   
 		return resizedBitmap;   
 	}
-	
-	public void tick(int millisec) {
-		if(needSubTitleShow == false) {
-			return;
-		}
 
-		int modifytime = millisec + timeoffset;
-		if(data != null) {
-			if((modifytime >= data.beginTime()) && (modifytime <= data.endTime())) {
-				if(getVisibility() == View.GONE)
-					return ;
-			}
-			else {
-				data = SubManager.getinstance().getSubData(modifytime);
-			}
-		}
-		else {
-			data = SubManager.getinstance().getSubData(modifytime);
-		}
-		
-		redraw();
-	}
+    /*
+    suppose pgs data as follow:
+    dataPgsA: size>0 startpts>0 delay=0 (show subtitle)
+    dataPgsB: size=0 startpts>0 delay=0 (show blank)
+    */
+    private void getDataForPsgA(int curTime) {
+        data = SubManager.getinstance().getSubData(curTime);
+        if(data != null) {
+            if((data.subSize() > 0) && (data.beginTime() > 0)) {
+                dataPgsA = data;
+                dataPgsAValid = true;
+                dataPgsBValid = false; //after get dataPgsA, should get dataPgsB then
+            }
+        }
+    }
+
+    private void getDataForPsgB(int curTime) {
+        data = SubManager.getinstance().getSubData(curTime);
+        if(data != null) {
+            //if((data.subSize() == 0) && (data.beginTime() > 0)) {
+            if(data.beginTime() > 0) {
+                dataPgsB = data;
+                dataPgsBValid = true;
+            }
+        }
+    }
+
+    public int getSubTypeDetial() {
+        return SubManager.getinstance().getSubTypeDetial();
+    }
+
+    private boolean resetForSeek = false;
+    public void resetForSeek() {
+        resetForSeek = true;
+    }
+    
+    public void tick(int millisec) {
+        if(needSubTitleShow == false) {
+            return;
+        }
+
+        //add for pgs
+        SubData datatmp = null;
+
+        int modifytime = millisec + timeoffset;
+        /*if((getSubTypeDetial() == 0) ||(getSubTypeDetial() == -1)) {
+            return;
+        }
+        else */if(getSubTypeDetial() == SUBTITLE_PGS) {
+            Log.i(TAG,"[tick]data:"+data+",dataPgsAValid:"+dataPgsAValid+",dataPgsBValid:"+dataPgsBValid+",modifytime:"+modifytime);
+			if(resetForSeek) {
+                this.removeAllViews();
+                this.requestLayout();
+                data = null;
+                dataPgsAValid = false;
+                dataPgsBValid = false;
+                dataPgsAShowed = false;
+                dataPgsBShowed = false;
+                resetForSeek = false;
+            }
+            if(data == null) {
+                if(dataPgsAValid == false) {
+                    getDataForPsgA(modifytime);
+                }
+                else if(dataPgsBValid == false) {
+                    getDataForPsgB(modifytime);
+                }
+                else {
+                    // TODO:
+                    //dataPgsAValid = true
+                    //dataPgsBValid = true
+                    //data = null
+                    //error status
+                    Log.i(TAG,"dataPgsAValid = true, dataPgsBValid = true, data = null, error status");
+                }
+            }
+            else { //data != null
+                if((dataPgsBValid == true) && (dataPgsAShowed == true))  {
+                    Log.i(TAG,"[tick]dataPgsB.beginTime():"+dataPgsB.beginTime());
+                    if(modifytime >= dataPgsB.beginTime()) {
+                        redraw(dataPgsB);
+                        dataPgsAShowed = false;
+                        //dataPgsBShowed = true;
+                        dataPgsAValid = false; //current showing dataPgsB, reset dataPgsAValid and get dataPgsA in any case
+                        getDataForPsgA(modifytime);
+                    }
+                    else {
+                        // TODO:
+                        //dataPgsBValid = true means dataPgsAValid is true meanwhile, handle in dataPgsAValid = true case
+                    }
+                }
+                else if(dataPgsAValid == true) {
+                    //enter this case means dataPgsBValid=fasle, should get dataPgsB 
+                    Log.i(TAG,"[tick]dataPgsA.beginTime():"+dataPgsA.beginTime());
+                    if(modifytime >= dataPgsA.beginTime()) {
+                        redraw(dataPgsA);
+                        dataPgsAShowed = true;
+                    }
+                    else {
+                        // TODO:
+                        // here means dataPgsA is valid, but current time still small than dataPgsA start time
+                    }
+                    if(dataPgsBValid == false) {
+                        getDataForPsgB(modifytime);
+                    }
+                }
+                else {
+                    //dataPgsAValid = false, dataPgsBValid = false, should get dataPgsA immediately
+                    getDataForPsgA(modifytime);
+                }
+            }
+        }
+        else {
+            if(data != null) {
+                if((modifytime >= data.beginTime()) && (modifytime <= data.endTime())) {
+                    if(getVisibility() == View.GONE)
+                        return ;
+                }
+                else {
+                    data = SubManager.getinstance().getSubData(modifytime);
+                }
+            }
+            else {
+                data = SubManager.getinstance().getSubData(modifytime);
+            }
+            redraw();
+        }
+    }
 	
 	public void setDelay(int milsec) {
 		timeoffset = milsec;
@@ -253,14 +397,37 @@ public class SubtitleView extends FrameLayout {
     }
     
     public void closeSubtitle() {
-    	SubManager.getinstance().closeSubtitle();
+        data = null;
+        dataPgsA = null;
+        dataPgsB = null;
+        dataPgsAValid = false;
+        dataPgsBValid = false;
+        dataPgsAShowed = false;
+        dataPgsBShowed = false;
+        resetForSeek = false;
+        SubManager.getinstance().closeSubtitle();
     }
 
-	public Subtitle.SUBTYPE setFile(SubID file, String enc) throws Exception {
-		Subtitle.SUBTYPE tmp =SubManager.getinstance().setFile(file, enc);
-		data = null;
-		return tmp;
-	}
+    public void startSubThread() {
+        Log.i(TAG,"startSubThread");
+        SubManager.getinstance().startSubThread();
+    }
+
+    public void stopSubThread() {
+        SubManager.getinstance().stopSubThread();
+    }
+
+    public Subtitle.SUBTYPE setFile(SubID file, String enc) throws Exception {
+        data = null;
+        dataPgsA = null;
+        dataPgsB = null;
+        dataPgsAValid = false;
+        dataPgsBValid = false;
+        dataPgsAShowed = false;
+        dataPgsBShowed = false;
+        Subtitle.SUBTYPE tmp =SubManager.getinstance().setFile(file, enc);
+        return tmp;
+    }
 
 	public SubtitleApi getSubtitleFile() {
 		return SubManager.getinstance().getSubtitleFile();

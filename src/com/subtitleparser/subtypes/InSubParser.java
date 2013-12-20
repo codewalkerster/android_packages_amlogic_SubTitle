@@ -22,80 +22,133 @@ import com.subtitleparser.SubtitleParser;
 
 class InSubApi extends SubtitleApi
 {
-	native  RawData getrawdata(int millisec); 
-	native int setInSubtitleNumberByJni(int  ms,String filename);
-	native  void closeInSub( );
+    native  RawData getrawdata(int millisec); 
+    native int setInSubtitleNumberByJni(int  ms,String filename);
+    native  void closeInSub( );
+    native  int getInSubType( );
 
-	private static final String SUBTITLE_FILE = "/data/subtitle.db";
-	private static final String WRITE_SUBTITLE_FILE = "/data/subtitle_img.jpeg";
-	private static int subtitle_packet_size = (4+1+4+4+2+2+2+2+2+4+720*576/4);
-	public  static int subtitle_file_position = 0;
-	private static int sync_byte = 0;
-	private static int packet_size = 0;
-	private static int read_bytes = 0;
-	private static int subtitle_width = 0;
-	private static int subtitle_height = 0;
-	private static int subtitle_alpha = 0;
-	private static int subtitle_pts = 0;
-	public  static int subtitle_delay = 0;
-	private static RawData inter_data = null;
-	private static Bitmap bf_show=null;
-	
-	 private Bitmap bitmap=null;
-	 private String filename=null;
-	 int index=0;
-	 InSubApi(String file1,int id)
-	 {
-	 	 filename=file1;
-	 	 index=id;
-	 	 setInSubtitleNumberByJni(index,filename);
-	 };
-	 public void closeSubtitle( )
-	 {
-		Log.i("InSubApi",	"closeSubtitle");
-		 closeInSub();
-	 }
-	 public Subtitle.SUBTYPE type()
-	 {
-		 return Subtitle.SUBTYPE.INSUB;
-	 }
-	 public SubData getdata(int millisec )
-	 {
-		 //add  value to bitmap
-		 //add  value to begingtime,endtime
-		 inter_data = getrawdata(millisec);
-		 if(inter_data != null){
-			 if(inter_data.type==1)
-			 {
-			 	bf_show = Bitmap.createBitmap(inter_data.rawdata, inter_data.width,
-					inter_data.height, Config.ARGB_8888);
-				
-				Log.i("SubData",	"time b: " + millisec+"  e:"+inter_data.sub_delay);
-				if(inter_data.sub_delay>millisec)
-					return new SubData( bf_show, millisec,inter_data.sub_delay);
-				else
-				    return new SubData( bf_show, millisec,millisec+1500);					 
-			 }
-			 else 
-			 {
-				Log.i("InSubApi",	"get SubData by string  delay time :"+inter_data.sub_delay);
-				if(inter_data.sub_delay>millisec)
-					return new SubData( inter_data.subtitlestring, millisec,inter_data.sub_delay);		
-				else
-					return new SubData( inter_data.subtitlestring, millisec,millisec+1500);				 
-			 }
-		 }else
-		 {
-			Log.i("InSubApi",	"get subdata return null");
-//			int[] data = new int[1];
-//			Arrays.fill(data, 0x00000000);
-//			bitmap= Bitmap.createBitmap( data,  1,  1, Config.ARGB_8888  ) ;	
-//	 		return new SubData( bitmap, millisec, millisec+300);
-			return null;
-		}
+    private final int SUBTITLE_VOB = 1;
+    private final int SUBTITLE_PGS = 2;
+    private final int SUBTITLE_MKV_STR = 3;
+    private final int SUBTITLE_MKV_VOB = 4;
+    private final int SUBTITLE_SSA = 5;
 
-		
-	 };
+    private static final String SUBTITLE_FILE = "/data/subtitle.db";
+    private static final String WRITE_SUBTITLE_FILE = "/data/subtitle_img.jpeg";
+    private static int subtitle_packet_size = (4+1+4+4+2+2+2+2+2+4+720*576/4);
+    public  static int subtitle_file_position = 0;
+    private static int sync_byte = 0;
+    private static int packet_size = 0;
+    private static int read_bytes = 0;
+    private static int subtitle_width = 0;
+    private static int subtitle_height = 0;
+    private static int subtitle_alpha = 0;
+    private static int subtitle_pts = 0;
+    public  static int subtitle_delay = 0;
+    private static RawData inter_data = null;
+    private static Bitmap bf_show=null;
+
+    private Bitmap bitmap=null;
+    private String filename=null;
+    int index=0;
+    InSubApi(String file1,int id)
+    {
+        filename=file1;
+        index=id;
+        setInSubtitleNumberByJni(index,filename);
+    };
+    public int getSubTypeDetial() {
+        Log.i("InSubApi",	"getInSubType():"+getInSubType());
+        return getInSubType();
+    }
+    public void closeSubtitle( )
+    {
+        Log.i("InSubApi",	"closeSubtitle");
+        closeInSub();
+    }
+    public Subtitle.SUBTYPE type()
+    {
+        return Subtitle.SUBTYPE.INSUB;
+    }
+    public SubData getdata(int millisec )
+    {
+        //add  value to bitmap
+        //add  value to begingtime,endtime
+        inter_data = getrawdata(millisec);
+
+        //cause delay time always is zero for pgs format, so we should hadle it with special method
+        /*if(getInSubType() == 0) {
+            return null;
+        }
+        else */if(getInSubType() == SUBTITLE_PGS) {
+             if(inter_data != null ) {
+                if(inter_data.sub_start > 0) {
+                    if(inter_data.sub_size > 0) {
+                        if(inter_data.type==1) { //graphic subtitle)
+                            bf_show = Bitmap.createBitmap(inter_data.rawdata, inter_data.width,
+                                                            inter_data.height, Config.ARGB_8888);
+                            Log.i("getdata","[Bitmap]start time:"+millisec+",delay time:"+inter_data.sub_delay);
+                            return new SubData(bf_show, inter_data.sub_start, inter_data.sub_delay, inter_data.sub_size);
+                        }
+                        else {
+                            Log.i("getdata","[text]start time:"+inter_data.sub_start+",delay time:"+inter_data.sub_delay);
+                            return new SubData(inter_data.subtitlestring, inter_data.sub_start, inter_data.sub_delay, inter_data.sub_size);				 
+                        }
+                    }
+                    else if(inter_data.sub_size == 0){
+                        if(inter_data.type==1) { //graphic subtitle)
+                            Log.i("getdata","sub_size=0,[Bitmap]start time:"+millisec+",delay time:"+inter_data.sub_delay);
+                            //bf_show = null;
+                            bf_show = Bitmap.createBitmap(1, 1, Config.ARGB_8888);
+                            return new SubData(bf_show, inter_data.sub_start, inter_data.sub_delay, inter_data.sub_size);
+                        }
+                        else {
+                            Log.i("getdata","sub_size=0,[text]start time:"+inter_data.sub_start+",delay time:"+inter_data.sub_delay);
+                            return new SubData("", inter_data.sub_start, inter_data.sub_delay, inter_data.sub_size);				 
+                        }
+                    }
+                    else {
+                        return null;
+                     }
+                }
+                else {
+                    return null;
+                 }
+             }
+             else {
+                return null;
+             }
+        }
+        else {
+            if(inter_data != null) {
+                if(inter_data.type==1) {
+                    bf_show = Bitmap.createBitmap(inter_data.rawdata, inter_data.width,
+                                                                inter_data.height, Config.ARGB_8888);
+
+                    Log.i("SubData",	"time b: " + millisec+"  e:"+inter_data.sub_delay);
+                    if(inter_data.sub_delay>millisec)
+                        return new SubData( bf_show, millisec,inter_data.sub_delay);
+                    else
+                        return new SubData( bf_show, millisec,millisec+1500);					 
+                }
+                else {
+                    Log.i("InSubApi",	"get SubData by string  delay time :"+inter_data.sub_delay);
+                    if(inter_data.sub_delay>millisec)
+                        return new SubData( inter_data.subtitlestring, millisec,inter_data.sub_delay);		
+                    else
+                        return new SubData( inter_data.subtitlestring, millisec,millisec+1500);				 
+                }
+            }
+            else {
+                Log.i("InSubApi",	"get subdata return null");
+                //			int[] data = new int[1];
+                //			Arrays.fill(data, 0x00000000);
+                //			bitmap= Bitmap.createBitmap( data,  1,  1, Config.ARGB_8888  ) ;	
+                //	 		return new SubData( bitmap, millisec, millisec+300);
+                return null;
+            }
+        }
+    };
 	 
 		// 2-byte number
 		private static int SHORT_little_endian_TO_big_endian(int i)

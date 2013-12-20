@@ -329,8 +329,9 @@ rar_read(void *ptr, size_t size, size_t nmemb, rar_stream_t *stream)
 
 /**********************************************************************/
 
-static ssize_t
-get_line(char **lineptr, size_t *n, rar_stream_t *stream)
+//wxl delete for debug
+/*static ssize_t
+getline(char **lineptr, size_t *n, rar_stream_t *stream)
 {
     size_t res = 0;
     int c;
@@ -367,7 +368,7 @@ get_line(char **lineptr, size_t *n, rar_stream_t *stream)
 	return -1;
     (*lineptr)[res] = 0;
     return res;
-}
+}*/
 
 /**********************************************************************
  * MPEG parsing
@@ -1016,7 +1017,8 @@ vobsub_parse_one_line(vobsub_t *vob, rar_stream_t *fd)
 	size_t line_reserve = 0;
 	char *line = NULL;
     do {
-	line_size = get_line(&line, &line_reserve, fd);
+	//line_size = getline(&line, &line_reserve, fd);
+	line_size = -1; // wxl modify for debug
 	if (line_size < 0) {
         break;
     }

@@ -24,6 +24,9 @@ class TextSubApi extends SubtitleApi
 	 public void closeSubtitle( )
 	 {		 
 	 }
+        public int getSubTypeDetial() { 
+            return -1;
+        }
 	 public Subtitle.SUBTYPE type()
 	 {
 		 return Subtitle.SUBTYPE.SUB_COMMONTXT;
@@ -36,7 +39,7 @@ class TextSubApi extends SubtitleApi
         int endTimei = -1;
 
         try {
-            for (int i=0;i< sf.size();i++) {
+            for (int i=0;i< sf.size()-1;i++) {
                 sli = (SubtitleLine) sf.get(i);
                 endTimei = sli.getEnd().getMilValue();
                 slj = (SubtitleLine) sf.get(i+1);
@@ -90,6 +93,9 @@ class TextSubApi extends SubtitleApi
                     else
                         st = str;
                 }
+                if(st == null) {
+		    return null;
+		}
                 st=st.replaceAll( "\\{(.*?)\\}","" );
                 st=st.replaceAll( "\\\\N","\\\n" );
                 st=st.replaceAll( "\\\\h","" );
@@ -98,6 +104,7 @@ class TextSubApi extends SubtitleApi
                 st=st.replaceAll( "\\{\\\\fad.*?\\}","" );
                 st=st.replaceAll( "\\{\\\\be.*?\\}","" );
                 st=st.replaceAll( "\\{\\\\pos.*?\\}","" );
+                
                 return new SubData(st,0,0);
             }
             

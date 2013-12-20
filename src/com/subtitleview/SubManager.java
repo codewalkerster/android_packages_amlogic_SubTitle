@@ -34,6 +34,18 @@ public class SubManager{
 		video_width = 0;
 		video_height = 0;
 	}
+
+        public void startSubThread() {
+            if(subtitle != null) {
+                subtitle.startSubThread();
+            }
+        }
+
+        public void stopSubThread() {
+            if(subtitle != null) {
+                subtitle.stopSubThread();
+            }
+        }
 	
 	public Subtitle.SUBTYPE setFile(SubID file, String enc) throws Exception {
 		if(subapi != null) {
@@ -130,6 +142,13 @@ public class SubManager{
     }
 	public SubtitleApi getSubtitleFile() {
 		return subapi;
+	}
+
+        public int  getSubTypeDetial() {
+		if(subapi != null) {
+		    return subapi.getSubTypeDetial();
+		}
+		return -1;
 	}
 	
 	public SubData getSubData(int ms) {

@@ -146,8 +146,17 @@ public class Subtitle {
 			return null;
 	}
 
+    public void startSubThread() {
+        startSubThreadByJni();
+    }
+
+    public void stopSubThread() {
+        stopSubThreadByJni();
+    }
 
     public static native SubtitleFile parseSubtitleFileByJni(String fileName,String encode);
+    native void startSubThreadByJni();
+    native void stopSubThreadByJni();
 
 
 
@@ -231,16 +240,28 @@ public class Subtitle {
 	private static String checkEncoding(String fileName, String enc)
 	{
 		BufferedInputStream bis = null;
+             FileInputStream fin = null;
 		byte[] first3Bytes=new byte[3];
 		String charset=enc;
 
+             int idx = fileName.indexOf("INSUB");
+             Log.i("subtitle","[checkEncoding]fileName:"+fileName+",idx:"+idx);
+             if(idx != -1) {
+                return charset;
+             }
+
 		try {
-			bis = new BufferedInputStream(new FileInputStream(new File(fileName)));
+                    fin = new FileInputStream(new File(fileName));
+			bis = new BufferedInputStream(fin);
 			bis.mark(0);
 			int r =bis.read( first3Bytes, 0, 3) ;
 			if(r == -1)
 			{
-				return charset;
+                        if(fin != null)
+                            fin.close();
+                        if(bis != null)
+                            bis.close();
+                        return charset;
 			}
 
 
@@ -271,6 +292,11 @@ public class Subtitle {
             	}
             }
 
+                if(fin != null)
+                    fin.close();
+                if(bis != null)
+                    bis.close();
+
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -293,14 +319,19 @@ public class Subtitle {
 		int i=0;
 		byte[] probeBytes=new byte[size];
 		BufferedInputStream bis = null;
+             FileInputStream fin = null;
 
 
 		int r=0;
 		try {
-			bis = new BufferedInputStream(new FileInputStream(new File(fileName)));
+                    fin = new FileInputStream(new File(fileName));
+			bis = new BufferedInputStream(fin);
 			bis.mark(0);
 			r = bis.read( probeBytes, 0, size);
-			
+                    if(fin != null)
+                        fin.close();
+                    if(bis != null)
+                        bis.close();
 
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

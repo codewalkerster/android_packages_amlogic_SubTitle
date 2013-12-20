@@ -59,6 +59,7 @@ public class FileIO {
 	public static Subtitle.SUBTYPE dectFileType(String filePath,String encoding)
 	{
 		BufferedReader input = null;
+             Subtitle.SUBTYPE type = Subtitle.SUBTYPE.SUB_INVALID;
 		int testMaxLines =60;
 		Pattern MICRODVD_Pattern = Pattern.compile("\\{\\d+\\}\\{\\d+\\}");
 		Pattern MICRODVD_Pattern_2 = Pattern.compile("\\{\\d+\\}\\{\\}");
@@ -89,99 +90,122 @@ public class FileIO {
 					Log.v("dectFileType"," -----new line--------"+(60-testMaxLines)+"  "+line);
 					if(line.length()>3000)
 					{
-						return Subtitle.SUBTYPE.SUB_INVALID;
+						type = Subtitle.SUBTYPE.SUB_INVALID;
+                                        break;
 					}
 
 					testMaxLines--;
 					if(line==null)
 					{
-						return Subtitle.SUBTYPE.SUB_INVALID;
+						type = Subtitle.SUBTYPE.SUB_INVALID;
+                                        break;
 					}
 					if(line.startsWith("Dialogue: "))
 					{
-						return Subtitle.SUBTYPE.SUB_SSA;	
+						type = Subtitle.SUBTYPE.SUB_SSA;
+                                        break;
 					}
 					matcher=MICRODVD_Pattern.matcher(line);
 					if(matcher.find())
 					{
-						return Subtitle.SUBTYPE.SUB_MICRODVD;
+						type = Subtitle.SUBTYPE.SUB_MICRODVD;
+                                        break;
 					}
 
 					matcher=MICRODVD_Pattern_2.matcher(line);
 					if(matcher.find())
 					{
-						return Subtitle.SUBTYPE.SUB_MICRODVD ;
+						type = Subtitle.SUBTYPE.SUB_MICRODVD ;
+                                        break;
 					}
 					matcher=SUB_MPL2_Pattern.matcher(line);
 					if(matcher.find())
 					{
-						return Subtitle.SUBTYPE.SUB_MPL2;
+						type = Subtitle.SUBTYPE.SUB_MPL2;
+                                        break;
 					}
 					matcher=SUBRIP_Pattern.matcher(line);
 					if(matcher.find())
 					{
-						return Subtitle.SUBTYPE.SUB_SUBRIP;
+						type = Subtitle.SUBTYPE.SUB_SUBRIP;
+                                        break;
 					}
 					matcher=SUBVIEWER_Pattern.matcher(line);
 					if(matcher.find())
 					{
-						return Subtitle.SUBTYPE.SUB_SUBVIEWER;
+						type = Subtitle.SUBTYPE.SUB_SUBVIEWER;
+                                        break;
 					}
 					matcher=SUBVIEWER2_Pattern.matcher(line);
 					if(matcher.find())
 					{
-						return Subtitle.SUBTYPE.SUB_SUBVIEWER2;
+						type = Subtitle.SUBTYPE.SUB_SUBVIEWER2;
+                                        break;
 					}
 					matcher=SAMI_Pattern.matcher(line);
 					if(matcher.find())
 					{
-						return Subtitle.SUBTYPE.SUB_SAMI;
+						type = Subtitle.SUBTYPE.SUB_SAMI;
+                                        break;
 					}
 					matcher=JACOSUB_Pattern.matcher(line);
 					if(matcher.find())
 					{
-						return Subtitle.SUBTYPE.SUB_JACOSUB;
+						type = Subtitle.SUBTYPE.SUB_JACOSUB;
+                                        break;
 					}
 					matcher=JACOSUB_Pattern_2.matcher(line);
 					if(matcher.find())
 					{
-						return Subtitle.SUBTYPE.SUB_JACOSUB;
+						type = Subtitle.SUBTYPE.SUB_JACOSUB;
+                                        break;
 					}
 					matcher=VPLAYER_Pattern.matcher(line);
 					if(matcher.find())
 					{
-						return Subtitle.SUBTYPE.SUB_VPLAYER;
+						type = Subtitle.SUBTYPE.SUB_VPLAYER;
+                                        break;
 					}
 					if(line.startsWith("<"))
 					{
-						return Subtitle.SUBTYPE.SUB_RT;
+						type = Subtitle.SUBTYPE.SUB_RT;
+                                        break;
 					}
 					matcher=PJS_Pattern.matcher(line);
 					if(matcher.find())
 					{
-						return Subtitle.SUBTYPE.SUB_PJS;					
+						type = Subtitle.SUBTYPE.SUB_PJS;
+                                        break;
 					}
 					matcher=MPSUB_Pattern.matcher(line);
 					if(matcher.find())
 					{
-						return Subtitle.SUBTYPE.SUB_MPSUB;					
+						type = Subtitle.SUBTYPE.SUB_MPSUB;	
+                                        break;
 					}
 					matcher=MPSUB_Pattern_2.matcher(line);
 					if(matcher.find())
 					{
-						return Subtitle.SUBTYPE.SUB_MPSUB;					
+						type = Subtitle.SUBTYPE.SUB_MPSUB;
+                                        break;
 					}
 					matcher=AQTITLE_Pattern.matcher(line);
 					if(matcher.find())
 					{
-						return Subtitle.SUBTYPE.SUB_AQTITLE;					
+						type = Subtitle.SUBTYPE.SUB_AQTITLE;
+                                        break;
 					}
 					matcher=SUBRIP9_Pattern.matcher(line);
 					if(matcher.find())
 					{
-						return Subtitle.SUBTYPE.SUB_SUBRIP09;					
+						type = Subtitle.SUBTYPE.SUB_SUBRIP09;
+                                        break;
 					}
 				}
+
+                            if(input != null)
+                                input.close();
+                            return type;
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

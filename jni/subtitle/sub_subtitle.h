@@ -5,12 +5,14 @@
 #define VOB_SUB_WIDTH 1920
 #define VOB_SUB_HEIGHT 1280
 #define VOB_SUB_SIZE VOB_SUB_WIDTH*VOB_SUB_HEIGHT/4
+#define DVB_SUB_SIZE VOB_SUB_WIDTH*VOB_SUB_HEIGHT
 
 #define SUBTITLE_VOB      1
 #define SUBTITLE_PGS      2
 #define SUBTITLE_MKV_STR  3
 #define SUBTITLE_MKV_VOB  4
 #define SUBTITLE_SSA  5     //add yjf
+#define SUBTITLE_DVB  6
 
 typedef struct 
 {
@@ -53,6 +55,10 @@ int get_spu(AML_SPUVAR *spu, int sub_fd);
 int release_spu(AML_SPUVAR *spu);
 int get_inter_spu();
 unsigned char spu_fill_pixel(unsigned short *pixelIn, char *pixelOut, AML_SPUVAR *sub_frame, int n);
-int add_pgs_end_time(int end_time);
+int add_sub_end_time(int end_time);
+int subtitle_thread_create();
+int init_subtitle_file();
+int close_subtitle();
+void set_subthread(int runing);
 
 #endif

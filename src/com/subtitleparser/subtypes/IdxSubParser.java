@@ -36,6 +36,9 @@ class IdxSubApi extends SubtitleApi
 	 {
 		 closeIdxSub();
 	 }
+        public int getSubTypeDetial() {
+            return -1;
+        }
 	 public Subtitle.SUBTYPE type()
 	 {
 		 return Subtitle.SUBTYPE.SUB_IDXSUB;

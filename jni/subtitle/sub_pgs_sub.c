@@ -403,7 +403,11 @@ static int pgs_decode(AML_SPUVAR *spu, unsigned char* buf)
             }
             else if(size==0xb){ //clearSubpictureHeader
             	LOGI("enter type 0x16,0xb, %d %d\n", start_time,end_time);
-            	add_pgs_end_time(start_time);
+
+		spu->subtitle_type = SUBTITLE_PGS;
+             spu->pts = start_time;
+             write_subtitle_file(spu);
+            	//add_pgs_end_time(start_time);
                 //subtitle_pgs_send_msg_bplay_show_subtitle(subtitle_pgs.cntl, BROADCAST_ALL, SUBTITLE_TYPE_PGS, 0);
             }
             else{
@@ -442,7 +446,8 @@ static int pgs_decode(AML_SPUVAR *spu, unsigned char* buf)
                 subtitle_pgs.showdata.rle_buf_size            =subtitle_pgs.pgs_info->rle_buf_size;
                 LOGI("decoder pgs data to show\n\n");
 				parser_one_pgs(spu);
-				return 0;
+				//return 0;
+				return 1;
             }
             break;
         case 0x80: //trailer
@@ -604,6 +609,8 @@ int get_pgs_spu(AML_SPUVAR *spu, int read_handle)
                         }
 						free(buf);                        
                     }
+					if(pgs_ret == 1)
+						goto pgs_decode_end;
 					continue;
                 }
             }
@@ -720,5 +727,6 @@ aml_soft_demux:
         }
     }
 	
+pgs_decode_end:
     return pgs_ret;
 }
