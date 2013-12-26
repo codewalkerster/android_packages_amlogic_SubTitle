@@ -547,6 +547,7 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 	     		spu->subtitle_type = SUBTITLE_VOB;
 	     		spu->buffer_size  = VOB_SUB_SIZE;
 				spu->spu_data = malloc(VOB_SUB_SIZE);
+				memset(spu->spu_data, 0, VOB_SUB_SIZE);
 				spu->pts = current_pts;
 				ret = get_vob_spu(spu_buf_piece+rd_oft, &restlen, current_length, spu); 
                 if (current_type==0x17000) {
@@ -659,7 +660,7 @@ int init_subtitle_file()
 	close_subtitle();
 	init_pgs_subtitle();
 	dvbsub_init_decoder();
-	
+    dvdsub_init_decoder();
 	restlen = 0;
 	return 0;
 }

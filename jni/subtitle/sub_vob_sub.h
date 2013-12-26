@@ -4,6 +4,7 @@
 #include "sub_subtitle.h"
 
 int get_vob_spu(char *input_buf, int *buf_size, unsigned length, AML_SPUVAR *spu);
+void dvdsub_init_decoder(void);
 
 typedef enum
 {

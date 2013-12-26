@@ -19,6 +19,8 @@
 #define  LOG_TAG    "sub_jni"
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+static uint32_t palette[16];
+static int has_palette = 0;
 
 unsigned short doDCSQC(unsigned char *pdata,unsigned char *pend)
 {
@@ -203,6 +205,58 @@ static int get_spu_cmd(AML_SPUVAR *sub_frame)
     return -1;
 }
 
+/**
+ * Locale-independent conversion of ASCII isspace.
+ */
+static int av_isspace(int c)
+{
+    return c == ' ' || c == '\f' || c == '\n' || c == '\r' || c == '\t' || c == '\v';
+}
+
+static void parse_palette(char *p)
+{
+    int i;
+
+    has_palette = 1;
+    for(i=0;i<16;i++) {
+        palette[i] = strtoul(p, &p, 16);
+        while(*p == ',' || av_isspace(*p))
+            p++;
+    }
+}
+
+static int dvdsub_parse_extradata(char *extradata, int extradata_size)
+{
+    char *dataorig, *data;
+
+    if (!extradata || !extradata_size)
+        return 1;
+
+	extradata += 5;
+	extradata_size -= 5;
+    dataorig = data = malloc(extradata_size+1);
+    if (!data)
+        return 1;
+    memcpy(data, extradata, extradata_size);
+    data[extradata_size] = '\0';
+
+    for(;;) {
+        int pos = strcspn(data, "\n\r");
+        if (pos==0 && *data==0)
+            break;
+
+        if (strncmp("palette:", data, 8) == 0) {
+            parse_palette(data + 8);
+        }
+
+        data += pos;
+        data += strspn(data, "\n\r");
+    }
+
+    free(dataorig);
+    return 1;
+}
+
 int get_vob_spu(char *spu_buf, int *bufsize, unsigned length, AML_SPUVAR *spu)
 {
 //	LOGI("spubuf  %x %x %x %x %x %x %x %x   %x %x %x %x %x %x %x %x  \n %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n",
@@ -218,6 +272,18 @@ int get_vob_spu(char *spu_buf, int *bufsize, unsigned length, AML_SPUVAR *spu)
 	unsigned short *ptrPXDRead;
 
 	rd_oft = 0;
+    if (spu_buf[0]=='E' && spu_buf[1]=='X' && spu_buf[2]=='T' && spu_buf[3]=='R' && spu_buf[4]=='A') {
+        LOGI("## extradata %x,%x,%x,%x,%x,%x,%x,%x, x,%x,%x,%x,%x,%x,%x,%x, ----------\n",
+            spu_buf[0],spu_buf[1],spu_buf[2],spu_buf[3],spu_buf[4],spu_buf[5],spu_buf[6],spu_buf[7],
+            spu_buf[8],spu_buf[9],spu_buf[10],spu_buf[11],spu_buf[12],spu_buf[13],spu_buf[14],spu_buf[15]);
+        dvdsub_parse_extradata(spu_buf, current_length);
+        rd_oft += current_length;
+        current_length = 0;
+        *bufsize -= rd_oft;
+		
+        return 0;
+    }
+	
 	spu->length = spu_buf[0]<<8;
 	spu->length |= spu_buf[1];
 	spu->cmd_offset = spu_buf[2]<<8;
@@ -257,6 +323,19 @@ int get_vob_spu(char *spu_buf, int *bufsize, unsigned length, AML_SPUVAR *spu)
 	}
 
     *bufsize -= rd_oft;
+
+    if(has_palette) {
+        spu->rgba_background = (palette[(spu->spu_color)&0x0f] & 0x00ffffff)
+                          | ((((spu->spu_alpha)&0x0f) * 17U) << 24);
+        spu->rgba_pattern1= (palette[(spu->spu_color>>4)&0x0f] & 0x00ffffff)
+                          | ((((spu->spu_alpha>>4)&0x0f) * 17U) << 24);
+        spu->rgba_pattern2 = (palette[(spu->spu_color>>8)&0x0f] & 0x00ffffff)
+                          | ((((spu->spu_alpha>>8)&0x0f) * 17U) << 24);
+        spu->rgba_pattern3 = (palette[(spu->spu_color>>12)&0x0f] & 0x00ffffff)
+                          | ((((spu->spu_alpha>>12)&0x0f) * 17U) << 24);
+        spu->rgba_enable = 1;
+    }
+
 	// if one frame data is ready, decode it.
 	LOGI("spu->frame_rdy is %d\n\n",spu->frame_rdy);
 	if (spu->frame_rdy == 1){
@@ -305,5 +384,14 @@ error:
 	return rd_oft;
 }
 
+void dvdsub_init_decoder(void)
+{
+    int i = 0;
+	
+    has_palette = 0;
+    for(i=0;i<16;i++) {
+        palette[i] = 0;
+    }
+}
 
 
