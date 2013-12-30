@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+      package="com.amlogic.SubTitleService"
+      android:versionCode="1"
+      android:versionName="1.0"
+      android:sharedUserId="android.uid.system"> 
+  <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />  
+  <uses-permission android:name="android.permission.SYSTEM_OVERLAY_WINDOW" /> 
+	<application>  
+			<service android:name=".SubTitleService">  
+			    <intent-filter>  
+			        <action android:name="com.amlogic.SubTitleService.SubTitleService"/>  
+			     </intent-filter>  
+			</service>  
+	</application>
+</manifest> 
