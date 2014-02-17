@@ -2,9 +2,11 @@ package com.amlogic.SubTitleService;
 
 import android.util.Log;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.IBinder;
 import java.lang.ref.WeakReference;
 import android.view.*;
@@ -119,7 +121,7 @@ public class SubTitleService extends Service {
         if(DEBUG) Log.i(TAG,"[onUnbind]");
         
         mServiceInUse = false;
-
+        unregisterConfigurationChangeReceiver();
         stopSelf(mServiceStartId);
         System.exit(0);
         return true;
@@ -156,6 +158,58 @@ public class SubTitleService extends Service {
         p.width = mWScreenx;//ViewGroup.LayoutParams.WRAP_CONTENT;
         p.height = mWScreeny;//ViewGroup.LayoutParams.WRAP_CONTENT;
         //if(DEBUG) Log.i(TAG,"[showSubtitleOverlay]mWm:"+mWm+",mSubView:"+mSubView);
+        mWm.addView(mSubView, p);
+        registerConfigurationChangeReceiver();
+    }
+
+    private void registerConfigurationChangeReceiver() {
+        IntentFilter intentFilter = new IntentFilter(Intent.ACTION_CONFIGURATION_CHANGED);
+        registerReceiver(mConfigurationChangeReceiver, intentFilter);
+        if(DEBUG) Log.i(TAG,"[registerConfigurationChangeReceiver]mConfigurationChangeReceiver:"+mConfigurationChangeReceiver);
+    }
+
+    private void unregisterConfigurationChangeReceiver() {
+        if(DEBUG) Log.i(TAG,"[unregisterConfigurationChangeReceiver]mConfigurationChangeReceiver:"+mConfigurationChangeReceiver);
+        if(mConfigurationChangeReceiver != null) {
+            unregisterReceiver(mConfigurationChangeReceiver);
+            mConfigurationChangeReceiver = null;
+        }
+    }
+
+    private BroadcastReceiver mConfigurationChangeReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            updateSubWinLayoutParams();
+        }
+    };
+
+    private void updateSubWinLayoutParams() {
+        if(DEBUG) Log.i(TAG,"[updateSubtitleWinLayoutParams]subShowState:"+subShowState);
+        if(subShowState == SUB_OFF)
+            return;
+        if(mWm == null)
+            return;
+        if(mSubView == null)
+            return;
+        if(p == null) 
+            return;
+        
+        p.type = LayoutParams.TYPE_SYSTEM_OVERLAY ;
+        p.format = PixelFormat.TRANSLUCENT;
+        p.flags = LayoutParams.FLAG_NOT_TOUCH_MODAL
+            | LayoutParams.FLAG_NOT_FOCUSABLE
+            | LayoutParams.FLAG_LAYOUT_NO_LIMITS;
+        p.gravity = Gravity.LEFT | Gravity.TOP; 
+        Display display = mWm.getDefaultDisplay();
+        int mWScreenx = display.getWidth();
+        int mWScreeny = display.getHeight();
+        p.x = 0;
+        p.y = 0;
+        p.width = mWScreenx;//ViewGroup.LayoutParams.WRAP_CONTENT;
+        p.height = mWScreeny;//ViewGroup.LayoutParams.WRAP_CONTENT;
+        if(DEBUG) Log.i(TAG,"[updateSubtitleWinLayoutParams]p.width:"+p.width+",p.height:"+p.height);
+        if(mWm != null) {
+            mWm.removeView(mSubView);
+        }
         mWm.addView(mSubView, p);
     }
 
