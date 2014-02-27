@@ -50,6 +50,7 @@ public class Subtitle {
 		 SUB_DIVX  ,
 		 SUB_IDXSUB,
 		 SUB_COMMONTXT,
+		 SUB_LRC,
 		 INSUB
 	}
 	private String filename=null;
@@ -194,6 +195,11 @@ public class Subtitle {
 //			input = FileIO.file2string(fileName, encoding);
 //			sp=new SamiParser(); 
 //			return sp.parse(input);
+             case SUB_LRC:
+                    Log.i("SubtitleFile", "--LrcSubParser--:"+fileName );
+                    input = FileIO.file2string(fileName, encoding);
+                    sp=new LrcSubParser(); 
+                    return sp.parse(input,index);
 		case SUB_MICRODVD:
 		case SUB_SUBRIP:
 		case SUB_SUBVIEWER:

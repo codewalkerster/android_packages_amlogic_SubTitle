@@ -29,6 +29,7 @@ public class SubtitleUtils {
         "rt",
         "ssa",
         "ass",
+        "lrc",
         "idx",
         "sub",
        /* "may be need add new types--------------" */};	

@@ -76,6 +76,7 @@ public class FileIO {
 		Pattern MPSUB_Pattern_2 = Pattern.compile("FORMAT=TIME");
 		Pattern AQTITLE_Pattern = Pattern.compile("-->>");
 		Pattern SUBRIP9_Pattern = Pattern.compile("\\[\\d+:\\d+:\\d+\\]");
+             Pattern LRC_Pattern = Pattern.compile("[\\d+:\\d+.\\d]+");
 
 		Matcher matcher=null;
 		try {
@@ -199,6 +200,12 @@ public class FileIO {
 					if(matcher.find())
 					{
 						type = Subtitle.SUBTYPE.SUB_SUBRIP09;
+                                        break;
+					}
+                                 matcher=LRC_Pattern.matcher(line);
+					if(matcher.find())
+					{
+						type = Subtitle.SUBTYPE.SUB_LRC;
                                         break;
 					}
 				}
