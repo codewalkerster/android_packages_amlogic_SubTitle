@@ -76,7 +76,7 @@ public class FileIO {
 		Pattern MPSUB_Pattern_2 = Pattern.compile("FORMAT=TIME");
 		Pattern AQTITLE_Pattern = Pattern.compile("-->>");
 		Pattern SUBRIP9_Pattern = Pattern.compile("\\[\\d+:\\d+:\\d+\\]");
-             Pattern LRC_Pattern = Pattern.compile("[\\d+:\\d+.\\d]+");
+             Pattern LRC_Pattern = Pattern.compile("\\[\\d+:\\d+.\\d+\\]"+"(.*?)");
 
 		Matcher matcher=null;
 		try {
