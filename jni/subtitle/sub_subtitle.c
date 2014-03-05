@@ -1079,6 +1079,7 @@ int get_inter_spu()
 	
 	if(aml_sub_handle < 0){
 		aml_sub_handle = open(SUBTITLE_READ_DEVICE,O_RDONLY);
+        return -1;
 	}
 	if(aml_sub_handle < 0){
 		LOGI("subtitle read device open fail\n");

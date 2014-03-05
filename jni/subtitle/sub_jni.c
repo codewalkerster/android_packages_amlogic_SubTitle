@@ -168,7 +168,7 @@ JNIEXPORT jint JNICALL getCurrentInSubtitleIndex
 JNIEXPORT void JNICALL closeInSubView (JNIEnv *env, jclass cl )  
 {
 	LOGE("jni closeInSubView!");
-	set_subtitle_enable(0);
+	//set_subtitle_enable(0);
 	close_subtitle();
 	sub_thread = 0;
 	subThreadRunning = 0;
