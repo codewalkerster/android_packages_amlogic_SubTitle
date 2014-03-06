@@ -6,7 +6,7 @@
       android:sharedUserId="android.uid.system"> 
   <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />  
   <uses-permission android:name="android.permission.SYSTEM_OVERLAY_WINDOW" /> 
-	<application android:persistent="true">  
+	<application>  
 			<service android:name=".SubTitleService">  
 			    <intent-filter>  
 			        <action android:name="com.amlogic.SubTitleService.SubTitleService"/>  

@@ -79,7 +79,7 @@ public class SubTitleService extends Service {
         super.onCreate();
         if(DEBUG) Log.i(TAG,"[onCreate]");
 
-        init();
+        initView();
     }
 
     @Override
@@ -127,18 +127,28 @@ public class SubTitleService extends Service {
         return true;
     }
 
-    private void showSubtitleOverlay() {
-        if(DEBUG) Log.i(TAG,"[showSubtitleOverlay]");
-        //LayoutInflater mInflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        //mSubView = mInflater.inflate(R.layout.subtitleview, null);
+    public void init() {
+        if(DEBUG) Log.i(TAG, "[init]");
+        if(subtitleServiceInited == false) {
+            subtitleServiceInited = true;
+            showSubtitleOverlay();
+        }
+    }
+
+    private void initView() {
+        mContext = SubTitleService.this;
         mSubView = LayoutInflater.from(mContext).inflate(R.layout.subtitleview, null);
-       
         subTitleView = (SubtitleView) mSubView.findViewById(R.id.subtitle);
         subTitleView.clear();
         subTitleView.setTextColor(Color.WHITE);
         subTitleView.setTextSize(28);
         subTitleView.setTextStyle(Typeface.BOLD);
         subTitleView.setViewStatus(true);
+        registerConfigurationChangeReceiver();
+    }
+
+    private void showSubtitleOverlay() {
+        if(DEBUG) Log.i(TAG,"[showSubtitleOverlay]");
         
         mWm = (WindowManager)mContext.getSystemService(Context.WINDOW_SERVICE);
         p = new WindowManager.LayoutParams();
@@ -159,7 +169,6 @@ public class SubTitleService extends Service {
         p.height = mWScreeny;//ViewGroup.LayoutParams.WRAP_CONTENT;
         //if(DEBUG) Log.i(TAG,"[showSubtitleOverlay]mWm:"+mWm+",mSubView:"+mSubView);
         mWm.addView(mSubView, p);
-        registerConfigurationChangeReceiver();
     }
 
     private void registerConfigurationChangeReceiver() {
@@ -326,15 +335,6 @@ public class SubTitleService extends Service {
         ((BaseAdapter) lv.getAdapter()).notifyDataSetChanged();  
     }
 
-    public void init() {
-        if(DEBUG) Log.i(TAG, "[init]");
-        if(subtitleServiceInited == false) {
-            subtitleServiceInited = true;
-            mContext = SubTitleService.this;
-            showSubtitleOverlay();
-        }
-    }
-
     private String setSublanguage() {
         String type=null;
         String able=mContext.getResources().getConfiguration().locale.getCountry();
@@ -397,7 +397,7 @@ public class SubTitleService extends Service {
     }
 
     public int getSubTotal() {
-        //if(DEBUG) Log.i(TAG,"[getSubTotal] subtitleUtils:"+subtitleUtils);
+        if(DEBUG) Log.i(TAG,"[getSubTotal] subtitleUtils:"+subtitleUtils);
         if(subtitleUtils != null) {
             subTotal = subtitleUtils.getSubTotal();
         }
@@ -496,7 +496,6 @@ public class SubTitleService extends Service {
     
     public void showSubContent(int position) {
         if(DEBUG) Log.i(TAG,"[showSubContent]position:"+position);
-
         if (position > 0 && mHandler != null) {
             if (subShowState == SUB_ON ) {
                 Message msg = mHandler.obtainMessage(SHOW_CONTENT);
@@ -600,6 +599,7 @@ public class SubTitleService extends Service {
             switch (msg.what) {
                 case SHOW_CONTENT:
                     if(subShowState == SUB_ON) {
+                        init();
                         int pos = msg.arg1;
                          if (pos > 0) {
                             if(subTitleView != null) {
