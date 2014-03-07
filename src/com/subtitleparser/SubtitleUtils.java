@@ -20,7 +20,8 @@ public class SubtitleUtils {
 //	private List<String> strlist = new ArrayList<String>();
 	private List<SubID> strlist = new ArrayList<SubID>();
 	private int exSubtotle=0;
-	
+	private boolean supportLrc = false; //lrc support
+    
     private static final String[] extensions = {
     	"txt",
         "srt",
@@ -109,22 +110,35 @@ public class SubtitleUtils {
 
       	File DirFile= subfile.getParentFile();
       	int idxindex=0;
+       boolean skipLrc = false;
       	
     	if(DirFile.isDirectory())
     	{
-	    	for (String file : DirFile.list()) 
-	    	{
-	    		if(file.startsWith(prefix))
-	    		{
-	    	        for (String ext : extensions) {
-	    	            if (file.toLowerCase().endsWith(ext))
-	    	            {
-	    	            	strlist.add(new SubID(DirFile.getAbsolutePath()+"/"+file,0));
-	    	            	break;
-	    	            }
-	    	        }	    			
-	    		}
-	    	}
+            for (String file : DirFile.list()) 
+            {
+                if(file.startsWith(prefix))
+                {
+                    for (String ext : extensions) {
+                        if (file.toLowerCase().endsWith(ext))
+                        {
+                            if(supportLrc == true)
+                            {
+                                skipLrc = false;
+                            }
+                            else
+                            {
+                                skipLrc = file.toLowerCase().endsWith("lrc"); //shield lrc file
+                            }
+                            
+                            if(!skipLrc) 
+                            {
+                                strlist.add(new SubID(DirFile.getAbsolutePath()+"/"+file,0));
+                            }
+                            break;
+                        }
+                    }	    			
+                }
+            }
 	    	for(SubID file : strlist)
 	    	{
 	    		if(file.filename.toLowerCase().endsWith("idx"))
