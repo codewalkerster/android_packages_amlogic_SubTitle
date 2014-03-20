@@ -66,7 +66,8 @@ public class SubTitleService extends Service {
     private static final int SET_GRAVITY = 0xF8;
     private static final int SET_POS_HEIGHT = 0xF9;
     private static final int HIDE = 0xFA;
-    private static final int CLEAR = 0xFB;
+    private static final int DISPLAY = 0xFB;
+    private static final int CLEAR = 0xFC;
     private static final long MSG_SEND_DELAY = 0; //0s
     private static final int SUB_OFF = 0;
     private static final int SUB_ON = 1;
@@ -269,7 +270,7 @@ public class SubTitleService extends Service {
                 else if(pos > 0) {
                     if(DEBUG) Log.i(TAG,"[option select]select subtitle "+(pos-1));
                     curSubId = (pos-1);
-                    sendCloseMsg();
+                    sendCloseMsg(); // TODO: maybe have bug for opening the same subtitle after hide
                     sendOpenMsg();
                 }
 
@@ -462,6 +463,10 @@ public class SubTitleService extends Service {
         sendHideMsg();
     }
 
+    public void display() {
+        sendDisplayMsg();
+    }
+
     public void clear() {
         sendClearMsg();
     }
@@ -585,6 +590,13 @@ public class SubTitleService extends Service {
         }
     }
 
+    private void sendDisplayMsg() {
+         if(mHandler != null) {
+            Message msg = mHandler.obtainMessage(DISPLAY);
+            mHandler.sendMessageDelayed(msg, MSG_SEND_DELAY);
+        }
+    }
+
     private void sendClearMsg() {
          if(mHandler != null) {
             Message msg = mHandler.obtainMessage(CLEAR);
@@ -676,8 +688,17 @@ public class SubTitleService extends Service {
                     break;
                 case HIDE:
                     if(subTitleView != null) {
-                        subTitleView.clear();
+                        //subTitleView.clear();
+                        subTitleView.setVisibility(View.GONE);
                         subShowState = SUB_OFF;
+                    }
+                    break;
+                case DISPLAY:
+                    if(subTitleView != null) {
+                        if(View.VISIBLE != subTitleView.getVisibility()) {
+                            subTitleView.setVisibility(View.VISIBLE);
+                            subShowState = SUB_ON;
+                        }
                     }
                     break;
                 case CLEAR:
@@ -768,6 +789,10 @@ public class SubTitleService extends Service {
 
         public void hide() {
             mService.get().hide();
+        }
+
+        public void display() {
+            mService.get().display();
         }
 
         public String getCurName() {

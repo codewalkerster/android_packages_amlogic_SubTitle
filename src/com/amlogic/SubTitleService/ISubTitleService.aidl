@@ -19,5 +19,6 @@ interface ISubTitleService
 	void setPosHeight(int height);
 	void clear();
 	void hide();
+	void display();
 	String getCurName();
 }
