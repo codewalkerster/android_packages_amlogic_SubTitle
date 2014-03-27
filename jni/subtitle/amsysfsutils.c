@@ -60,7 +60,7 @@ int amsysfs_set_sysfs_int(const char *path, int val)
 {
     int fd;
     int bytes;
-    char  bcmd[16];
+    char  bcmd[32];
     fd = open(path, O_CREAT | O_RDWR | O_TRUNC, 0644);
     if (fd >= 0) {
         sprintf(bcmd, "%d", val);
@@ -77,7 +77,7 @@ int amsysfs_get_sysfs_int(const char *path)
 {
     int fd;
     int val = 0;
-    char  bcmd[16];
+    char  bcmd[32];
     fd = open(path, O_RDONLY);
     if (fd >= 0) {
         read(fd, bcmd, sizeof(bcmd));
@@ -93,7 +93,7 @@ int amsysfs_set_sysfs_int16(const char *path, int val)
 {
     int fd;
     int bytes;
-    char  bcmd[16];
+    char  bcmd[32];
     fd = open(path, O_CREAT | O_RDWR | O_TRUNC, 0644);
     if (fd >= 0) {
         sprintf(bcmd, "0x%x", val);
@@ -111,7 +111,7 @@ int amsysfs_get_sysfs_int16(const char *path)
 {
     int fd;
     int val = 0;
-    char  bcmd[16];
+    char  bcmd[32];
     fd = open(path, O_RDONLY);
     if (fd >= 0) {
         read(fd, bcmd, sizeof(bcmd));
@@ -153,14 +153,14 @@ int  amsysfs_get_sysfs_str(const char *path, char *valstr, int size)
 
 int amsysfs_set_sysfs_int(const char *path, int val)
 {
-    char  bcmd[16] = "";
+    char  bcmd[32] = "";
     sprintf(bcmd,"%d",val);
     return amSystemWriteWriteSysfs(path, bcmd);
 }
 
 int amsysfs_get_sysfs_int(const char *path)
 {
-    char  bcmd[16]= "";
+    char  bcmd[32]= "";
     int val = 0;
     if(amSystemWriteReadSysfs(path, bcmd) == 0) {
         val = strtol(bcmd, NULL, 10);
@@ -170,14 +170,14 @@ int amsysfs_get_sysfs_int(const char *path)
 
 int amsysfs_set_sysfs_int16(const char *path, int val)
 {
-    char  bcmd[16]= "";
+    char  bcmd[32]= "";
     sprintf(bcmd, "0x%x", val);
     return amSystemWriteWriteSysfs(path, bcmd);
 }
 
 int amsysfs_get_sysfs_int16(const char *path)
 {
-    char  bcmd[16]= "";
+    char  bcmd[32]= "";
     int val = 0;
     if(amSystemWriteReadSysfs(path, bcmd) == 0) {
         val = strtol(bcmd, NULL, 16);
