@@ -116,7 +116,7 @@ public class SubtitleUtils {
     	{
             for (String file : DirFile.list()) 
             {
-                if(file.startsWith(prefix))
+                if((file.toLowerCase()).startsWith(prefix.toLowerCase()))
                 {
                     for (String ext : extensions) {
                         if (file.toLowerCase().endsWith(ext))
