@@ -89,6 +89,7 @@ static int  aml_sub_handle = -1;
 char *restbuf = NULL;
 int restlen = 0;
 //extern int sub_thread;
+lock_t sublock;
 
 typedef struct{
 	int subtitle_type;        //add yjf 
@@ -313,6 +314,7 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 	
 	if(get_subtitle_subtype() == 1){
 		//pgs subtitle
+		sublen = 50;
 		size = subtitle_get_sub_size_fd(read_sub_fd);
 		LOGI("start pgs sub buffer size %d\n", size);
 		int ret_spu = get_pgs_spu(spu,read_sub_fd);
@@ -320,6 +322,7 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 		LOGI("end pgs sub buffer size %d\n", size);
 		return 0;
 	} else if (get_subtitle_subtype() == 5) {
+		sublen = 50;
 		size = subtitle_get_sub_size_fd(read_sub_fd);
 		LOGI("start dvb sub buffer size %d\n", size);
 
@@ -390,8 +393,7 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 		current_pts |= spu_buf_piece[rd_oft++]<<16;
 		current_pts |= spu_buf_piece[rd_oft++]<<8;
 		current_pts |= spu_buf_piece[rd_oft++];
-	  	LOGI("current_pts is %x\n",current_pts);
-		LOGI("current_length is %d\n",current_length);
+	  	LOGI("current_type:%x, current_pts is %x, current_length is %d, \n",current_type, current_pts, current_length);
 		
 
 		
@@ -433,9 +435,6 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 			continue;
 		}
 		*/
-		
-	  	LOGI("current_type is 0x%x\n",current_type);
-
 		switch (current_type) {
 			case 0x17003:	//XSUB		
 				
@@ -461,7 +460,7 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 				}
 				spu->spu_width = avihandle->width;
 				spu->spu_height = avihandle->height;
-				LOGI(" spu->spu_width is 0x%x,  spu->spu_height=0x%x\n  spu->spu_width is %u,  spu->spu_height=%u\n",avihandle->width,avihandle->height,spu->spu_width,spu->spu_height);
+				LOGI(" spu->pts:%x, spu->spu_width is 0x%x,  spu->spu_height=0x%x\n  spu->spu_width is %u,  spu->spu_height=%u\n",spu->pts, avihandle->width,avihandle->height,spu->spu_width,spu->spu_height);
 
 				spu->rgba_enable = 1;	// XSUB
 				//FFT:The background pixels are 100% transparent 
@@ -618,7 +617,7 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 
 	
 		write_subtitle_file(spu);
-		file_position = ADD_SUBTITLE_POSITION(file_position);
+		add_file_position();
 	
 	}
 error:
@@ -700,6 +699,7 @@ int write_subtitle_file(AML_SPUVAR *spu)
 		close_subtitle();
 	}	
 	
+    lp_lock(&sublock);
 	while (ADD_SUBTITLE_POSITION(file_position)==read_position) {
 		LOGI("## write_subtitle_file wait file_pos=%d,read_pos=%d,-----------\n",ADD_SUBTITLE_POSITION(file_position),read_position);
 		usleep(100000);
@@ -736,6 +736,8 @@ int write_subtitle_file(AML_SPUVAR *spu)
 	else {
 		subtitle_type_for_pgs = 0;
 	}
+	
+    lp_unlock(&sublock);
 	return 0;
 }
 
@@ -747,6 +749,7 @@ int read_subtitle_file()
 
 int get_inter_spu_packet(int pts)
 {
+    lp_lock(&sublock);
 	LOGI(" search pts %x , s %x \n",pts,pts/90);
 	
 	int storenumber=(file_position>=read_position)?file_position-read_position:sublen+file_position-1-read_position;
@@ -766,13 +769,17 @@ int get_inter_spu_packet(int pts)
 	}
 	
 	if(get_inter_spu_type() != SUBTITLE_PGS) {
-		if(inter_subtitle_data[read_position].subtitle_pts > pts ||	inter_subtitle_data[read_position].subtitle_pts < (pts - 10*90000))
+		if(inter_subtitle_data[read_position].subtitle_pts > pts ||	inter_subtitle_data[read_position].subtitle_pts < (pts - 10*90000)) {
+			lp_unlock(&sublock);
 			return -1;
+		}
 	}
 
 	LOGI("get_inter_spu_packet  read_position is %d  file_position is %d  ,time is %d\n",read_position,file_position,inter_subtitle_data[read_position].subtitle_pts);
+
+	lp_unlock(&sublock);
 	return read_position;
-	}
+}
 
 int get_inter_spu_type()
 {
@@ -860,8 +867,19 @@ int get_inter_spu_resize_size()
 
 int add_read_position()
 {
+	lp_lock(&sublock);
 	read_position = ADD_SUBTITLE_POSITION(read_position);
 	LOGI("read_position is %d\n\n",read_position);
+
+	lp_unlock(&sublock);
+	return 0;
+}
+int add_file_position()
+{
+	lp_lock(&sublock);
+	file_position = ADD_SUBTITLE_POSITION(file_position);
+
+	lp_unlock(&sublock);
 	return 0;
 }
 
@@ -1108,6 +1126,8 @@ int get_inter_spu()
 
 int close_subtitle()
 {
+    lp_lock(&sublock);
+
 	LOGI("----------------------close_subtitle------------------------------");
 	dvbsub_close_decoder();
 	if (restbuf) {
@@ -1129,6 +1149,7 @@ int close_subtitle()
         aml_sub_handle = -1;
     }
 	
+    lp_unlock(&sublock);
 	return 0;
 }
 

@@ -22,7 +22,7 @@ int set_sysfs_int(const char *path, int val)
 }
 int get_sysfs_int(const char *path)
 {
-    return amsysfs_get_sysfs_int16(path);
+    return amsysfs_get_sysfs_int(path);
 }
 
 int set_subtitle_enable(int enable)

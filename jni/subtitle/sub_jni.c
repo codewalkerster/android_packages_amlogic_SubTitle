@@ -26,7 +26,7 @@
 #include "sub_subtitle.h"
 int sub_thread = 0;
 int subThreadRunning = 0;
-
+extern lock_t sublock;
 JNIEXPORT jobject JNICALL parseSubtitleFile
   (JNIEnv *env, jclass cl, jstring filename, jstring encode)
 {
@@ -476,6 +476,7 @@ int subtitle_thread_create()
 #if 1
 	pthread_t thread;
     int rc;
+    lp_lock_init(&sublock,NULL);
     LOGI("[subtitle_thread:%d]starting controler thread!!\n", __LINE__);
     rc = pthread_create(&thread, NULL, inter_subtitle_parser, NULL);
     if (rc) {
