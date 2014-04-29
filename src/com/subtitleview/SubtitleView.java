@@ -117,6 +117,20 @@ public class SubtitleView extends FrameLayout {
 		this.requestLayout();
 	}
 
+    public int getSubType() {
+        int ret = 0; // text default
+        if(data != null) {
+            //Log.i(TAG,"[getSubType]data.subSize():"+data.subSize()+",data.gettype():"+data.gettype());
+            if(data.subSize() > 0) {
+                if(data.gettype() == 1) {	
+                    ret = 1; //bitmap
+                }
+            }
+        }
+        //Log.i(TAG,"[getSubType]ret:"+ret);
+        return ret;
+    }
+
     public void redraw(SubData data) {
         this.removeAllViews();
         if(data != null) {

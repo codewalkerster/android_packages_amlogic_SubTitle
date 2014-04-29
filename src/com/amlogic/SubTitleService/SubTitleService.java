@@ -124,7 +124,7 @@ public class SubTitleService extends Service {
         mServiceInUse = false;
         unregisterConfigurationChangeReceiver();
         stopSelf(mServiceStartId);
-        System.exit(0);
+        //System.exit(0);
         return true;
     }
 
@@ -378,7 +378,7 @@ public class SubTitleService extends Service {
         synchronized (this) {
             if(subtitleUtils == null) {
                 subtitleUtils = new SubtitleUtils(path);
-                curSubId = subtitleUtils.getCurrentInSubtitleIndexByJni();
+                curSubId = subtitleUtils.getCurrentInSubtitleIndexByJni();  //get inner subtitle current index as default, 0 is always, if there is no inner subtitle, 0 indicate the first external subtitle
                 if(DEBUG) Log.i(TAG, "[open] curSubId: "+curSubId);
                 sendOpenMsg();
                 sendInitSelectMsg();
@@ -437,6 +437,15 @@ public class SubTitleService extends Service {
             sendCloseMsg();
             sendOpenMsg();
         }
+    }
+
+    public int getSubType() {
+        int ret = 0;
+        if(subTitleView != null) {
+            ret = subTitleView.getSubType();
+        }
+        if(DEBUG) Log.i(TAG,"[getSubType]ret:"+ret);
+        return ret;
     }
 
     public void setTextColor(int color) {
@@ -761,6 +770,10 @@ public class SubTitleService extends Service {
 
         public void option() {
             mService.get().option();
+        }
+
+        public int getSubType() {
+            return mService.get().getSubType();
         }
 
         public void setTextColor(int color) {
