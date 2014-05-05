@@ -699,11 +699,11 @@ int write_subtitle_file(AML_SPUVAR *spu)
 		close_subtitle();
 	}	
 	
-    lp_lock(&sublock);
 	while (ADD_SUBTITLE_POSITION(file_position)==read_position) {
 		LOGI("## write_subtitle_file wait file_pos=%d,read_pos=%d,-----------\n",ADD_SUBTITLE_POSITION(file_position),read_position);
 		usleep(100000);
 	}
+    lp_lock(&sublock);
 
 	if(inter_subtitle_data[file_position].data)
 		free(inter_subtitle_data[file_position].data);

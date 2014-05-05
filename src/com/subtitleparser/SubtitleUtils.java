@@ -11,7 +11,8 @@ import android.util.Log;
 public class SubtitleUtils {
 	public native int getInSubtitleTotalByJni();
 	
-//	public native int setInSubtitleNumberByJni(int  ms);
+	//public native int setInSubtitleNumberByJni(int  ms);
+	public native void setSubtitleNumberByJni(int  idx);
 	public native int getCurrentInSubtitleIndexByJni();
 //	public native void FileChangedByJni(String name);
 
@@ -74,8 +75,18 @@ public class SubtitleUtils {
     {
     	if(subfile==null)
     		return null ;
+        
+        if(index<getInSubTotal()) 
+        {
+            return "INSUB";
+        }
+        else if(index<(exSubtotle+accountInSubtitleNumber()))
+        {
+            return strlist.get(index - getInSubTotal()).filename;
+        }
+        return null;
     	
-    	if(index<exSubtotle)
+    	/*if(index<exSubtotle)
     		return strlist.get(index).filename;
     	else if(index<getSubTotal())
     	{
@@ -83,7 +94,7 @@ public class SubtitleUtils {
 //    		setInSubtitleNumber(index-exSubtotle);
     		return "INSUB";
     	}
-		return null;
+		return null;*/
 
     }
     
@@ -91,7 +102,17 @@ public class SubtitleUtils {
     {
     	if(subfile==null)
     		return null ;
-    	
+
+        if(index<getInSubTotal()) 
+        {
+            return new SubID("INSUB",index);
+        }
+        else if(index<getSubTotal())
+        {
+            return strlist.get(index - getInSubTotal());
+        }
+        return null;
+    	/*
     	if(index<exSubtotle)
     		return strlist.get(index);
     	else if(index<getSubTotal())
@@ -100,7 +121,7 @@ public class SubtitleUtils {
 //    		setInSubtitleNumber(index-exSubtotle);
     		return new SubID("INSUB",index-exSubtotle);
     	}
-		return null;    
+		return null; */   
 	}
     private void  accountExSubtitleNumber()
     {
@@ -111,6 +132,7 @@ public class SubtitleUtils {
       	File DirFile= subfile.getParentFile();
       	int idxindex=0;
        boolean skipLrc = false;
+       int exSubIndex = getInSubTotal();
       	
     	if(DirFile.isDirectory())
     	{
@@ -132,7 +154,8 @@ public class SubtitleUtils {
                             
                             if(!skipLrc) 
                             {
-                                strlist.add(new SubID(DirFile.getAbsolutePath()+"/"+file,0));
+                                strlist.add(new SubID(DirFile.getAbsolutePath()+"/"+file,exSubIndex));
+                                exSubIndex++;
                             }
                             break;
                         }
@@ -174,9 +197,14 @@ public class SubtitleUtils {
     	return getInSubtitleTotalByJni();
     }
     //wait to finish.
-    private  void setInSubtitleNumber(int index)
+    public void setInSubtitleNumber(int index)
     {
-//    	setInSubtitleNumberByJni(index);
+    	//setInSubtitleNumberByJni(index);
+    	return;
+    }  
+    public void setSubtitleNumber(int index)
+    {
+    	setSubtitleNumberByJni(index);
     	return;
     }   
     private int accountIdxSubtitleNumber( String filename )

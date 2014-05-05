@@ -23,6 +23,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.app.AlertDialog;
 import android.widget.*;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -43,7 +44,7 @@ public class SubTitleService extends Service {
     //for subtitle
     private SubtitleUtils subtitleUtils = null;
     private SubtitleView subTitleView = null;
-    private int subTotal= 0;
+    private int mSubTotal= -1;
     private int curSubId = 0;
     private SubID subID;
 
@@ -354,13 +355,18 @@ public class SubTitleService extends Service {
         return type;
     }
 
-    /*public*/private void openFile(SubID filepath) {
-        if(DEBUG) Log.i(TAG, "[openFile] filepath: "+filepath);
-        if(filepath==null)
+    /*public*/private void openFile(SubID subID) {
+        if(DEBUG) Log.i(TAG, "[openFile] subID: "+subID);
+        if(subID==null)
             return;
         try {
-            if(subTitleView.setFile(filepath,setSublanguage())==Subtitle.SUBTYPE.SUB_INVALID)
+            if(subTitleView.setFile(subID,setSublanguage())==Subtitle.SUBTYPE.SUB_INVALID)
             return;
+
+            if(DEBUG) Log.i(TAG, "[openFile] subtitleUtils: "+subtitleUtils+",getSubTotal():"+getSubTotal()+",subID.index:"+subID.index);
+            if(subtitleUtils != null && getSubTotal() > 0) {
+                subtitleUtils.setSubtitleNumber(subID.index);
+            }
         } 
         catch(Exception e) {
             if(DEBUG) Log.d(TAG, "open:error");
@@ -374,10 +380,22 @@ public class SubTitleService extends Service {
         if(d != null) {
             d.dismiss();
         }
+
+        File file= new File(path);
+        String tmp=file.getName();
+        if(tmp != null) {
+            int ext = tmp.lastIndexOf('.');
+            if(ext == -1) {
+                subShowState = SUB_OFF;
+                return;
+            }
+        }
         
         synchronized (this) {
             if(subtitleUtils == null) {
                 subtitleUtils = new SubtitleUtils(path);
+                mSubTotal = -1;
+                mSubTotal = prepareSubTotal();
                 curSubId = subtitleUtils.getCurrentInSubtitleIndexByJni();  //get inner subtitle current index as default, 0 is always, if there is no inner subtitle, 0 indicate the first external subtitle
                 if(DEBUG) Log.i(TAG, "[open] curSubId: "+curSubId);
                 sendOpenMsg();
@@ -392,25 +410,33 @@ public class SubTitleService extends Service {
         if(subtitleUtils != null) {
             subtitleUtils = null;
         }
-        subTotal = 0;
+        mSubTotal = -1;
         sendCloseMsg();
         //subShowState = SUB_OFF;
     }
 
-    public int getSubTotal() {
-        if(DEBUG) Log.i(TAG,"[getSubTotal] subtitleUtils:"+subtitleUtils);
-        if(subtitleUtils != null) {
-            subTotal = subtitleUtils.getSubTotal();
+    private int prepareSubTotal() {
+        if(DEBUG) Log.i(TAG,"[prepareSubTotal] subtitleUtils:"+subtitleUtils);
+        int total = -1;
+        if(mSubTotal == -1) {
+            if(subtitleUtils != null) {
+                total = subtitleUtils.getSubTotal();
+                if(DEBUG) Log.i(TAG,"[prepareSubTotal] mSubTotal:"+mSubTotal);
+            }
         }
-        if(DEBUG) Log.i(TAG,"[getSubTotal] subTotal:"+subTotal);
-        return subTotal;
+        return total;
+    }
+
+    public int getSubTotal() {
+        if(DEBUG) Log.i(TAG,"[getSubTotal] mSubTotal:"+mSubTotal);
+        return mSubTotal;
     }
     
     public void nextSub() { // haven't test
-        if(DEBUG) Log.i(TAG,"[nextSub]curSubId:"+curSubId+",subTotal:"+subTotal+",subtitleUtils:"+subtitleUtils);
-        if(subtitleUtils != null && subTotal > 0) {
+        if(DEBUG) Log.i(TAG,"[nextSub]curSubId:"+curSubId+",getSubTotal():"+getSubTotal()+",subtitleUtils:"+subtitleUtils);
+        if(subtitleUtils != null && getSubTotal() > 0) {
             curSubId++;
-            if(curSubId >= subTotal) {
+            if(curSubId >= getSubTotal()) {
                 curSubId = 0;
             }
             sendCloseMsg();
@@ -419,11 +445,11 @@ public class SubTitleService extends Service {
     }
 
     public void preSub() { // haven't test
-        if(DEBUG) Log.i(TAG,"[preSub]curSubId:"+curSubId+",subTotal:"+subTotal+",subtitleUtils:"+subtitleUtils);
-        if(subtitleUtils != null && subTotal > 0) {
+        if(DEBUG) Log.i(TAG,"[preSub]curSubId:"+curSubId+",getSubTotal():"+getSubTotal()+",subtitleUtils:"+subtitleUtils);
+        if(subtitleUtils != null && getSubTotal() > 0) {
             curSubId--;
             if(curSubId < 0) {
-                curSubId = subTotal - 1;
+                curSubId = getSubTotal() - 1;
             }
             sendCloseMsg();
             sendOpenMsg();
@@ -432,7 +458,7 @@ public class SubTitleService extends Service {
 
     public void openIdx(int idx) {
         if(DEBUG) Log.i(TAG,"[openIdx]idx:"+idx);
-        if(subtitleUtils != null && subTotal > 0) {
+        if(subtitleUtils != null && getSubTotal() > 0) {
             curSubId = idx;
             sendCloseMsg();
             sendOpenMsg();
@@ -509,11 +535,12 @@ public class SubTitleService extends Service {
     }
     
     public void showSubContent(int position) {
-        if(DEBUG) Log.i(TAG,"[showSubContent]position:"+position);
+        if(DEBUG) Log.i(TAG,"[showSubContent]position:"+position+",subShowState:"+subShowState+",mHandler:"+mHandler);
         if (position > 0 && mHandler != null) {
             if (subShowState == SUB_ON ) {
                 Message msg = mHandler.obtainMessage(SHOW_CONTENT);
                 msg.arg1 = position;
+                if(DEBUG) Log.i(TAG,"[showSubContent]sendMessage msg:"+msg);
                 mHandler.sendMessageDelayed(msg, MSG_SEND_DELAY);
             }
         }

@@ -163,6 +163,18 @@ JNIEXPORT jint JNICALL getCurrentInSubtitleIndex
 	return -1;
 }
 
+static 
+JNIEXPORT void JNICALL setSubtitleNumber
+  (JNIEnv *env, jclass cl, jint index)  
+{   
+    if(index == 0xff){
+        set_subtitle_enable(0);
+    }
+    else{
+        set_subtitle_enable(1);
+        set_subtitle_curr(index);
+    }
+}
 
 
 JNIEXPORT void JNICALL closeInSubView (JNIEnv *env, jclass cl )  
@@ -559,6 +571,7 @@ static JNINativeMethod insubMethods[] = {
     /* name, signature, funcPtr */
     	{ "getInSubtitleTotalByJni", "()I",                                 (void*)getInSubtitleTotal},
 		{ "getCurrentInSubtitleIndexByJni", "()I",                          (void*)getCurrentInSubtitleIndex },
+		{ "setSubtitleNumberByJni", "(I)V",                               (void*)setSubtitleNumber},
 //		{ "FileChangedByJni", "(Ljava/lang/String;)V",                          (void*)playfileChanged },
 		
     };
