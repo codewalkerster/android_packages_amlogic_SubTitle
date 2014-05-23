@@ -18,7 +18,7 @@ include $(CLEAR_VARS)
 LOCAL_SRC_FILES := $(call all-java-files-under, src) \
 		src/com/amlogic/SubTitleService/ISubTitleService.aidl
 
-LOCAL_SDK_VERSION := current
+#LOCAL_SDK_VERSION := current
 LOCAL_PROGUARD_ENABLED := disabled
 
 LOCAL_PACKAGE_NAME := SubTitle

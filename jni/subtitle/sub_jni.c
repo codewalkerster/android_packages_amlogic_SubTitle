@@ -473,7 +473,7 @@ void *inter_subtitle_parser()
 {
     //sub_thread = 1;
 	while(sub_thread){
-		LOGI("[inter_subtitle_parser]get_subtitle_num():%d\n", get_subtitle_num());
+		//LOGI("[inter_subtitle_parser]get_subtitle_num():%d\n", get_subtitle_num());
 		if(get_subtitle_num())
 			get_inter_spu();
 		usleep(500000);

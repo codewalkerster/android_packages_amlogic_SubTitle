@@ -7,6 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import android.util.Log;
+import android.os.SystemProperties;
 
 public class SubtitleUtils {
 	public native int getInSubtitleTotalByJni();
@@ -49,7 +50,9 @@ public class SubtitleUtils {
 			filename = name;
 //			FileChangedByJni(name);
 			subfile= new File(filename);
-			accountExSubtitleNumber();
+
+            if(SystemProperties.getBoolean("sys.extSubtitle.enable", true))
+			    accountExSubtitleNumber();
 		}
 	}
 	

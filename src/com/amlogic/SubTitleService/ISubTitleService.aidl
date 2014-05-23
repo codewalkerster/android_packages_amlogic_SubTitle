@@ -8,8 +8,8 @@ interface ISubTitleService
 	int getSubTotal();
 	void nextSub();
 	void preSub();
-	void startInSubThread();
-	void stopInSubThread();
+	//void startInSubThread();
+	//void stopInSubThread();
 	void showSub(int position);
 	void option(); 
 	int getSubType();
