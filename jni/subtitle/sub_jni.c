@@ -26,6 +26,7 @@
 #include "sub_subtitle.h"
 int sub_thread = 0;
 int subThreadRunning = 0;
+int subThreadSleeping = 0;
 extern lock_t sublock;
 JNIEXPORT jobject JNICALL parseSubtitleFile
   (JNIEnv *env, jclass cl, jstring filename, jstring encode)
@@ -476,7 +477,9 @@ void *inter_subtitle_parser()
 		//LOGI("[inter_subtitle_parser]get_subtitle_num():%d\n", get_subtitle_num());
 		if(get_subtitle_num())
 			get_inter_spu();
+        subThreadSleeping = 1;
 		usleep(500000);
+        subThreadSleeping = 0;
 	}
 	return NULL;
 }
@@ -540,7 +543,12 @@ int subtitle_thread_create()
 
 JNIEXPORT void JNICALL  startSubThread(JNIEnv *env, jclass cl)
 {
-	LOGI("[startSubThread]subThreadRunning%d\n",subThreadRunning);
+	LOGI("[startSubThread]subThreadRunning%d, subThreadSleeping:%d\n",subThreadRunning,subThreadSleeping);
+    if(subThreadSleeping == 1) 
+    {
+        usleep(500000);
+    }
+    
 	if(subThreadRunning == 0) 
 	{
 		subThreadRunning = 1;

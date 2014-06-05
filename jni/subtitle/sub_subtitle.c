@@ -358,8 +358,9 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 	}
 	else{
         size += restlen;
-    	LOGI("\n malloc subtitle size %d, restlen=%d, \n\n",size, restlen);
+		current_type = 0;
 		spu_buf = malloc(size);	
+		LOGI("\n malloc subtitle size %d, restlen=%d, spu_buf=%x, \n\n",size, restlen, spu_buf);
 	}
 	int sizeflag=size;
 	char* spu_buf_tmp=spu_buf;
@@ -377,9 +378,13 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 
         if (restlen)
             memcpy(spu_buf_piece, restbuf, restlen);
-		
-		ret = subtitle_read_sub_data_fd(read_sub_fd, spu_buf_piece+restlen, 16);
-		sizeflag-=16;spu_buf_tmp+=16;
+
+		if ((current_type==0x17000 || current_type==0x1700a) && restlen>0) {
+			LOGI("decode rest data!\n");
+		} else {
+			ret = subtitle_read_sub_data_fd(read_sub_fd, spu_buf_piece+restlen, 16);
+			sizeflag-=16;spu_buf_tmp+=16;
+		}
 	
 		rd_oft = 0;
 		if ((spu_buf_piece[rd_oft++]!=0x41)||(spu_buf_piece[rd_oft++]!=0x4d)||
@@ -394,7 +399,7 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 			ret = -1;
 			goto error; 		// wrong head
 		}
-	LOGI("\n\n ******* find correct subtitle header ******\n\n");
+		LOGI("\n\n ******* find correct subtitle header ******\n\n");
 		current_type = spu_buf_piece[rd_oft++]<<16;
 		current_type |= spu_buf_piece[rd_oft++]<<8;
 		current_type |= spu_buf_piece[rd_oft++];
@@ -408,33 +413,27 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 		current_pts |= spu_buf_piece[rd_oft++]<<16;
 		current_pts |= spu_buf_piece[rd_oft++]<<8;
 		current_pts |= spu_buf_piece[rd_oft++];
-	  	LOGI("current_type:%x, current_pts is %x, current_length is %d, \n",current_type, current_pts, current_length);
+	  	LOGI("sizeflag=%u, current_type:%x, current_pts is %x, current_length is %d, \n",sizeflag, current_type, current_pts, current_length);
 		
-
-		
-		LOGI("\n sizeflag =%u  \n\n",sizeflag);
-
 		if(current_length >sizeflag)
 		{
-			  	LOGI("current_length >size");
+			LOGI("current_length > size");
 			ret = subtitle_read_sub_data_fd(read_sub_fd, spu_buf_piece, sizeflag);
 			sizeflag=0;
 			ret=-1;
 			goto error;
 		}
-		if(current_type==0x17000)
+		if(current_type==0x17000 || current_type==0x1700a)
 		{
-			LOGI("current_type=0x17000\n");
 //			ret = subtitle_read_sub_data_fd(read_sub_fd, spu_buf_piece+16, current_length);
 			ret = subtitle_read_sub_data_fd(read_sub_fd, spu_buf_piece+restlen+16, sizeflag-restlen);
 			restlen = sizeflag;
 			sizeflag=0;
 			spu_buf_tmp+=current_length;
-	
+			LOGI("current_type=0x17000 or 0x1700a! restlen=%d, sizeflag=%d,\n", restlen, sizeflag);
 		}
 		else
 		{
-			LOGI("current_type!!=0x17000\n");
 	        ret = subtitle_read_sub_data_fd(read_sub_fd, spu_buf_piece+16, current_length+4);
 		 	sizeflag-=(current_length+4);
 		    spu_buf_tmp+=(current_length+4);
@@ -555,6 +554,7 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 				duration_pts |= spu_buf_piece[rd_oft++]<<16;
 				duration_pts |= spu_buf_piece[rd_oft++]<<8;
 				duration_pts |= spu_buf_piece[rd_oft++];
+                restlen -= 4;
 				LOGI("duration_pts is %d\n",duration_pts);
 			case 0x17000://vob internel image
 				sublen = 50;
@@ -564,8 +564,8 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 				memset(spu->spu_data, 0, VOB_SUB_SIZE);
 				spu->pts = current_pts;
 				ret = get_vob_spu(spu_buf_piece+rd_oft, &restlen, current_length, spu); 
-                if (current_type==0x17000) {
-                    LOGI("## ret=%d, restlen=%d, sizeflag=%d,---\n", ret, restlen, sizeflag);
+                if (current_type==0x17000 || current_type==0x1700a) {
+                    LOGI("## ret=%d, restlen=%d, sizeflag=%d, restbuf=%x,%x, ---\n", ret, restlen, sizeflag, restbuf,restbuf?restbuf[0]:0);
                     if (restlen) {
                         if (restbuf) {
                             free(restbuf);
@@ -580,11 +580,13 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 
                         if ((restbuf[0]==0x41) && (restbuf[1]==0x4d) &&
                             (restbuf[2]==0x4c) && (restbuf[3]==0x55) && (restbuf[4]==0xaa)) {
-                            LOGI("## sub header found ! ---\n");
+                            LOGI("## sub header found ! restbuf=%x,%x, ---\n", restbuf, restbuf[0]);
+                            sizeflag = restlen;
                         } else {
+                            LOGI("## no header found, free restbuf! ---\n");
                             free(restbuf);
                             restbuf = NULL;
-                            restlen = 0;
+                            restlen = sizeflag = 0;
                         }
                     }
                 }else {
@@ -636,8 +638,11 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 	
 	}
 error:
-	if (spu_buf)
+	LOGI("[%s::%d] error! spu_buf=%x, \n",__FUNCTION__,__LINE__, spu_buf);
+	if (spu_buf) {
 		free(spu_buf);
+		spu_buf = NULL;
+	}
 		
 	return ret;
 }

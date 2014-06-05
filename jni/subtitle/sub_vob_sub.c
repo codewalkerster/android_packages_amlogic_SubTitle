@@ -337,7 +337,7 @@ int get_vob_spu(char *spu_buf, int *bufsize, unsigned length, AML_SPUVAR *spu)
     }
 
 	// if one frame data is ready, decode it.
-	LOGI("spu->frame_rdy is %d\n\n",spu->frame_rdy);
+	LOGI("spu->frame_rdy is %d, restlen=%d, rd_oft=%d, \n\n",spu->frame_rdy, *bufsize, rd_oft);
 	if (spu->frame_rdy == 1){
 		pixDataOdd = malloc(VOB_SUB_SIZE/2);
 		LOGI("pixDataOdd is %x\n\n",pixDataOdd);
