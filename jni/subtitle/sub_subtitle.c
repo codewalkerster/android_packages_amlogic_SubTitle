@@ -158,7 +158,7 @@ static unsigned short GetWordFromPixBuffer(unsigned short bitpos, unsigned short
 int get_ass_spu(char *spu_buf, unsigned length, AML_SPUVAR *spu)
 {     
     int ret=0;
-    int i=0;
+    int i=0,j=0;
 	//LOGE("spubuf  %c %c %c %c %c %c %c %c   %c %c %c %c %c %c %c %c  \n %c %c %c %c %c %c %c %c %c %c %c %c %c %c %c %c %c\n",
 	//    spu_buf[0], spu_buf[1],spu_buf[2],spu_buf[3],spu_buf[4],spu_buf[5],spu_buf[6],spu_buf[7],
 	//    spu_buf[8],spu_buf[9],spu_buf[10],spu_buf[11],spu_buf[12],spu_buf[13],spu_buf[14],spu_buf[15],
@@ -187,6 +187,21 @@ int get_ass_spu(char *spu_buf, unsigned length, AML_SPUVAR *spu)
         spu->m_delay=endmills*90;
         LOGE("%d:%d:%d:%d, end mills=0x%x m-delay=0x%x\n", hour,min,sec,mills,endmills,spu->m_delay);
     }
+
+    j = 0;
+    for (i=0; i<35; i++) {
+        //LOGE("i=%d, %s,\n", i, spu_buf+i);
+        if (strncmp(spu_buf+i,"Default",7)==0) {
+            j = i;
+            i = strcspn(spu_buf+i, "\}");
+            j = j+i+1;
+            //LOGE("i=%d, size:%u, %s,\n", i, spu->buffer_size, spu_buf+j);
+            spu->buffer_size -= j;
+            memmove(spu->spu_data, spu->spu_data+j, spu->buffer_size);
+            break;
+        }
+    } 
+
     return ret;
 }
 
