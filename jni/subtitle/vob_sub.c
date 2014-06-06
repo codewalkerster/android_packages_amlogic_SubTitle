@@ -1443,7 +1443,7 @@ static int do_vob_sub_cmd(subtitlevobsub_t* subtitlevobsub, unsigned char *packe
             case CMD_END:
                 if(pCmdData<=(pCmdEnd-6))
                 {
-//                    subtitlevobsub->duration = doDCSQC(pCmdData,pCmdEnd-6);
+                    subtitlevobsub->duration = doDCSQC(pCmdData,pCmdEnd-6);
                     if(subtitlevobsub->duration>0)
                         subtitlevobsub->duration*=1024;
                 }
