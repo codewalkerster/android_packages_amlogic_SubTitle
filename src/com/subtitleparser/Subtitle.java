@@ -44,6 +44,7 @@ public class Subtitle {
 		 SUB_MPSUB   ,
 		 SUB_AQTITLE   ,
 		 SUB_SUBVIEWER2 ,
+		 SUB_SUBVIEWER3 ,
 		 SUB_SUBRIP09  ,
 		 SUB_JACOSUB  ,
 		 SUB_MPL2  ,
@@ -209,6 +210,7 @@ public class Subtitle {
 		case SUB_MPSUB   :
 		case SUB_AQTITLE   :
 		case SUB_SUBVIEWER2 :
+        case SUB_SUBVIEWER3 :
 		case SUB_SUBRIP09  :
 		case SUB_JACOSUB  :
 		case SUB_MPL2  :

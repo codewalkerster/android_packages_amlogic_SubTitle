@@ -67,6 +67,7 @@ public class FileIO {
 		Pattern SUBRIP_Pattern = Pattern.compile("\\d+:\\d+:\\d+.\\d+,\\d+:\\d+:\\d+.\\d+");
 		Pattern SUBVIEWER_Pattern = Pattern.compile("\\d+:\\d+:\\d+[\\,\\.:]\\d+ ?--> ?\\d+:\\d+:\\d+[\\,\\.:]\\d+");
 		Pattern SUBVIEWER2_Pattern = Pattern.compile("\\{T \\d+:\\d+:\\d+:\\d+ ");
+        Pattern SUBVIEWER3_Pattern = Pattern.compile("\\d+:\\d+:\\d+,\\d+\\s+\\d+:\\d+:\\d+,\\d+");
 		Pattern SAMI_Pattern = Pattern.compile("<SAMI>");
 		Pattern JACOSUB_Pattern = Pattern.compile("\\d+:\\d+:\\d+.\\d+ \\d+:\\d+:\\d+.\\d+");
 		Pattern JACOSUB_Pattern_2 = Pattern.compile("@\\d+ @\\d+");
@@ -76,7 +77,7 @@ public class FileIO {
 		Pattern MPSUB_Pattern_2 = Pattern.compile("FORMAT=TIME");
 		Pattern AQTITLE_Pattern = Pattern.compile("-->>");
 		Pattern SUBRIP9_Pattern = Pattern.compile("\\[\\d+:\\d+:\\d+\\]");
-             Pattern LRC_Pattern = Pattern.compile("\\[\\d+:\\d+.\\d+\\]"+"(.*?)");
+        Pattern LRC_Pattern = Pattern.compile("\\[\\d+:\\d+.\\d+\\]"+"(.*?)");
 
 		Matcher matcher=null;
 		try {
@@ -141,6 +142,12 @@ public class FileIO {
 					if(matcher.find())
 					{
 						type = Subtitle.SUBTYPE.SUB_SUBVIEWER2;
+                                        break;
+					}
+                    matcher=SUBVIEWER3_Pattern.matcher(line);
+					if(matcher.find())
+					{
+						type = Subtitle.SUBTYPE.SUB_SUBVIEWER3;
                                         break;
 					}
 					matcher=SAMI_Pattern.matcher(line);

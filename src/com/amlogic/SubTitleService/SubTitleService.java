@@ -96,7 +96,7 @@ public class SubTitleService extends ISubTitleService.Stub {
         subTitleView.clear();
         subTitleView.setTextColor(Color.WHITE);
         subTitleView.setTextSize(28);
-        subTitleView.setTextStyle(Typeface.BOLD);
+        subTitleView.setTextStyle(Typeface.NORMAL);
         subTitleView.setViewStatus(true);
         registerConfigurationChangeReceiver();
     }
@@ -124,7 +124,9 @@ public class SubTitleService extends ISubTitleService.Stub {
         p.width = mWScreenx;//ViewGroup.LayoutParams.WRAP_CONTENT;
         p.height = mWScreeny;//ViewGroup.LayoutParams.WRAP_CONTENT;
         //if(Debug()) Log.i(TAG,"[showSubtitleOverlay]mWm:"+mWm+",mSubView:"+mSubView);
-        mWm.addView(mSubView, p);
+        if(mWm != null && mSubView != null) {
+            mWm.addView(mSubView, p);
+        }
     }
 
     private void registerConfigurationChangeReceiver() {
@@ -294,6 +296,7 @@ public class SubTitleService extends ISubTitleService.Stub {
     private String setSublanguage() {
         String type=null;
         String able=mContext.getResources().getConfiguration().locale.getCountry();
+        if(Debug()) Log.i(TAG, "[setSublanguage] Country: "+able);
         if(able.equals("TW"))
              type ="BIG5";
         else if(able.equals("JP"))
@@ -304,6 +307,8 @@ public class SubTitleService extends ISubTitleService.Stub {
               type ="iso88591";
         else if(able.equals("TR"))
               type ="cp1254";
+        else if(able.equals("PC"))
+              type ="cp1098"; // "cp1097";
         else
               type ="GBK";
         return type;
@@ -360,13 +365,14 @@ public class SubTitleService extends ISubTitleService.Stub {
     }
 
     public void close() {
-        if(Debug()) Log.i(TAG, "[close] subTitleView: "+subTitleView);
+        if(Debug()) Log.i(TAG, "[close] subTitleView: "+subTitleView+", mWm:"+mWm+", mSubView:"+mSubView);
         if(subtitleUtils != null) {
             subtitleUtils = null;
         }
         if(mWm != null) {
             isOverlayOpen= false;
             if(mSubView != null) {
+                if(Debug()) Log.i(TAG, "[close] mWm.removeView(mSubView)");
                 mWm.removeView(mSubView);
                 mWm = null;
             }

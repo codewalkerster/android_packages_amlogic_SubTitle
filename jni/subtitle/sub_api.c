@@ -895,6 +895,65 @@ subtitle_t *internal_sub_read_line_subviewer2(int fd, subtitle_t *current)
     return current;
 }
 
+subtitle_t *internal_sub_read_line_subviewer3(int fd, subtitle_t *current)
+{
+    char line[LINE_LEN+1];
+    int a0,a1,a2,a3,a4,b1,b2,b3,b4;
+    char *p = NULL, *q = NULL;
+    int len;
+
+    while (1) 
+    {
+        if (!internal_subf_gets (line, fd)) 
+        {
+            return NULL;
+        }
+        if (sscanf(line, "%d  %d:%d:%d,%d  %d:%d:%d,%d",
+                    &a0,&a1,&a2,&a3,&a4,&b1,&b2,&b3,&b4) < 9)
+        {
+            continue;
+        }
+        current->start = a1 * 360000 + a2 * 6000 + a3 * 100 + a4;
+        current->end   = b1 * 360000 + b2 * 6000 + b3 * 100 + b4;
+
+        if (!internal_subf_gets (line, fd))
+        {
+            return NULL;
+        }
+
+        p=q=line;
+        for (current->text.lines=1; current->text.lines < SUB_MAX_TEXT; current->text.lines++) 
+        {
+            for (q=p,len=0; *p && *p!='\r' && *p!='\n' && *p!='|' && strncmp(p,"[br]",4); p++,len++);
+
+            current->text.text[current->text.lines-1] = (char *)MALLOC(len+1);
+            if (!current->text.text[current->text.lines-1])
+            {
+                return ERR;
+            }
+            strncpy (current->text.text[current->text.lines-1], q, len);
+            current->text.text[current->text.lines-1][len]='\0';
+
+            if (!*p || *p=='\r' || *p=='\n')
+            {
+                break;
+            }
+            if (*p=='|')
+            {
+                p++;
+            }
+            else 
+            {
+                while (*p++!=']');
+            }
+        }
+        break;
+    }
+
+    return current;
+}
+
+
 
 subtitle_t *internal_sub_read_line_vplayer(int fd, subtitle_t *current)
 {
@@ -1699,6 +1758,9 @@ static int internal_sub_autodetect (int fd)
         if (sscanf (line, "{T %d:%d:%d:%d",&i, &i, &i, &i)==4){
             return SUB_SUBVIEWER2;
         }
+        if (sscanf (line, "%d  %d:%d:%d,%d  %d:%d:%d,%d",&i, &i, &i, &i, &i, &i, &i, &i, &i)==9) {
+            return SUB_SUBVIEWER3;
+        }
         if (strstr (line, "<SAMI>")){
             return SUB_SAMI;
         }
@@ -1794,6 +1856,7 @@ SUBAPI subdata_t *internal_sub_open(char *filename,unsigned int rate,char* chars
         { internal_sub_read_line_mpsub, NULL, "mpsub" },
         { internal_sub_read_line_aqt, NULL, "aqt" },
         { internal_sub_read_line_subviewer2, NULL, "subviewer 2.0" },
+        { internal_sub_read_line_subviewer3, NULL, "subviewer 3.0" },
         { internal_sub_read_line_subrip09, NULL, "subrip 0.9" },
         { internal_sub_read_line_jacosub, NULL, "jacosub" },
         { internal_sub_read_line_mpl2, NULL, "mpl2" }
