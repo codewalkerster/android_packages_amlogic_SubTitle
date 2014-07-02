@@ -789,8 +789,10 @@ int get_inter_spu_packet(int pts)
 			return -1;
 		}
 	}
-    if (storenumber == 0)
+    if (storenumber == 0) {
+        lp_unlock(&sublock);
 		return -1;
+    }
 	LOGI("get_inter_spu_packet  read_position is %d  file_position is %d  ,time is %d\n",read_position,file_position,inter_subtitle_data[read_position].subtitle_pts);
 
 	lp_unlock(&sublock);
