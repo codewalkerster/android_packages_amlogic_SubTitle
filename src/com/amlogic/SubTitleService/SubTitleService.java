@@ -609,7 +609,8 @@ public class SubTitleService extends ISubTitleService.Stub {
                     if(subTitleView != null) {
                         if(Debug()) Log.i(TAG,"[handleMessage]closeSubtitle");
                         subTitleView.stopSubThread(); //close insub parse thread
-                        subTitleView.closeSubtitle();	
+                        subTitleView.closeSubtitle();
+                        subTitleView.setVisibility(View.VISIBLE);
                         subTitleView.clear();
                     }
                     subShowState = SUB_OFF;
