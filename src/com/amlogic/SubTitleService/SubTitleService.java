@@ -114,18 +114,18 @@ public class SubTitleService extends ISubTitleService.Stub {
             | LayoutParams.FLAG_NOT_FOCUSABLE
             | LayoutParams.FLAG_LAYOUT_NO_LIMITS;
         p.gravity = Gravity.LEFT | Gravity.TOP; 
-        Display display = mWm.getDefaultDisplay();
-        //DisplayInfo displayinfo = new DisplayInfo();
-        //display.getDisplayInfo(displayinfo);
-        int mWScreenx = display.getWidth();
-        int mWScreeny = display.getHeight();
-        p.x = 0;
-        p.y = 0;
-        p.width = mWScreenx;//ViewGroup.LayoutParams.WRAP_CONTENT;
-        p.height = mWScreeny;//ViewGroup.LayoutParams.WRAP_CONTENT;
-        //if(Debug()) Log.i(TAG,"[showSubtitleOverlay]mWm:"+mWm+",mSubView:"+mSubView);
-        if(mWm != null && mSubView != null) {
-            mWm.addView(mSubView, p);
+        if(mWm != null){
+        	Display display = mWm.getDefaultDisplay();
+	        //DisplayInfo displayinfo = new DisplayInfo();
+	        //display.getDisplayInfo(displayinfo);
+	        int mWScreenx = display.getWidth();
+	        int mWScreeny = display.getHeight();
+	        p.x = 0;
+	        p.y = 0;
+	        p.width = mWScreenx;//ViewGroup.LayoutParams.WRAP_CONTENT;
+	        p.height = mWScreeny;//ViewGroup.LayoutParams.WRAP_CONTENT;
+	        //if(Debug()) Log.i(TAG,"[showSubtitleOverlay]mWm:"+mWm+",mSubView:"+mSubView);
+        	mWm.addView(mSubView, p);
         }
     }
 
