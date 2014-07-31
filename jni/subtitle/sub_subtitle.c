@@ -566,7 +566,11 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 				ret = get_vob_spu(spu_buf_piece+rd_oft, &restlen, current_length, spu); 
                 if (current_type==0x17000 || current_type==0x1700a) {
                     LOGI("## ret=%d, restlen=%d, sizeflag=%d, restbuf=%x,%x, ---\n", ret, restlen, sizeflag, restbuf,restbuf?restbuf[0]:0);
-                    if (restlen) {
+                     if(restlen < 0){
+		         LOGI("Warning restlen <0, set to 0\n");
+		         restlen =0;		
+		     }
+		     if (restlen) {
                         if (restbuf) {
                             free(restbuf);
                             restbuf = NULL;
