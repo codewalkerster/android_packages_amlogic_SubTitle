@@ -62,6 +62,7 @@ public class SubTitleService extends ISubTitleService.Stub {
     private static final int HIDE = 0xFA;
     private static final int DISPLAY = 0xFB;
     private static final int CLEAR = 0xFC;
+    private static final int RESET_FOR_SEEK = 0xFD;
     private static final long MSG_SEND_DELAY = 0; //0s
     private static final int SUB_OFF = 0;
     private static final int SUB_ON = 1;
@@ -475,6 +476,10 @@ public class SubTitleService extends ISubTitleService.Stub {
         sendClearMsg();
     }
 
+    public void resetForSeek() {
+        sendResetForSeekMsg();
+    }
+
     public String getCurName() {
         SubID subID = subtitleUtils.getSubID(curSubId);
         if(Debug()) Log.i(TAG,"[getCurName]subID.filename:"+subID.filename);
@@ -587,6 +592,13 @@ public class SubTitleService extends ISubTitleService.Stub {
         }
     }
 
+    private void sendResetForSeekMsg() {
+         if(mHandler != null) {
+            Message msg = mHandler.obtainMessage(RESET_FOR_SEEK);
+            mHandler.sendMessageDelayed(msg, MSG_SEND_DELAY);
+        }
+    }
+
     private Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -691,6 +703,12 @@ public class SubTitleService extends ISubTitleService.Stub {
                 case CLEAR:
                     if(subTitleView != null) {
                         subTitleView.clear();
+                    }
+                    break;
+
+                case RESET_FOR_SEEK:
+                    if(subTitleView != null) {
+                        subTitleView.resetForSeek();
                     }
                     break;
 

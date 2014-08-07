@@ -19,6 +19,7 @@ interface ISubTitleService
 	void setTextStyle(int style);
 	void setPosHeight(int height);
 	void clear();
+	void resetForSeek();
 	void hide();
 	void display();
 	String getCurName();
