@@ -367,6 +367,7 @@ public class SubTitleService extends ISubTitleService.Stub {
     public void close() {
         if(Debug()) Log.i(TAG, "[close] subTitleView: "+subTitleView+", mWm:"+mWm+", mSubView:"+mSubView);
         if(subtitleUtils != null) {
+            subtitleUtils.setSubtitleNumber(0);
             subtitleUtils = null;
         }
         if(mWm != null) {
