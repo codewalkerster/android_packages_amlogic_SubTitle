@@ -187,18 +187,28 @@ int get_ass_spu(char *spu_buf, unsigned length, AML_SPUVAR *spu)
         spu->m_delay=endmills*90;
         LOGE("%d:%d:%d:%d, end mills=0x%x m-delay=0x%x\n", hour,min,sec,mills,endmills,spu->m_delay);
     }
-
+    // remove the chars before  '\}'
     j = 0;
     for (i=0; i<35; i++) {
         //LOGE("i=%d, %s,\n", i, spu_buf+i);
         if (strncmp(spu_buf+i,"Default",7)==0) {
             j = i;
             i = strcspn(spu_buf+i, "\}");
-            j = j+i+1;
-            //LOGE("i=%d, size:%u, %s,\n", i, spu->buffer_size, spu_buf+j);
-            spu->buffer_size -= j;
-            memmove(spu->spu_data, spu->spu_data+j, spu->buffer_size);
-            break;
+            if(*(spu_buf+j+i) == '\0'){
+              // not found '\}'
+              unsigned char* p = strstr(spu_buf+i, "0000,0000,0000,,");
+              if(p){
+                spu->buffer_size -= (p + 16 - spu->spu_data);
+                memmove(spu->spu_data, p + 16, spu->buffer_size);
+              }
+              break;
+            }else{
+              j = j+i+1;
+              //LOGE("i=%d, size:%u, %s,\n", i, spu->buffer_size, spu_buf+j);
+              spu->buffer_size -= j;
+              memmove(spu->spu_data, spu->spu_data+j, spu->buffer_size);
+              break;
+            }
         }
     } 
 
@@ -612,7 +622,6 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 				duration_pts |= spu_buf_piece[rd_oft++]<<16;
 				duration_pts |= spu_buf_piece[rd_oft++]<<8;
 				duration_pts |= spu_buf_piece[rd_oft++];
-	
 				sublen = 1000;
 	      		spu->subtitle_type = SUBTITLE_SSA;
 	      		spu->buffer_size = current_length+1;//256*(current_length/256+1);
@@ -625,7 +634,7 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
 				}
 				memcpy( spu->spu_data,spu_buf_piece+rd_oft, current_length );
 				get_ass_spu(spu->spu_data,spu->buffer_size,spu);
-				LOGI("CODEC_ID_SSA   size is:    %u ,data is:    %s\n",spu->buffer_size,spu->spu_data);
+				LOGI("CODEC_ID_SSA   size is:    %u ,data is:    %s, current_length=%d\n",spu->buffer_size,spu->spu_data, current_length);
 				ret = 0;
 				break;
 	
