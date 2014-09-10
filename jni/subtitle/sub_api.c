@@ -617,7 +617,7 @@ subtitle_t *internal_sub_read_line_microdvd(int fd, subtitle_t *current)
 		ptsrate ++;
 	if(ptsrate<=0)
 	{	
-		ptsrate=30;
+		ptsrate=24;//30;
 	}
 	log_print("--------internal_sub_read_line_microdvd---get frame rate: %f--\n",ptsrate);
 
