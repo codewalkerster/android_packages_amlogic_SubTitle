@@ -125,7 +125,9 @@ public class SubTitleService extends ISubTitleService.Stub {
 	        p.width = mWScreenx;//ViewGroup.LayoutParams.WRAP_CONTENT;
 	        p.height = mWScreeny;//ViewGroup.LayoutParams.WRAP_CONTENT;
 	        //if(Debug()) Log.i(TAG,"[showSubtitleOverlay]mWm:"+mWm+",mSubView:"+mSubView);
-        	mWm.addView(mSubView, p);
+        	if(mWm != null && mSubView != null && p != null) {
+			mWm.addView(mSubView, p);
+		}
         }
     }
 
