@@ -22,7 +22,7 @@ public class SubtitleUtils {
 //	private List<String> strlist = new ArrayList<String>();
 	private List<SubID> strlist = new ArrayList<SubID>();
 	private int exSubtotle=0;
-	private boolean supportLrc = false; //lrc support
+	private boolean supportLrc = true;//false; //lrc support
     
     private static final String[] extensions = {
     	"txt",
