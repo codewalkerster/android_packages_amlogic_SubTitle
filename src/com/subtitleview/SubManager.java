@@ -46,6 +46,35 @@ public class SubManager{
                 subtitle.stopSubThread();
             }
         }
+        
+    public void loadSubtitleFile(String path, String enc) throws Exception {
+        if(subapi != null) {
+            if(subapi.type() == Subtitle.SUBTYPE.INSUB) {
+                //don't release now,apk will call closeSubtitle when change file.
+            }
+            else {
+                subapi.closeSubtitle();
+                subapi = null;
+            }
+        }
+
+        subtitle.setSystemCharset(enc);
+        
+        try {
+            subtitle.setSubname(path);
+		    type = subtitle.getSubType();
+		    if (type == Subtitle.SUBTYPE.SUB_INVALID) {
+		    	subapi = null;
+		    }
+		    else {
+		    	subapi = subtitle.parse();
+	    	}
+		} 
+		catch (Exception e) {
+		    Log.e(TAG, "loadSubtitleFile, error is " + e.getMessage());
+			throw e;
+		}
+    }
 	
 	public Subtitle.SUBTYPE setFile(SubID file, String enc) throws Exception {
 		if(subapi != null) {

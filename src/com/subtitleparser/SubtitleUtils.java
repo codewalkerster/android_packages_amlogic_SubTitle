@@ -24,7 +24,7 @@ public class SubtitleUtils {
 	private int exSubtotle=0;
 	private boolean supportLrc = true;//false; //lrc support
     
-    private static final String[] extensions = {
+    public static final String[] extensions = {
     	"txt",
         "srt",
         "smi",
@@ -33,6 +33,7 @@ public class SubtitleUtils {
         "ssa",
         "ass",
         "lrc",
+        "xml",
         "idx",
         "sub",
        /* "may be need add new types--------------" */};	

@@ -78,6 +78,7 @@ public class FileIO {
 		Pattern AQTITLE_Pattern = Pattern.compile("-->>");
 		Pattern SUBRIP9_Pattern = Pattern.compile("\\[\\d+:\\d+:\\d+\\]");
         Pattern LRC_Pattern = Pattern.compile("\\[\\d+:\\d+.\\d+\\]"+"(.*?)");
+        Pattern XML_Pattern = Pattern.compile("<Subtitle>");
 
 		Matcher matcher=null;
 		try {
@@ -156,6 +157,12 @@ public class FileIO {
 						type = Subtitle.SUBTYPE.SUB_SAMI;
                                         break;
 					}
+                    matcher=XML_Pattern.matcher(line);
+					if(matcher.find())
+					{
+						type = Subtitle.SUBTYPE.SUB_XML;
+                                        break;
+					}
 					matcher=JACOSUB_Pattern.matcher(line);
 					if(matcher.find())
 					{
@@ -209,7 +216,7 @@ public class FileIO {
 						type = Subtitle.SUBTYPE.SUB_SUBRIP09;
                                         break;
 					}
-                                 matcher=LRC_Pattern.matcher(line);
+                    matcher=LRC_Pattern.matcher(line);
 					if(matcher.find())
 					{
 						type = Subtitle.SUBTYPE.SUB_LRC;

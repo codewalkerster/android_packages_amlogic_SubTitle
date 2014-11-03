@@ -19,12 +19,19 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.graphics.*;
 import com.subtitleparser.*;
 import com.subtitleview.SubtitleView;
+import android.os.Environment;
 import android.os.Handler; 
 import android.os.Message;
 import android.os.SystemProperties;
 import android.app.AlertDialog;
+import android.webkit.URLUtil;
 import android.widget.*;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.lang.RuntimeException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -49,6 +56,9 @@ public class SubTitleService extends ISubTitleService.Stub {
     private ListView lv;
     private int curOptSelect = 0; 
 
+    //for load subtitle file by user
+    private String mLoadPath = null;
+
     private static final int OPEN = 0xF0; //random value 
     private static final int SHOW_CONTENT = 0xF1;
     private static final int CLOSE = 0xF2; 
@@ -63,6 +73,7 @@ public class SubTitleService extends ISubTitleService.Stub {
     private static final int DISPLAY = 0xFB;
     private static final int CLEAR = 0xFC;
     private static final int RESET_FOR_SEEK = 0xFD;
+    private static final int LOAD = 0xFE;
     private static final long MSG_SEND_DELAY = 0; //0s
     private static final int SUB_OFF = 0;
     private static final int SUB_ON = 1;
@@ -317,6 +328,144 @@ public class SubTitleService extends ISubTitleService.Stub {
         return type;
     }
 
+    ////http://milleni.ercdn.net/9_test/double_lang_test.xml
+    private String downLoadXmlFile(String strURL) {
+        String filePath = null;
+        String fileName = null;
+        String dirPath = null;
+        if(strURL == null) {
+            return filePath;
+        }
+
+        if(strURL.lastIndexOf("/") > 0) {
+            fileName = strURL.substring(strURL.lastIndexOf("/") + 1);
+        }
+        else {
+            return filePath;
+        }
+        
+        // "/storage/sdcard0/Download";
+        dirPath = Environment.getExternalStorageDirectory().getPath() + "/" + Environment.DIRECTORY_DOWNLOADS;
+        File base = new File(dirPath);
+        if (!base.isDirectory() && !base.mkdir()) {
+            Log.e(TAG, "[downLoadXmlFile] unable to create external downloads directory " + base.getPath());
+            return filePath;
+        }
+
+        try {
+            if (!URLUtil.isNetworkUrl(strURL)) {
+                Log.i(TAG, "[downLoadXmlFile] is not network Url, strURL: "+strURL);
+            }
+            else
+            {
+                URL myURL = new URL(strURL);
+                URLConnection conn = myURL.openConnection();
+                conn.connect();
+                InputStream is = conn.getInputStream();
+                if (is == null) {
+                    throw new RuntimeException("stream is null");
+                }
+                if(fileName != null) {
+                    filePath = dirPath + "/" +fileName;
+                    Log.i(TAG, "[downLoadXmlFile] filePath: "+filePath);
+                    File file = new File(filePath);
+                    if (!file.exists()) {
+                        file.createNewFile();
+                    }
+                    else {
+                        file.delete();
+                    }
+                    FileOutputStream fos = new FileOutputStream(filePath);
+                    byte buf[] = new byte[128];
+                    do {
+                        int numread = is.read(buf);
+                        if (numread <= 0) {
+                            break;
+                        }
+                        fos.write(buf, 0, numread);
+                    }while (true);
+                    fos.close(); 
+                }
+            }
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+        }
+
+        return filePath;
+    }
+
+    public boolean load(String path) {
+        boolean ret = false;
+
+        // for subtitle which should download from net
+        final String urlPath = path;
+        if((urlPath.startsWith("http://") || urlPath.startsWith("https://")) && (urlPath.endsWith("xml"))) {
+            ret = true; // url subtitle return true
+            Runnable r = new Runnable() {
+                public void run() {
+                    try {
+                        String pathTmp = downLoadXmlFile(urlPath);
+                        String pathExtTmp=pathTmp.substring(pathTmp.lastIndexOf('.')+1);
+                        if(Debug())Log.i(TAG, "[load] pathExtTmp: "+pathExtTmp+", pathTmp:"+pathTmp);
+                        
+                        if(SubtitleUtils.extensions != null) {
+                            for (String ext : SubtitleUtils.extensions) {
+                                if(Debug())Log.i(TAG, "[load] ext:"+ext);
+                                if(pathExtTmp.toLowerCase().equals(ext)) {
+                                    mLoadPath = pathTmp;
+                                    sendCloseMsg();
+                                    sendLoadMsg();
+                                    break;
+                                }
+                                else {
+                                    mLoadPath = null;
+                                }
+                            }
+                        }
+                        else {
+                            mLoadPath = null;
+                        }
+                    }
+                    catch (Exception e) {
+                        Log.e(TAG, e.getMessage(), e);
+                    }
+                }
+            };
+            new Thread(r).start();
+        }
+        else {
+            String pathExt=path.substring(path.lastIndexOf('.')+1);
+            if(Debug()) Log.i(TAG, "[load] pathExt: "+pathExt+", path:"+path);
+            
+            if(SubtitleUtils.extensions != null) {
+                for (String ext : SubtitleUtils.extensions) {
+                    if(Debug()) Log.i(TAG, "[load] ext:"+ext);
+                    if(pathExt.toLowerCase().equals(ext)) {
+                        //if(mSubTotal < 0) {
+                            //mSubTotal = 1;
+                        //}
+                        //else {
+                            //mSubTotal += 1;
+                        //}
+                        mLoadPath = path;
+                        sendCloseMsg();
+                        sendLoadMsg();
+                        ret = true;
+                        break;
+                    }
+                    else {
+                        mLoadPath = null;
+                    }
+                }
+            }
+            else {
+                mLoadPath = null;
+            }
+        }
+        return ret;
+    }
+
     /*public*/private void openFile(SubID subID) {
         if(Debug()) Log.i(TAG, "[openFile] subID: "+subID);
         if(subID==null)
@@ -362,6 +511,7 @@ public class SubTitleService extends ISubTitleService.Stub {
                 if(Debug()) Log.i(TAG, "[open] curSubId: "+curSubId);
                 sendOpenMsg();
                 sendInitSelectMsg();
+                //load("http://milleni.ercdn.net/9_test/double_lang_test.xml"); for test
                 //option();
             }
         }
@@ -381,7 +531,8 @@ public class SubTitleService extends ISubTitleService.Stub {
                 mWm = null;
             }
         }
-        
+
+        mLoadPath = null;
         mSubTotal = -1;
         sendCloseMsg();
         //subShowState = SUB_OFF;
@@ -483,9 +634,13 @@ public class SubTitleService extends ISubTitleService.Stub {
     }
 
     public String getCurName() {
+        String name = null;
         SubID subID = subtitleUtils.getSubID(curSubId);
+        if(subID != null) {
         if(Debug()) Log.i(TAG,"[getCurName]subID.filename:"+subID.filename);
-        return subID.filename;
+            name = subID.filename;
+        }
+        return name;
     }
     
     public void showSub(int position) {
@@ -508,6 +663,13 @@ public class SubTitleService extends ISubTitleService.Stub {
         }
     }
 
+    private void sendLoadMsg() {
+        if(mHandler != null) {
+            Message msg = mHandler.obtainMessage(LOAD);
+            mHandler.sendMessageDelayed(msg, MSG_SEND_DELAY);
+        }
+    }
+
     private void sendCloseMsg() {
         if(mHandler != null) {
             Message msg = mHandler.obtainMessage(CLOSE);
@@ -516,6 +678,7 @@ public class SubTitleService extends ISubTitleService.Stub {
             mHandler.removeMessages(OPT_SHOW);
             mHandler.removeMessages(OPEN);
             mHandler.removeMessages(INITSELECT);
+            mHandler.removeMessages(LOAD);
         }
     }
 
@@ -716,6 +879,22 @@ public class SubTitleService extends ISubTitleService.Stub {
 
                 case OPT_SHOW:
                     showOptionOverlay();
+                    break;
+
+                case LOAD:
+                    if(Debug()) Log.i(TAG,"[handleMessage]loadSubtitleFile subShowState:"+subShowState+",subTitleView:"+subTitleView+",mLoadPath:"+mLoadPath);
+                    if(subShowState == SUB_OFF && subTitleView != null && mLoadPath != null) {
+                        if(Debug()) Log.i(TAG,"[handleMessage]loadSubtitleFile mLoadPath:"+mLoadPath);
+                        try {
+                            subTitleView.loadSubtitleFile(mLoadPath, setSublanguage());
+                            subShowState = SUB_ON;
+                        }
+                        catch(Exception e) {
+                            if(Debug()) Log.d(TAG, "load:error");
+                            subTitleView = null;
+                            e.printStackTrace();
+                        }
+                    }
                     break;
             }
         }

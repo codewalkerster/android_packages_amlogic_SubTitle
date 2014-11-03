@@ -431,6 +431,10 @@ public class SubtitleView extends FrameLayout {
         SubManager.getinstance().stopSubThread();
     }
 
+    public void loadSubtitleFile(String path, String enc) throws Exception {
+        SubManager.getinstance().loadSubtitleFile(path, enc);
+    }
+
     public Subtitle.SUBTYPE setFile(SubID file, String enc) throws Exception {
         data = null;
         dataPgsA = null;

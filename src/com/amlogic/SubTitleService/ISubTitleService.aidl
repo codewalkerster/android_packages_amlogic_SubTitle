@@ -23,4 +23,5 @@ interface ISubTitleService
 	void hide();
 	void display();
 	String getCurName();
+	boolean load(String path);
 }
