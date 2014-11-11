@@ -109,6 +109,11 @@ public class SubManager{
 
 		return type;
 	}
+
+    public Subtitle.SUBTYPE getSubType() {
+        Subtitle.SUBTYPE type = subtitle.getSubType();
+        return type;
+    }
 	
 	public int getDisplayWidth() {
 		//Log.d(TAG, "display_width:"+display_width);

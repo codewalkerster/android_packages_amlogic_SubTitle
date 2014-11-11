@@ -13,6 +13,7 @@ interface ISubTitleService
 	void showSub(int position);
 	void option(); 
 	int getSubType();
+	String getSubTypeStr();
 	void setTextColor(int color);
 	void setTextSize(int size);
 	void setGravity(int gravity);

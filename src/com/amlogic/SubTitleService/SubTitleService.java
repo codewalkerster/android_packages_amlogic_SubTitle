@@ -597,6 +597,15 @@ public class SubTitleService extends ISubTitleService.Stub {
         return ret;
     }
 
+    public String getSubTypeStr() {
+        String ret = "";
+        if(subTitleView != null) {
+            ret = subTitleView.getSubTypeStr();
+        }
+        if(Debug()) Log.i(TAG,"[getSubTypeStr]ret:"+ret);
+        return ret;
+    }
+
     public void setTextColor(int color) {
         sendSetTxtColorMsg(color);
     }

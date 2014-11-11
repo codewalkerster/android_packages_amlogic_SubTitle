@@ -131,6 +131,77 @@ public class SubtitleView extends FrameLayout {
         return ret;
     }
 
+    public String getSubTypeStr() {
+        String typeStr = "null";
+        Subtitle.SUBTYPE type = SubManager.getinstance().getSubType();
+        switch(type) {
+            case SUB_INVALID:
+                typeStr = "SUB_INVALID";
+                break;
+            case SUB_MICRODVD:
+                typeStr = "MICRODVD";
+                break;
+            case SUB_SUBRIP:
+                typeStr = "SUBRIP";
+                break;
+            case SUB_SUBVIEWER:
+                typeStr = "SUBVIEWER";
+                break;
+            case SUB_SAMI:
+                typeStr = "SAMI";
+                break;
+            case SUB_VPLAYER:
+                typeStr = "VPLAYER";
+                break;
+            case SUB_RT:
+                typeStr = "RT";
+                break;
+            case SUB_SSA:
+                typeStr = "SSA";
+                break;
+            case SUB_PJS:
+                typeStr = "PJS";
+                break;
+            case SUB_MPSUB:
+                typeStr = "MPSUB";
+                break;
+            case SUB_AQTITLE:
+                typeStr = "AQTITLE";
+                break;
+            case SUB_SUBVIEWER2:
+                typeStr = "SUBVIEWER";
+                break;
+            case SUB_SUBVIEWER3:
+                typeStr = "SUBVIEWER";
+                break;
+            case SUB_SUBRIP09:
+                typeStr = "SUBRIP";
+                break;
+            case SUB_JACOSUB:
+                typeStr = "JACOSUB";
+                break;
+            case SUB_MPL2:
+                typeStr = "SUB_MPL";
+                break;
+            case SUB_DIVX:
+                typeStr = "DIVX";
+                break;
+            case SUB_IDXSUB:
+                typeStr = "IDX+SUB";
+                break;
+            case SUB_COMMONTXT:
+                typeStr = "COMMONTXT";
+                break;
+            case SUB_LRC:
+                typeStr = "LRC";
+                break;
+            case INSUB:
+                typeStr = "INSUB";
+                break;
+        }
+        return typeStr;
+    }
+
     public void redraw(SubData data) {
         this.removeAllViews();
         if(data != null) {
