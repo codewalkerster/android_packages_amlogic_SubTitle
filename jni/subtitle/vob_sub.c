@@ -1892,7 +1892,7 @@ void idxsub_parser_data( const unsigned char * source,long length,int linewidth,
 	aAlpha[1] = ((subtitle_alpha>>8) >> 4)&0xf;
 	aAlpha[0] = (subtitle_alpha>>8) & 0xf;   
 	aAlpha[3] = (subtitle_alpha>>4)&0xf;                                                                                                    
-    aAlpha[2] = subtitle_alpha & 0xf;     
+    aAlpha[2] = subtitle_alpha & 0xf; 
     /* update Palette*/
 	aPalette[0]=  ((vobsubdata->VobSPU.spu_color>>8) >> 4)&0xf;  
 	aPalette[1] = (vobsubdata->VobSPU.spu_color>>8) & 0xf;                                                                                              
@@ -1918,6 +1918,8 @@ void idxsub_parser_data( const unsigned char * source,long length,int linewidth,
             LOGI("vobsubdata->vobsub->palette[aPalette[3]] = 0x%x \n", vobsubdata->vobsub->palette[aPalette[3]]);
 		}
 	}
+
+    aAlpha[1] = 0;
 	
 	if (set_rgb){	
 		if(property_get("media.vobsub.rgb0",value,NULL) > 0){
