@@ -1,4 +1,4 @@
-package com.amlogic.SubTitleService;
+package com.droidlogic.SubTitleService;
 
 interface ISubTitleService
 {

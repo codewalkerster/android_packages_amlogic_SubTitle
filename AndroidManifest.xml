@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.amlogic.SubTitleService"
+    package="com.droidlogic.SubTitleService"
     android:versionCode="1"
     android:versionName="1.0"
     android:sharedUserId="android.uid.system"> 
@@ -8,11 +8,12 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.SYSTEM_OVERLAY_WINDOW" /> 
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="droidlogic.permission.SYSTEM_CONTROL" />
     <application
         android:persistent="true">  
         <service android:name=".SubTitleService">  
             <intent-filter>  
-                <action android:name="com.amlogic.SubTitleService.SubTitleService"/>  
+                <action android:name="com.droidlogic.SubTitleService.SubTitleService"/>  
             </intent-filter>  
         </service> 
         <receiver android:name=".SubTitleServiceBroadcastReceiver">

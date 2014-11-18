@@ -16,7 +16,7 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(call all-java-files-under, src) \
-		src/com/amlogic/SubTitleService/ISubTitleService.aidl
+		src/com/droidlogic/SubTitleService/ISubTitleService.aidl
 
 #LOCAL_SDK_VERSION := current
 LOCAL_PROGUARD_ENABLED := disabled

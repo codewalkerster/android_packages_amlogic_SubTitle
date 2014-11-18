@@ -1,4 +1,4 @@
-package com.amlogic.SubTitleService;
+package com.droidlogic.SubTitleService;
 
 import android.util.Log;
 import android.app.Service;

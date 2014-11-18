@@ -10,7 +10,7 @@ LOCAL_C_INCLUDES := $(JNI_H_INCLUDE) \
 			$(TOP)/frameworks/native/services \
 			$(TOP)/frameworks/native/include 
 
-LOCAL_SHARED_LIBRARIES += libutils libmedia libcutils libbinder libsystemwriteservice
+LOCAL_SHARED_LIBRARIES += libutils libmedia libcutils libbinder libsystemcontrolservice
 
 LOCAL_PRELINK_MODULE := false
 

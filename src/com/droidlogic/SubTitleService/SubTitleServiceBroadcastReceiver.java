@@ -1,4 +1,4 @@
-package com.amlogic.SubTitleService;
+package com.droidlogic.SubTitleService;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -16,7 +16,7 @@ public class SubTitleServiceBroadcastReceiver extends BroadcastReceiver {
         Log.i(TAG, "[onReceive]action:"+action+", subtitleService:"+subtitleService);
         if(Intent.ACTION_BOOT_COMPLETED.equals(action)) {
             subtitleService = new SubTitleService(context);
-            ServiceManager.addService(Context.SUBTITLE_SERVICE, subtitleService);
+            ServiceManager.addService(/*Context.SUBTITLE_SERVICE*/"subtitle_service", subtitleService);
         }
     }
 }
