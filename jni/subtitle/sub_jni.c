@@ -642,18 +642,19 @@ JNI_OnLoad(JavaVM* vm, void* reserved)
 	if (registerNativeMethods(env, "com/subtitleparser/subtypes/InSubApi",insubdataMethods, NELEM(insubdataMethods)) < 0){
 		LOGE("registerNativeMethods failed!");
 		return -1;
-    }    
+    }
     if (registerNativeMethods(env, "com/subtitleparser/subtypes/IdxSubApi",idxsubdataMethods, NELEM(idxsubdataMethods)) < 0){
 		LOGE("registerNativeMethods failed!");
 		return -1;
-    } 
+    }
 
-	if(subThreadRunning == 0) 
+    /*
+	if(subThreadRunning == 0)
 	{
 		subThreadRunning = 1;
 		sub_thread = 1;
 		subtitle_thread_create();
 		init_subtitle_file();
-	}
+	}*/
     return JNI_VERSION_1_4;
 }
