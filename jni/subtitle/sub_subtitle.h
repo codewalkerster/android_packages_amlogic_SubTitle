@@ -19,40 +19,40 @@
 #define SUBTITLE_SSA  5     //add yjf
 #define SUBTITLE_DVB  6
 
-typedef struct 
+typedef struct
 {
- unsigned sync_bytes;
- unsigned buffer_size;
- unsigned pid;	
- unsigned pts;
- unsigned m_delay;
- unsigned char *spu_data;
- unsigned short cmd_offset;
- unsigned short length; 
+    unsigned sync_bytes;
+    unsigned buffer_size;
+    unsigned pid;
+    unsigned pts;
+    unsigned m_delay;
+    unsigned char *spu_data;
+    unsigned short cmd_offset;
+    unsigned short length;
 
- unsigned r_pt;
- unsigned frame_rdy;
- 	
- unsigned short spu_color; 
- unsigned short spu_alpha; 
- unsigned short spu_start_x;
- unsigned short spu_start_y;
- unsigned short spu_width;
- unsigned short spu_height;
- unsigned short top_pxd_addr;  
- unsigned short bottom_pxd_addr; 
+    unsigned r_pt;
+    unsigned frame_rdy;
 
- unsigned disp_colcon_addr;  
- unsigned char display_pending;
- unsigned char displaying;
- unsigned char subtitle_type;
- unsigned char reser[2];   
+    unsigned short spu_color;
+    unsigned short spu_alpha;
+    unsigned short spu_start_x;
+    unsigned short spu_start_y;
+    unsigned short spu_width;
+    unsigned short spu_height;
+    unsigned short top_pxd_addr;
+    unsigned short bottom_pxd_addr;
 
- unsigned rgba_enable;	
- unsigned rgba_background;
- unsigned rgba_pattern1;
- unsigned rgba_pattern2;
- unsigned rgba_pattern3; 
+    unsigned disp_colcon_addr;
+    unsigned char display_pending;
+    unsigned char displaying;
+    unsigned char subtitle_type;
+    unsigned char reser[2];
+
+    unsigned rgba_enable;
+    unsigned rgba_background;
+    unsigned rgba_pattern1;
+    unsigned rgba_pattern2;
+    unsigned rgba_pattern3;
 } AML_SPUVAR;
 
 

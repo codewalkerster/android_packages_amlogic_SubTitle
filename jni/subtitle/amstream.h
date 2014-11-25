@@ -1,23 +1,23 @@
- /*
- * AMLOGIC Audio/Video streaming port driver.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the named License,
- * or any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA
- *
- * Author:  Tim Yao <timyao@amlogic.com>
- *
- */
+/*
+* AMLOGIC Audio/Video streaming port driver.
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; either version 2 of the named License,
+* or any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software
+* Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA
+*
+* Author:  Tim Yao <timyao@amlogic.com>
+*
+*/
 
 #ifndef AMSTREAM_H
 #define AMSTREAM_H
@@ -59,7 +59,7 @@
 #define AMSTREAM_IOC_ADECSTAT   _IOR(AMSTREAM_IOC_MAGIC, 0x10, unsigned long)
 #define AMSTREAM_IOC_PORT_INIT   _IO(AMSTREAM_IOC_MAGIC, 0x11)
 #define AMSTREAM_IOC_TRICKMODE  _IOW(AMSTREAM_IOC_MAGIC, 0x12, unsigned long)
-#define AMSTREAM_IOC_AUDIO_INFO	 _IOW(AMSTREAM_IOC_MAGIC, 0x13, unsigned long)
+#define AMSTREAM_IOC_AUDIO_INFO  _IOW(AMSTREAM_IOC_MAGIC, 0x13, unsigned long)
 #define AMSTREAM_IOC_TRICK_STAT  _IOR(AMSTREAM_IOC_MAGIC, 0x14, unsigned long)
 #define AMSTREAM_IOC_AUDIO_RESET _IO(AMSTREAM_IOC_MAGIC, 0x15)
 #define AMSTREAM_IOC_SID         _IOW(AMSTREAM_IOC_MAGIC, 0x16, int)
@@ -75,40 +75,46 @@
 #define AMSTREAM_IOC_GET_SUBTITLE_INFO       _IOR(AMSTREAM_IOC_MAGIC, 0xad, unsigned long)
 #define AMSTREAM_IOC_SET_SUBTITLE_INFO       _IOW(AMSTREAM_IOC_MAGIC, 0xae, unsigned long)
 
-struct buf_status {
-        int size;
-        int data_len;
-        int free_len;
-        unsigned int read_pointer;
-        unsigned int write_pointer;
+struct buf_status
+{
+    int size;
+    int data_len;
+    int free_len;
+    unsigned int read_pointer;
+    unsigned int write_pointer;
 };
 
 
-struct vdec_status {
-        unsigned int width;
-        unsigned int height;
-        unsigned int fps;
-        unsigned int error_count;
-        unsigned int status;
+struct vdec_status
+{
+    unsigned int width;
+    unsigned int height;
+    unsigned int fps;
+    unsigned int error_count;
+    unsigned int status;
 };
 
-struct adec_status {
-        unsigned int channels;
-        unsigned int sample_rate;
-        unsigned int resolution;
-        unsigned int error_count;
-        unsigned int status;
+struct adec_status
+{
+    unsigned int channels;
+    unsigned int sample_rate;
+    unsigned int resolution;
+    unsigned int error_count;
+    unsigned int status;
 };
 
-struct am_io_param {
-    union {
-          int data;
-          int id;//get bufstatus? //or others
+struct am_io_param
+{
+    union
+    {
+        int data;
+        int id;//get bufstatus? //or others
     };
 
     int len; //buffer size;
 
-    union {
+    union
+    {
         char buf[1];
         struct buf_status status;
         struct vdec_status vstatus;

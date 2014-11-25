@@ -14,7 +14,7 @@
 
 #define CODEC_AMSUBTITLE_DEVICE     "/dev/amsubtitle"
 
-#define msleep(n)	usleep(n*1000)
+#define msleep(n)   usleep(n*1000)
 
 int set_sysfs_int(const char *path, int val)
 {
@@ -27,13 +27,13 @@ int get_sysfs_int(const char *path)
 
 int set_subtitle_enable(int enable)
 {
-	log_print("[%s::%d] %d,----- \n",__FUNCTION__,__LINE__, enable);
+    log_print("[%s::%d] %d,----- \n", __FUNCTION__, __LINE__, enable);
     return set_sysfs_int("/sys/class/subtitle/enable", enable);
 }
 
 int get_subtitle_enable()
 {
-	log_print("[%s::%d] %d,------ \n",__FUNCTION__,__LINE__, get_sysfs_int("/sys/class/subtitle/enable"));
+    log_print("[%s::%d] %d,------ \n", __FUNCTION__, __LINE__, get_sysfs_int("/sys/class/subtitle/enable"));
     return get_sysfs_int("/sys/class/subtitle/enable");
 }
 

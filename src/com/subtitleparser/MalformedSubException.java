@@ -3,11 +3,11 @@ package com.subtitleparser;
 /**
  * SUB format exception.
  *
- * @author 
+ * @author
  */
-public class MalformedSubException extends Exception{
+public class MalformedSubException extends Exception {
 
-	public MalformedSubException(String msg){
-		super(msg);
-	}
+        public MalformedSubException (String msg) {
+            super (msg);
+        }
 }

@@ -44,14 +44,14 @@
 #ifndef AV_RB16
 #   define AV_RB16(x)                           \
     ((((const uint8_t*)(x))[0] << 8) |          \
-      ((const uint8_t*)(x))[1])
+     ((const uint8_t*)(x))[1])
 #endif
 #ifndef AV_RB32
 #   define AV_RB32(x)                                \
     (((uint32_t)((const uint8_t*)(x))[0] << 24) |    \
-               (((const uint8_t*)(x))[1] << 16) |    \
-               (((const uint8_t*)(x))[2] <<  8) |    \
-                ((const uint8_t*)(x))[3])
+     (((const uint8_t*)(x))[1] << 16) |    \
+     (((const uint8_t*)(x))[2] <<  8) |    \
+     ((const uint8_t*)(x))[3])
 #endif
 #ifndef NEG_USR32
 #   define NEG_USR32(a,s) (((uint32_t)(a))>>(32-(s)))
@@ -103,7 +103,7 @@ static inline av_const unsigned zero_extend(unsigned val, unsigned bits)
 #ifndef av_bswap16
 static av_always_inline av_const uint16_t av_bswap16(uint16_t x)
 {
-    x= (x>>8) | (x<<8);
+    x = (x >> 8) | (x << 8);
     return x;
 }
 #endif
@@ -111,8 +111,8 @@ static av_always_inline av_const uint16_t av_bswap16(uint16_t x)
 #ifndef av_bswap32
 static av_always_inline av_const uint32_t av_bswap32(uint32_t x)
 {
-    x= ((x<<8)&0xFF00FF00) | ((x>>8)&0x00FF00FF);
-    x= (x>>16) | (x<<16);
+    x = ((x << 8) & 0xFF00FF00) | ((x >> 8) & 0x00FF00FF);
+    x = (x >> 16) | (x << 16);
     return x;
 }
 #endif
@@ -121,17 +121,18 @@ static av_always_inline av_const uint32_t av_bswap32(uint32_t x)
 static inline uint64_t av_const av_bswap64(uint64_t x)
 {
 #if 0
-    x= ((x<< 8)&0xFF00FF00FF00FF00ULL) | ((x>> 8)&0x00FF00FF00FF00FFULL);
-    x= ((x<<16)&0xFFFF0000FFFF0000ULL) | ((x>>16)&0x0000FFFF0000FFFFULL);
-    return (x>>32) | (x<<32);
+    x = ((x << 8) & 0xFF00FF00FF00FF00ULL) | ((x >> 8) & 0x00FF00FF00FF00FFULL);
+    x = ((x << 16) & 0xFFFF0000FFFF0000ULL) | ((x >> 16) & 0x0000FFFF0000FFFFULL);
+    return (x >> 32) | (x << 32);
 #else
-    union {
+    union
+    {
         uint64_t ll;
         uint32_t l[2];
     } w, r;
     w.ll = x;
-    r.l[0] = av_bswap32 (w.l[1]);
-    r.l[1] = av_bswap32 (w.l[0]);
+    r.l[0] = av_bswap32(w.l[1]);
+    r.l[1] = av_bswap32(w.l[0]);
     return r.ll;
 #endif
 }
@@ -162,7 +163,8 @@ static inline uint64_t av_const av_bswap64(uint64_t x)
 
 /* bit input */
 /* buffer, buffer_end and size_in_bits must be present and used by every reader */
-typedef struct GetBitContext {
+typedef struct GetBitContext
+{
     const uint8_t *buffer, *buffer_end;
 #ifdef ALT_BITSTREAM_READER
     int index;
@@ -224,11 +226,13 @@ typedef struct GetBitContext {
  */
 
 
-static inline int get_bits_count(const GetBitContext *s){
+static inline int get_bits_count(const GetBitContext *s)
+{
     return s->index;
 }
 
-static inline void skip_bits_long(GetBitContext *s, int n){
+static inline void skip_bits_long(GetBitContext *s, int n)
+{
     s->index += n;
 }
 
@@ -289,14 +293,16 @@ static inline void skip_bits_long(GetBitContext *s, int n){
 
 #   define GET_CACHE(name, gb) name##_cache0
 
-static inline int get_bits_count(const GetBitContext *s) {
-    return ((uint8_t*)s->buffer_ptr - s->buffer)*8 - 32 + s->bit_count;
+static inline int get_bits_count(const GetBitContext *s)
+{
+    return ((uint8_t *)s->buffer_ptr - s->buffer) * 8 - 32 + s->bit_count;
 }
 
-static inline void skip_bits_long(GetBitContext *s, int n){
+static inline void skip_bits_long(GetBitContext *s, int n)
+{
     OPEN_READER(re, s);
     re_bit_count += n;
-    re_buffer_ptr += re_bit_count>>5;
+    re_buffer_ptr += re_bit_count >> 5;
     re_bit_count &= 31;
     re_cache0 = av_be2ne32(re_buffer_ptr[-1]) << re_bit_count;
     re_cache1 = 0;
@@ -306,7 +312,8 @@ static inline void skip_bits_long(GetBitContext *s, int n){
 
 #endif
 
-static inline unsigned int get_bits(GetBitContext *s, int n){
+static inline unsigned int get_bits(GetBitContext *s, int n)
+{
     register int tmp;
     OPEN_READER(re, s);
     UPDATE_CACHE(re, s);
@@ -319,7 +326,8 @@ static inline unsigned int get_bits(GetBitContext *s, int n){
 /**
  * Shows 1-25 bits.
  */
-static inline unsigned int show_bits(GetBitContext *s, int n){
+static inline unsigned int show_bits(GetBitContext *s, int n)
+{
     register int tmp;
     OPEN_READER(re, s);
     UPDATE_CACHE(re, s);
@@ -327,18 +335,20 @@ static inline unsigned int show_bits(GetBitContext *s, int n){
     return tmp;
 }
 
-static inline void skip_bits(GetBitContext *s, int n){
- //Note gcc seems to optimize this to s->index+=n for the ALT_READER :))
+static inline void skip_bits(GetBitContext *s, int n)
+{
+    //Note gcc seems to optimize this to s->index+=n for the ALT_READER :))
     OPEN_READER(re, s);
     UPDATE_CACHE(re, s);
     LAST_SKIP_BITS(re, s, n);
     CLOSE_READER(re, s);
 }
 
-static inline unsigned int get_bits1(GetBitContext *s){
+static inline unsigned int get_bits1(GetBitContext *s)
+{
 #ifdef ALT_BITSTREAM_READER
     unsigned int index = s->index;
-    uint8_t result = s->buffer[index>>3];
+    uint8_t result = s->buffer[index >> 3];
 #ifdef ALT_BITSTREAM_READER_LE
     result >>= index & 7;
     result &= 1;
@@ -348,7 +358,6 @@ static inline unsigned int get_bits1(GetBitContext *s){
 #endif
     index++;
     s->index = index;
-
     return result;
 #else
     return get_bits(s, 1);
@@ -365,10 +374,12 @@ static inline unsigned int get_bits1(GetBitContext *s){
  * responsible for checking for the buffer end yourself (take advantage of the padding)!
  */
 static inline void init_get_bits(GetBitContext *s,
-                   const uint8_t *buffer, int bit_size)
+                                 const uint8_t *buffer, int bit_size)
 {
-    int buffer_size = (bit_size+7)>>3;
-    if (buffer_size < 0 || bit_size < 0) {
+    int buffer_size = (bit_size + 7) >> 3;
+
+    if (buffer_size < 0 || bit_size < 0)
+    {
         buffer_size = bit_size = 0;
         buffer = NULL;
     }
@@ -379,13 +390,14 @@ static inline void init_get_bits(GetBitContext *s,
 #ifdef ALT_BITSTREAM_READER
     s->index        = 0;
 #elif defined A32_BITSTREAM_READER
-    s->buffer_ptr   = (uint32_t*)((intptr_t)buffer & ~3);
-    s->bit_count    = 32 +     8*((intptr_t)buffer &  3);
+    s->buffer_ptr   = (uint32_t *)((intptr_t)buffer & ~3);
+    s->bit_count    = 32 +     8 * ((intptr_t)buffer &  3);
     skip_bits_long(s, 0);
 #endif
 }
 
-enum AVSubtitleType {
+enum AVSubtitleType
+{
     SUBTITLE_NONE,
 
     SUBTITLE_BITMAP,                ///< A bitmap, pict will be set
@@ -407,14 +419,16 @@ enum AVSubtitleType {
  * four components are given, that's all.
  * the last component is alpha
  */
-typedef struct AVPicture {
+typedef struct AVPicture
+{
     uint8_t *data[4];
     int linesize[4];       ///< number of bytes per line
 } AVPicture;
 
 #define AVPALETTE_SIZE 1024
 
-typedef struct AVSubtitleRect {
+typedef struct AVSubtitleRect
+{
     int x;         ///< top left corner  of pict, undefined when pict is not set
     int y;         ///< top left corner  of pict, undefined when pict is not set
     int w;         ///< width            of pict, undefined when pict is not set
@@ -438,7 +452,8 @@ typedef struct AVSubtitleRect {
     char *ass;
 } AVSubtitleRect;
 
-typedef struct AVSubtitle {
+typedef struct AVSubtitle
+{
     uint16_t format; /* 0 = graphics */
     uint32_t start_display_time; /* relative to packet pts, in ms */
     uint32_t end_display_time; /* relative to packet pts, in ms */
@@ -455,7 +470,6 @@ av_cold int dvbsub_close_decoder();
 void *av_malloc(unsigned int size)
 {
     void *ptr = NULL;
-
     ptr = malloc(size);
     return ptr;
 }
@@ -467,45 +481,52 @@ void *av_realloc(void *ptr, unsigned int size)
 
 void av_freep(void **arg)
 {
-    if(*arg)
-      free(*arg);
+    if (*arg)
+        free(*arg);
+
     *arg = NULL;
 }
 void av_free(void *arg)
 {
-    if(arg)
-      free(arg);
+    if (arg)
+        free(arg);
 }
 void *av_mallocz(unsigned int size)
 {
     void *ptr = malloc(size);
+
     if (ptr)
         memset(ptr, 0, size);
+
     return ptr;
 }
 
-static inline uint32_t bytestream_get_be32(const uint8_t** ptr) {
+static inline uint32_t bytestream_get_be32(const uint8_t **ptr)
+{
     uint32_t tmp;
     tmp = (*ptr)[3] | ((*ptr)[2] << 8) | ((*ptr)[1] << 16) | ((*ptr)[0] << 24);
     *ptr += 4;
     return tmp;
 }
 
-static inline uint32_t bytestream_get_be24(const uint8_t** ptr) {
+static inline uint32_t bytestream_get_be24(const uint8_t **ptr)
+{
     uint32_t tmp;
     tmp = (*ptr)[2] | ((*ptr)[1] << 8) | ((*ptr)[0] << 16) ;
     *ptr += 3;
     return tmp;
 }
 
-static inline uint32_t bytestream_get_be16(const uint8_t** ptr) {
+static inline uint32_t bytestream_get_be16(const uint8_t **ptr)
+{
     uint32_t tmp;
     tmp = (*ptr)[1] | ((*ptr)[0] << 8);
     *ptr += 3;
     return tmp;
 }
 
-static inline uint8_t bytestream_get_byte(const uint8_t** ptr) {
+static inline uint8_t bytestream_get_byte(const uint8_t **ptr)
+{
     uint8_t tmp;
     tmp = **ptr;
     *ptr += 1;

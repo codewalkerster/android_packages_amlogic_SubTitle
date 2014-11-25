@@ -28,7 +28,7 @@
 /* Maximal length of line of a subtitle */
 #define LINE_LEN                    1000
 
-typedef enum 
+typedef enum
 {
     SUB_ALIGNMENT_BOTTOMLEFT = 1,
     SUB_ALIGNMENT_BOTTOMCENTER,
@@ -44,7 +44,7 @@ typedef enum
 /**
  * Subtitle struct unit
  */
-typedef struct 
+typedef struct
 {
     /// number of subtitle lines
     int lines;
@@ -54,9 +54,9 @@ typedef struct
 
     /// alignment of subtitles
     sub_alignment_t alignment;
-} subtext_t;    
+} subtext_t;
 
-struct subdata_s 
+struct subdata_s
 {
     list_t  list;            /* head node of subtitle_t list */
     list_t  list_temp;
@@ -66,7 +66,7 @@ struct subdata_s
     int     sub_format;
 };
 
-struct subtitle_s 
+struct subtitle_s
 {
     list_t      list;         /* linked list */
     int         start;        /* start time */
@@ -78,10 +78,10 @@ struct subtitle_s
 typedef struct subtitle_s subtitle_t;
 typedef struct subdata_s subdata_t;
 
-typedef struct 
+typedef struct
 {
     subtitle_t *(*read)(int fd, subtitle_t *dest);
-    void       (*post)(subtitle_t *dest);
+    void (*post)(subtitle_t *dest);
     const char *name;
 } subreader_t;
 
@@ -123,10 +123,10 @@ typedef struct _DivXSubPictHdr_HD
     DivXSubPictColor pattern1;
     DivXSubPictColor pattern2;
     DivXSubPictColor pattern3;
-	unsigned char background_transparency;	//HD profile only
-	unsigned char pattern1_transparency;	//HD profile only
-	unsigned char pattern2_transparency;	//HD profile only
-	unsigned char pattern3_transparency;	//HD profile only
+    unsigned char background_transparency;  //HD profile only
+    unsigned char pattern1_transparency;    //HD profile only
+    unsigned char pattern2_transparency;    //HD profile only
+    unsigned char pattern3_transparency;    //HD profile only
     unsigned char *rleData;
 } DivXSubPictHdr_HD;
 
@@ -134,7 +134,7 @@ typedef struct _DivXSubPictHdr_HD
 #define sub_ms2pts(x) ((x) * 900)
 
 SUBAPI extern void internal_sub_close(subdata_t *subdata);
-SUBAPI extern subdata_t *internal_sub_open(char *filename,unsigned rate,char *charset);
+SUBAPI extern subdata_t *internal_sub_open(char *filename, unsigned rate, char *charset);
 SUBAPI extern char *internal_sub_filenames(char *filename, unsigned perfect_match);
 SUBAPI extern subtitle_t *internal_sub_search(subdata_t *subdata, subtitle_t *ref, int pts);
 SUBAPI extern int internal_sub_get_starttime(subtitle_t *subt);
@@ -145,11 +145,12 @@ SUBAPI extern void internal_divx_sub_delete(subdata_t *subdata, int pts);
 SUBAPI extern void internal_divx_sub_flush(subdata_t *subdata);
 
 /*The struct use fot notify the ui layer the audio information of the clip */
-typedef struct _CLIP_AUDIO_INFO {
+typedef struct _CLIP_AUDIO_INFO
+{
     unsigned int audio_info; /* audio codec info */
     unsigned int audio_cur_play_index;   /* audio play current index */
     unsigned int total_audio_stream; /* total audio stream number */
-}Clip_Audio_Info;
+} Clip_Audio_Info;
 
 /*@}*/
 #endif /* SUB_API_H */

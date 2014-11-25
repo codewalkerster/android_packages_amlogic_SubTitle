@@ -8,15 +8,15 @@ void dvdsub_init_decoder(void);
 
 typedef enum
 {
-	FSTA_DSP = 0,
-	STA_DSP = 1,
-	STP_DSP  = 2,
-	SET_COLOR = 3,
-	SET_CONTR = 4,
-	SET_DAREA = 5,
-	SET_DSPXA = 6,
-	CHG_COLCON = 7,
-	CMD_END = 0xFF,
+    FSTA_DSP = 0,
+    STA_DSP = 1,
+    STP_DSP  = 2,
+    SET_COLOR = 3,
+    SET_CONTR = 4,
+    SET_DAREA = 5,
+    SET_DSPXA = 6,
+    CHG_COLCON = 7,
+    CMD_END = 0xFF,
 } CommandID;
 
 #endif
