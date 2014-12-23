@@ -16,13 +16,14 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := $(call all-java-files-under, src) \
-		src/com/droidlogic/SubTitleService/ISubTitleService.aidl
+    src/com/droidlogic/SubTitleService/ISubTitleService.aidl
 
 #LOCAL_SDK_VERSION := current
 LOCAL_PROGUARD_ENABLED := disabled
 
 LOCAL_PACKAGE_NAME := SubTitle
 LOCAL_CERTIFICATE := platform
+LOCAL_JAVA_LIBRARIES := droidlogic
 LOCAL_REQUIRED_MODULES := libsubjni
 
 include $(BUILD_PACKAGE)

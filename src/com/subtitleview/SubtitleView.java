@@ -27,6 +27,8 @@ public class SubtitleView extends FrameLayout {
         private int graphicViewMode = 0;
         private float wscale = 1.000f;
         private float hscale = 1.000f;
+        private int wmax = 0;
+        private int hmax = 0;
         private ImageView mImageView = null;
         private TextView mTextView = null;
 
@@ -70,6 +72,13 @@ public class SubtitleView extends FrameLayout {
             wscale = 1.000f;
             hscale = 1.000f;
             SubManager.getinstance();
+        }
+
+        public void setImgSubRatio(float ratioW, float ratioH, int maxW, int maxH) {
+            wscale = ratioW;
+            hscale = ratioH;
+            wmax = maxW;
+            hmax = maxH;
         }
 
         public void setTextColor (int color) {
@@ -206,7 +215,7 @@ public class SubtitleView extends FrameLayout {
                 if (data.subSize() > 0) {
                     if (data.gettype() == 1) {
                         evaluteScale (data.getSubBitmap());
-                        Bitmap inter_bitmap = creatBitmapByScale (data.getSubBitmap(), wscale, wscale);
+                        Bitmap inter_bitmap = creatBitmapByScale (data.getSubBitmap(), wscale, hscale, wmax, hmax);
                         if ( (inter_bitmap != null) && (mImageView != null)) {
                             mImageView.setImageBitmap (inter_bitmap);
                             this.addView (mImageView);
@@ -234,8 +243,7 @@ public class SubtitleView extends FrameLayout {
             if (data != null) {
                 if (data.gettype() == 1) {
                     evaluteScale (data.getSubBitmap());
-                    Bitmap inter_bitmap = creatBitmapByScale (data.getSubBitmap(),
-                                          wscale, wscale);
+                    Bitmap inter_bitmap = creatBitmapByScale (data.getSubBitmap(), wscale, hscale, wmax, hmax);
                     if ( (inter_bitmap != null) && (mImageView != null)) {
                         mImageView.setImageBitmap (inter_bitmap);
                         this.addView (mImageView);
@@ -276,8 +284,8 @@ public class SubtitleView extends FrameLayout {
             int bitmap_height = 0;
             int max_width = 0;
             int max_height = 0;
-            wscale = 1.000f;
-            hscale = 1.000f;
+            //wscale = 1.000f;
+            //hscale = 1.000f;
             display_width = SubManager.getinstance().getDisplayWidth();
             display_height = SubManager.getinstance().getDisplayHeight();
             video_width = SubManager.getinstance().getVideoWidth();
@@ -286,6 +294,7 @@ public class SubtitleView extends FrameLayout {
                 bitmap_width = bitmap.getWidth();
                 bitmap_height = bitmap.getHeight();
             }
+
             //Log.d(TAG, "disply width: " + display_width + ", height: " + display_height);
             //Log.d(TAG, "video width: " + video_width + ", height: " + video_height);
             //Log.d(TAG, "bitmap width: " + bitmap_width + ", height: " + bitmap_height);
@@ -315,17 +324,25 @@ public class SubtitleView extends FrameLayout {
             hscale = h_scale;
         }
 
-        public static Bitmap creatBitmapByScale (Bitmap bitmap, float w_scale, float h_scale) {
+        public static Bitmap creatBitmapByScale (Bitmap bitmap, float w_scale, float h_scale, int wmax, int hmax) {
             if (bitmap == null) {
                 return null;
             }
             int w = bitmap.getWidth();
             int h = bitmap.getHeight();
-            /*
+
+            if (w * w_scale > wmax) {
+                w_scale = ((float)wmax) / w;
+            }
+
+            if (h * h_scale > hmax) {
+                h_scale = ((float)hmax) / h;
+            }
+
             Log.d(TAG, "bitmap width: " + w + ", height: " + h
                     + ", w_scale: " + Float.toString(w_scale)
                     + ", h_scale: " + Float.toString(h_scale));
-            */
+
             Matrix matrix = new Matrix();
             matrix.postScale (w_scale, h_scale);
             Bitmap resizedBitmap = Bitmap.createBitmap (bitmap, 0, 0, w, h, matrix, true);

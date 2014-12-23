@@ -37,6 +37,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.droidlogic.app.SystemControlManager;
+
 public class SubTitleService extends ISubTitleService.Stub {
         private static final String TAG = "SubTitleService";
         private Context mContext;
@@ -79,9 +81,11 @@ public class SubTitleService extends ISubTitleService.Stub {
         private static final int SUB_ON = 1;
         private int subShowState = SUB_OFF;
         private boolean isOverlayOpen = false;
+        SystemControlManager mSystemControl;
 
         public SubTitleService (Context context) {
             mContext = context;
+            mSystemControl = new SystemControlManager(context);
             initView();
         }
 
@@ -94,7 +98,7 @@ public class SubTitleService extends ISubTitleService.Stub {
         }
 
         private void checkOverlayOpen() {
-            if (Debug()) { Log.i (TAG, "[checkOverlayOpen] isOverlayOpen:" + isOverlayOpen); }
+            if (Debug()) Log.i(TAG, "[checkOverlayOpen] isOverlayOpen:" + isOverlayOpen);
             if (isOverlayOpen == false) {
                 isOverlayOpen = true;
                 showSubtitleOverlay();
@@ -114,7 +118,7 @@ public class SubTitleService extends ISubTitleService.Stub {
         }
 
         private void showSubtitleOverlay() {
-            if (Debug()) { Log.i (TAG, "[showSubtitleOverlay]"); }
+            if (Debug()) Log.i(TAG, "[showSubtitleOverlay]");
             if (mWm == null) {
                 mWm = (WindowManager) mContext.getSystemService (Context.WINDOW_SERVICE);
             }
@@ -145,11 +149,11 @@ public class SubTitleService extends ISubTitleService.Stub {
         private void registerConfigurationChangeReceiver() {
             IntentFilter intentFilter = new IntentFilter (Intent.ACTION_CONFIGURATION_CHANGED);
             mContext.getApplicationContext().registerReceiver (mConfigurationChangeReceiver, intentFilter);
-            if (Debug()) { Log.i (TAG, "[registerConfigurationChangeReceiver]mConfigurationChangeReceiver:" + mConfigurationChangeReceiver); }
+            if (Debug()) Log.i(TAG, "[registerConfigurationChangeReceiver]mConfigurationChangeReceiver:" + mConfigurationChangeReceiver);
         }
 
         private void unregisterConfigurationChangeReceiver() {
-            if (Debug()) { Log.i (TAG, "[unregisterConfigurationChangeReceiver]mConfigurationChangeReceiver:" + mConfigurationChangeReceiver); }
+            if (Debug()) Log.i(TAG, "[unregisterConfigurationChangeReceiver]mConfigurationChangeReceiver:" + mConfigurationChangeReceiver);
             if (mConfigurationChangeReceiver != null) {
                 mContext.getApplicationContext().unregisterReceiver (mConfigurationChangeReceiver);
                 mConfigurationChangeReceiver = null;
@@ -163,7 +167,7 @@ public class SubTitleService extends ISubTitleService.Stub {
         };
 
         private void updateSubWinLayoutParams() {
-            if (Debug()) { Log.i (TAG, "[updateSubtitleWinLayoutParams]subShowState:" + subShowState); }
+            if (Debug()) Log.i(TAG, "[updateSubtitleWinLayoutParams]subShowState:" + subShowState);
             if (subShowState == SUB_OFF) {
                 return;
             }
@@ -189,7 +193,7 @@ public class SubTitleService extends ISubTitleService.Stub {
             p.y = 0;
             p.width = mWScreenx;//ViewGroup.LayoutParams.WRAP_CONTENT;
             p.height = mWScreeny;//ViewGroup.LayoutParams.WRAP_CONTENT;
-            if (Debug()) { Log.i (TAG, "[updateSubtitleWinLayoutParams]p.width:" + p.width + ",p.height:" + p.height); }
+            if (Debug()) Log.i(TAG, "[updateSubtitleWinLayoutParams]p.width:" + p.width + ",p.height:" + p.height);
             if (mWm != null) {
                 mWm.removeView (mSubView);
                 mWm.addView (mSubView, p);
@@ -197,7 +201,7 @@ public class SubTitleService extends ISubTitleService.Stub {
         }
 
         private void showOptionOverlay() {
-            if (Debug()) { Log.i (TAG, "[showOptionOverlay]"); }
+            if (Debug()) Log.i(TAG, "[showOptionOverlay]");
             int total = getSubTotal();
             if (total == 0) {
                 Toast.makeText (mContext,
@@ -232,11 +236,11 @@ public class SubTitleService extends ISubTitleService.Stub {
             lv.setOnItemClickListener (new OnItemClickListener() {
                 public void onItemClick (AdapterView<?> parent, View view, int pos, long id) {
                     if (pos == 0) { //first is close subtitle showing
-                        if (Debug()) { Log.i (TAG, "[option select]close subtitle showing"); }
+                        if (Debug()) Log.i(TAG, "[option select]close subtitle showing");
                         sendHideMsg();
                     }
                     else if (pos > 0) {
-                        if (Debug()) { Log.i (TAG, "[option select]select subtitle " + (pos - 1)); }
+                        if (Debug()) Log.i(TAG, "[option select]select subtitle " + (pos - 1));
                         curSubId = (pos - 1);
                         sendCloseMsg(); // TODO: maybe have bug for opening the same subtitle after hide
                         sendOpenMsg();
@@ -255,14 +259,14 @@ public class SubTitleService extends ISubTitleService.Stub {
             int total = getSubTotal();
             String trackStr = mContext.getResources().getString (R.string.opt_sub_track);
             String closeStr = mContext.getResources().getString (R.string.opt_close);
-            if (Debug()) { Log.i (TAG, "[getListData]total:" + total); }
+            if (Debug()) Log.i(TAG, "[getListData]total:" + total);
             for (int i = 0; i < total; i++) {
                 if (!clsItmAdded) {
                     //add close subtitle item
                     Map<String, Object> mapCls = new HashMap<String, Object>();
                     clsItmAdded = true;
                     mapCls.put ("item_text", closeStr);
-                    if (Debug()) { Log.i (TAG, "[getListData]map.put:" + closeStr + ",curOptSelect:" + curOptSelect); }
+                    if (Debug()) Log.i(TAG, "[getListData]map.put:" + closeStr + ",curOptSelect:" + curOptSelect);
                     if (curOptSelect == 0) {
                         mapCls.put ("item_img", R.drawable.item_img_sel);
                     }
@@ -275,7 +279,7 @@ public class SubTitleService extends ISubTitleService.Stub {
                 String subTrackStr = trackStr + Integer.toString (i);
                 //Log.i(TAG,"[getListData]subTrackStr:"+subTrackStr);
                 map.put ("item_text", subTrackStr);
-                if (Debug()) { Log.i (TAG, "[getListData]map.put[" + i + "]:" + subTrackStr + ",curOptSelect:" + curOptSelect); }
+                if (Debug()) Log.i(TAG, "[getListData]map.put[" + i + "]:" + subTrackStr + ",curOptSelect:" + curOptSelect);
                 if (curOptSelect == (i + 1)) {
                     map.put ("item_img", R.drawable.item_img_sel);
                 }
@@ -304,7 +308,7 @@ public class SubTitleService extends ISubTitleService.Stub {
         private String setSublanguage() {
             String type = null;
             String able = mContext.getResources().getConfiguration().locale.getCountry();
-            if (Debug()) { Log.i (TAG, "[setSublanguage] Country: " + able); }
+            if (Debug()) Log.i(TAG, "[setSublanguage] Country: " + able);
             if (able.equals ("TW")) {
                 type = "BIG5";
             }
@@ -403,10 +407,10 @@ public class SubTitleService extends ISubTitleService.Stub {
                         try {
                             String pathTmp = downLoadXmlFile (urlPath);
                             String pathExtTmp = pathTmp.substring (pathTmp.lastIndexOf ('.') + 1);
-                            if (Debug()) { Log.i (TAG, "[load] pathExtTmp: " + pathExtTmp + ", pathTmp:" + pathTmp); }
+                            if (Debug()) Log.i(TAG, "[load] pathExtTmp: " + pathExtTmp + ", pathTmp:" + pathTmp);
                             if (SubtitleUtils.extensions != null) {
                             for (String ext : SubtitleUtils.extensions) {
-                                    if (Debug()) { Log.i (TAG, "[load] ext:" + ext); }
+                                    if (Debug()) Log.i(TAG, "[load] ext:" + ext);
                                     if (pathExtTmp.toLowerCase().equals (ext)) {
                                         mLoadPath = pathTmp;
                                         sendCloseMsg();
@@ -431,10 +435,10 @@ public class SubTitleService extends ISubTitleService.Stub {
             }
             else {
                 String pathExt = path.substring (path.lastIndexOf ('.') + 1);
-                if (Debug()) { Log.i (TAG, "[load] pathExt: " + pathExt + ", path:" + path); }
+                if (Debug()) Log.i(TAG, "[load] pathExt: " + pathExt + ", path:" + path);
                 if (SubtitleUtils.extensions != null) {
                 for (String ext : SubtitleUtils.extensions) {
-                        if (Debug()) { Log.i (TAG, "[load] ext:" + ext); }
+                        if (Debug()) Log.i(TAG, "[load] ext:" + ext);
                         if (pathExt.toLowerCase().equals (ext)) {
                             //if(mSubTotal < 0) {
                             //mSubTotal = 1;
@@ -461,7 +465,7 @@ public class SubTitleService extends ISubTitleService.Stub {
         }
 
         /*public*/private void openFile (SubID subID) {
-            if (Debug()) { Log.i (TAG, "[openFile] subID: " + subID); }
+            if (Debug()) Log.i(TAG, "[openFile] subID: " + subID);
             if (subID == null) {
                 return;
             }
@@ -469,20 +473,20 @@ public class SubTitleService extends ISubTitleService.Stub {
                 if (subTitleView.setFile (subID, setSublanguage()) == Subtitle.SUBTYPE.SUB_INVALID) {
                     return;
                 }
-                if (Debug()) { Log.i (TAG, "[openFile] subtitleUtils: " + subtitleUtils + ",getSubTotal():" + getSubTotal() + ",subID.index:" + subID.index); }
+                if (Debug()) Log.i(TAG, "[openFile] subtitleUtils: " + subtitleUtils + ",getSubTotal():" + getSubTotal() + ",subID.index:" + subID.index);
                 if (subtitleUtils != null && getSubTotal() > 0) {
                     subtitleUtils.setSubtitleNumber (subID.index);
                 }
             }
             catch (Exception e) {
-                if (Debug()) { Log.d (TAG, "open:error"); }
+                if (Debug()) Log.d(TAG, "open:error");
                 subTitleView = null;
                 e.printStackTrace();
             }
         }
 
         public void open (String path) {
-            if (Debug()) { Log.i (TAG, "[open] path: " + path); }
+            if (Debug()) Log.i(TAG, "[open] path: " + path);
             if (d != null) {
                 d.dismiss();
             }
@@ -501,7 +505,7 @@ public class SubTitleService extends ISubTitleService.Stub {
                     mSubTotal = -1;
                     mSubTotal = prepareSubTotal();
                     curSubId = subtitleUtils.getCurrentInSubtitleIndexByJni(); //get inner subtitle current index as default, 0 is always, if there is no inner subtitle, 0 indicate the first external subtitle
-                    if (Debug()) { Log.i (TAG, "[open] curSubId: " + curSubId); }
+                    if (Debug()) Log.i(TAG, "[open] curSubId: " + curSubId);
                     sendOpenMsg();
                     sendInitSelectMsg();
                     //load("http://milleni.ercdn.net/9_test/double_lang_test.xml"); for test
@@ -511,7 +515,7 @@ public class SubTitleService extends ISubTitleService.Stub {
         }
 
         public void close() {
-            if (Debug()) { Log.i (TAG, "[close] subTitleView: " + subTitleView + ", mWm:" + mWm + ", mSubView:" + mSubView); }
+            if (Debug()) Log.i(TAG, "[close] subTitleView: " + subTitleView + ", mWm:" + mWm + ", mSubView:" + mSubView);
             if (subtitleUtils != null) {
                 subtitleUtils.setSubtitleNumber (0);
                 subtitleUtils = null;
@@ -519,7 +523,7 @@ public class SubTitleService extends ISubTitleService.Stub {
             if (mWm != null) {
                 isOverlayOpen = false;
                 if (mSubView != null) {
-                    if (Debug()) { Log.i (TAG, "[close] mWm.removeView(mSubView)"); }
+                    if (Debug()) Log.i(TAG, "[close] mWm.removeView(mSubView)");
                     mWm.removeView (mSubView);
                     mWm = null;
                 }
@@ -531,24 +535,24 @@ public class SubTitleService extends ISubTitleService.Stub {
         }
 
         private int prepareSubTotal() {
-            if (Debug()) { Log.i (TAG, "[prepareSubTotal] subtitleUtils:" + subtitleUtils); }
+            if (Debug()) Log.i(TAG, "[prepareSubTotal] subtitleUtils:" + subtitleUtils);
             int total = -1;
             if (mSubTotal == -1) {
                 if (subtitleUtils != null) {
                     total = subtitleUtils.getSubTotal();
-                    if (Debug()) { Log.i (TAG, "[prepareSubTotal] mSubTotal:" + mSubTotal); }
+                    if (Debug()) Log.i(TAG, "[prepareSubTotal] mSubTotal:" + mSubTotal);
                 }
             }
             return total;
         }
 
         public int getSubTotal() {
-            if (Debug()) { Log.i (TAG, "[getSubTotal] mSubTotal:" + mSubTotal); }
+            if (Debug()) Log.i(TAG, "[getSubTotal] mSubTotal:" + mSubTotal);
             return mSubTotal;
         }
 
         public void nextSub() { // haven't test
-            if (Debug()) { Log.i (TAG, "[nextSub]curSubId:" + curSubId + ",getSubTotal():" + getSubTotal() + ",subtitleUtils:" + subtitleUtils); }
+            if (Debug()) Log.i(TAG, "[nextSub]curSubId:" + curSubId + ",getSubTotal():" + getSubTotal() + ",subtitleUtils:" + subtitleUtils);
             if (subtitleUtils != null && getSubTotal() > 0) {
                 curSubId++;
                 if (curSubId >= getSubTotal()) {
@@ -560,7 +564,7 @@ public class SubTitleService extends ISubTitleService.Stub {
         }
 
         public void preSub() { // haven't test
-            if (Debug()) { Log.i (TAG, "[preSub]curSubId:" + curSubId + ",getSubTotal():" + getSubTotal() + ",subtitleUtils:" + subtitleUtils); }
+            if (Debug()) Log.i(TAG, "[preSub]curSubId:" + curSubId + ",getSubTotal():" + getSubTotal() + ",subtitleUtils:" + subtitleUtils);
             if (subtitleUtils != null && getSubTotal() > 0) {
                 curSubId--;
                 if (curSubId < 0) {
@@ -572,7 +576,7 @@ public class SubTitleService extends ISubTitleService.Stub {
         }
 
         public void openIdx (int idx) {
-            if (Debug()) { Log.i (TAG, "[openIdx]idx:" + idx); }
+            if (Debug()) Log.i(TAG, "[openIdx]idx:" + idx);
             if (subtitleUtils != null && getSubTotal() > 0) {
                 curSubId = idx;
                 sendCloseMsg();
@@ -585,7 +589,7 @@ public class SubTitleService extends ISubTitleService.Stub {
             if (subTitleView != null) {
                 ret = subTitleView.getSubType();
             }
-            if (Debug()) { Log.i (TAG, "[getSubType]ret:" + ret); }
+            if (Debug()) Log.i(TAG, "[getSubType]ret:" + ret);
             return ret;
         }
 
@@ -594,7 +598,7 @@ public class SubTitleService extends ISubTitleService.Stub {
             if (subTitleView != null) {
                 ret = subTitleView.getSubTypeStr();
             }
-            if (Debug()) { Log.i (TAG, "[getSubTypeStr]ret:" + ret); }
+            if (Debug()) Log.i(TAG, "[getSubTypeStr]ret:" + ret);
             return ret;
         }
 
@@ -634,30 +638,37 @@ public class SubTitleService extends ISubTitleService.Stub {
             sendResetForSeekMsg();
         }
 
+        public void setImgSubRatio(float ratioW, float ratioH, int maxW, int maxH) {
+            if (Debug()) Log.i(TAG,"[setImgSubRatio] ratioW:" + ratioW + ", ratioH:" + ratioH + ",maxW:" + maxW + ",maxH:" + maxH);
+            if (subTitleView != null) {
+                subTitleView.setImgSubRatio(ratioW, ratioH, maxW, maxH);
+            }
+        }
+
         public String getCurName() {
             String name = null;
             SubID subID = subtitleUtils.getSubID (curSubId);
             if (subID != null) {
-                if (Debug()) { Log.i (TAG, "[getCurName]subID.filename:" + subID.filename); }
+                if (Debug()) Log.i(TAG, "[getCurName]subID.filename:" + subID.filename);
                 name = subID.filename;
             }
             return name;
         }
 
         public void showSub (int position) {
-            if (Debug()) { Log.i (TAG, "[showSubContent]position:" + position + ",subShowState:" + subShowState + ",mHandler:" + mHandler); }
+            if (Debug()) Log.i (TAG, "[showSubContent]position:" + position + ",subShowState:" + subShowState + ",mHandler:" + mHandler);
             if (position > 0 && mHandler != null) {
                 if (subShowState == SUB_ON) {
                     Message msg = mHandler.obtainMessage (SHOW_CONTENT);
                     msg.arg1 = position;
-                    if (Debug()) { Log.i (TAG, "[showSubContent]sendMessage msg:" + msg); }
+                    if (Debug()) Log.i(TAG, "[showSubContent]sendMessage msg:" + msg);
                     mHandler.sendMessageDelayed (msg, MSG_SEND_DELAY);
                 }
             }
         }
 
         public void option() {
-            if (Debug()) { Log.i (TAG, "[option]"); }
+            if (Debug()) Log.i(TAG, "[option]");
             if (mHandler != null) {
                 Message msg = mHandler.obtainMessage (OPT_SHOW);
                 mHandler.sendMessageDelayed (msg, MSG_SEND_DELAY);
@@ -768,7 +779,7 @@ public class SubTitleService extends ISubTitleService.Stub {
         private Handler mHandler = new Handler() {
             @Override
             public void handleMessage (Message msg) {
-                if (Debug()) { Log.i (TAG, "[handleMessage]msg.what:" + msg.what + ",subShowState:" + subShowState); }
+                if (Debug()) Log.i(TAG, "[handleMessage]msg.what:" + msg.what + ",subShowState:" + subShowState);
                 switch (msg.what) {
                     case SHOW_CONTENT:
                         if (subShowState == SUB_ON) {
@@ -785,14 +796,14 @@ public class SubTitleService extends ISubTitleService.Stub {
                         if (subShowState == SUB_OFF) {
                             subTitleView.startSubThread(); //open insub parse thread
                             subID = subtitleUtils.getSubID (curSubId);
-                            if (Debug()) { Log.i (TAG, "[handleMessage] curSubId: " + curSubId + ",subID:" + subID); }
+                            if (Debug()) Log.i(TAG, "[handleMessage] curSubId: " + curSubId + ",subID:" + subID);
                             openFile (subID);
                             subShowState = SUB_ON;
                         }
                         break;
                     case CLOSE:
                         if (subTitleView != null) {
-                            if (Debug()) { Log.i (TAG, "[handleMessage]closeSubtitle"); }
+                            if (Debug()) Log.i(TAG, "[handleMessage]closeSubtitle");
                             subTitleView.stopSubThread(); //close insub parse thread
                             subTitleView.closeSubtitle();
                             subTitleView.setVisibility (View.VISIBLE);
@@ -808,14 +819,14 @@ public class SubTitleService extends ISubTitleService.Stub {
                         break;
                     case INITSELECT:
                         if (getSubTotal() > 0) {
-                            if (Debug()) { Log.i (TAG, "[open] subShowState: " + subShowState); }
+                            if (Debug()) Log.i(TAG, "[open] subShowState: " + subShowState);
                             if (subShowState == SUB_OFF) {
                                 curOptSelect = 0;
                             }
                             else {
                                 curOptSelect = curSubId + 1; //skip close item, subtitle is open default
                             }
-                            if (Debug()) { Log.i (TAG, "[open] curOptSelect: " + curOptSelect); }
+                            if (Debug()) Log.i(TAG, "[open] curOptSelect: " + curOptSelect);
                         }
                         break;
                     case SET_TXT_COLOR:
@@ -880,15 +891,15 @@ public class SubTitleService extends ISubTitleService.Stub {
                         showOptionOverlay();
                         break;
                     case LOAD:
-                        if (Debug()) { Log.i (TAG, "[handleMessage]loadSubtitleFile subShowState:" + subShowState + ",subTitleView:" + subTitleView + ",mLoadPath:" + mLoadPath); }
+                        if (Debug()) Log.i(TAG, "[handleMessage]loadSubtitleFile subShowState:" + subShowState + ",subTitleView:" + subTitleView + ",mLoadPath:" + mLoadPath);
                         if (subShowState == SUB_OFF && subTitleView != null && mLoadPath != null) {
-                            if (Debug()) { Log.i (TAG, "[handleMessage]loadSubtitleFile mLoadPath:" + mLoadPath); }
+                            if (Debug()) Log.i(TAG, "[handleMessage]loadSubtitleFile mLoadPath:" + mLoadPath);
                             try {
                                 subTitleView.loadSubtitleFile (mLoadPath, setSublanguage());
                                 subShowState = SUB_ON;
                             }
                             catch (Exception e) {
-                                if (Debug()) { Log.d (TAG, "load:error"); }
+                                if (Debug()) Log.d(TAG, "load:error");
                                 subTitleView = null;
                                 e.printStackTrace();
                             }
