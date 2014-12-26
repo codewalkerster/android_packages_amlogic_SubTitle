@@ -331,11 +331,11 @@ public class SubtitleView extends FrameLayout {
             int w = bitmap.getWidth();
             int h = bitmap.getHeight();
 
-            if (w * w_scale > wmax) {
+            if (wmax > 0 && w * w_scale > wmax) {
                 w_scale = ((float)wmax) / w;
             }
 
-            if (h * h_scale > hmax) {
+            if (hmax > 0 && h * h_scale > hmax) {
                 h_scale = ((float)hmax) / h;
             }
 
