@@ -62,6 +62,7 @@ public class FileIO {
             int testMaxLines = 60;
             Pattern MICRODVD_Pattern = Pattern.compile ("\\{\\d+\\}\\{\\d+\\}");
             Pattern MICRODVD_Pattern_2 = Pattern.compile ("\\{\\d+\\}\\{\\}");
+            Pattern SUB_MPL1_Pattern = Pattern.compile ("\\d+,\\d+,\\d+,");
             Pattern SUB_MPL2_Pattern = Pattern.compile ("\\[\\d+\\]\\[\\d+\\]");
             Pattern SUBRIP_Pattern = Pattern.compile ("\\d+:\\d+:\\d+.\\d+,\\d+:\\d+:\\d+.\\d+");
             Pattern SUBVIEWER_Pattern = Pattern.compile ("\\d+:\\d+:\\d+[\\,\\.:]\\d+ ?--> ?\\d+:\\d+:\\d+[\\,\\.:]\\d+");
@@ -72,6 +73,7 @@ public class FileIO {
             Pattern JACOSUB_Pattern_2 = Pattern.compile ("@\\d+ @\\d+");
             Pattern VPLAYER_Pattern = Pattern.compile ("\\d+:\\d+:\\d+[: ]");
             Pattern PJS_Pattern = Pattern.compile ("\\d+\\d+,\"");
+            Pattern PJS_Pattern_2 = Pattern.compile ("\\d+,+.*\\d+,");
             Pattern MPSUB_Pattern = Pattern.compile ("FORMAT=\\d+");
             Pattern MPSUB_Pattern_2 = Pattern.compile ("FORMAT=TIME");
             Pattern AQTITLE_Pattern = Pattern.compile ("-->>");
@@ -109,6 +111,11 @@ public class FileIO {
                         matcher = MICRODVD_Pattern_2.matcher (line);
                         if (matcher.find()) {
                             type = Subtitle.SUBTYPE.SUB_MICRODVD ;
+                            break;
+                        }
+                        matcher = SUB_MPL1_Pattern.matcher (line);
+                        if (matcher.find()) {
+                            type = Subtitle.SUBTYPE.SUB_MPL1;
                             break;
                         }
                         matcher = SUB_MPL2_Pattern.matcher (line);
@@ -170,6 +177,11 @@ public class FileIO {
                             type = Subtitle.SUBTYPE.SUB_PJS;
                             break;
                         }
+                        matcher = PJS_Pattern_2.matcher (line);
+                        if (matcher.find()) {
+                            type = Subtitle.SUBTYPE.SUB_PJS;
+                            break;
+                        }
                         matcher = MPSUB_Pattern.matcher (line);
                         if (matcher.find()) {
                             type = Subtitle.SUBTYPE.SUB_MPSUB;
@@ -199,6 +211,7 @@ public class FileIO {
                     if (input != null) {
                         input.close();
                     }
+                    Log.v ("dectFileType", " type:" + type);
                     return type;
                 }
                 catch (IOException e) {
@@ -213,6 +226,7 @@ public class FileIO {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
+            Log.v ("dectFileType", " type:Subtitle.SUBTYPE.SUB_INVALID");
             return Subtitle.SUBTYPE.SUB_INVALID;
         }
 

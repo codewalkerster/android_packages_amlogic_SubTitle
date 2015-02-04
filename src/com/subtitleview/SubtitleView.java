@@ -18,6 +18,10 @@ import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.widget.LinearLayout;
+import android.os.Handler;
+import android.os.Message;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class SubtitleView extends FrameLayout {
         private static final String TAG = SubtitleView.class.getSimpleName();
@@ -40,7 +44,8 @@ public class SubtitleView extends FrameLayout {
         private boolean dataPgsAShowed = false;
         private boolean dataPgsBShowed = false;
         private final int SUBTITLE_PGS = 2;
-
+        private final int SUBTITLE_DVB = 6;
+        private final int SUBTITLE_TMD_TXT = 7;
         public void setGraphicSubViewMode (int flag) {
             graphicViewMode = flag;
         }
@@ -187,6 +192,9 @@ public class SubtitleView extends FrameLayout {
                 case SUB_JACOSUB:
                     typeStr = "JACOSUB";
                     break;
+                case SUB_MPL1:
+                    typeStr = "SUB_MPL";
+                    break;
                 case SUB_MPL2:
                     typeStr = "SUB_MPL";
                     break;
@@ -211,6 +219,7 @@ public class SubtitleView extends FrameLayout {
 
         public void redraw (SubData data) {
             this.removeAllViews();
+            stopOsdTimeout();
             if (data != null) {
                 if (data.subSize() > 0) {
                     if (data.gettype() == 1) {
@@ -223,23 +232,27 @@ public class SubtitleView extends FrameLayout {
                     }
                     else {
                         String sttmp = data.getSubString();
-                        sttmp = sttmp.replaceAll ("\r", "");
-                        byte sttmp_2[] = sttmp.getBytes();
-                        if (sttmp_2.length > 0 && 0 == sttmp_2[ sttmp_2.length - 1]) {
-                            sttmp_2[ sttmp_2.length - 1] = 0x20;
-                        }
-                        if (mTextView != null) {
-                            mTextView.setText (new String (sttmp_2));
-                            this.addView (mTextView);
+                        if (sttmp != null) {
+                            sttmp = sttmp.replaceAll ("\r", "");
+                            byte sttmp_2[] = sttmp.getBytes();
+                            if (sttmp_2.length > 0 && 0 == sttmp_2[ sttmp_2.length - 1]) {
+                                sttmp_2[ sttmp_2.length - 1] = 0x20;
+                            }
+                            if (mTextView != null) {
+                                mTextView.setText (new String (sttmp_2));
+                                this.addView (mTextView);
+                            }
                         }
                     }
                 }
             }
+            startSubShowTimeout();
             this.requestLayout();
         }
 
         public void redraw() {
             this.removeAllViews();
+            stopOsdTimeout();
             if (data != null) {
                 if (data.gettype() == 1) {
                     evaluteScale (data.getSubBitmap());
@@ -262,7 +275,46 @@ public class SubtitleView extends FrameLayout {
                     }
                 }
             }
+            startSubShowTimeout();
             this.requestLayout();
+        }
+
+        private Timer timer = new Timer();
+        private static final int MSG_SUB_SHOW_TIME_OUT = 0xd1;
+        protected void startSubShowTimeout() {
+            final Handler handler = new Handler() {
+                public void handleMessage(Message msg) {
+                    switch (msg.what) {
+                        case MSG_SUB_SHOW_TIME_OUT:
+                            SubtitleView.this.removeAllViews();
+                            SubtitleView.this.requestLayout();
+                        break;
+                    }
+                    super.handleMessage(msg);
+                }
+            };
+
+            TimerTask task = new TimerTask() {
+                public void run() {
+                    Message message = Message.obtain();
+                    message.what = MSG_SUB_SHOW_TIME_OUT;
+                    handler.sendMessage(message);
+                }
+            };
+
+            stopOsdTimeout();
+            if (timer == null) {
+                timer = new Timer();
+            }
+            if (timer != null) {
+                timer.schedule(task, 5*1000); //5s
+            }
+        }
+
+        private void stopOsdTimeout() {
+            if (timer != null)
+                timer.cancel();
+            timer = null;
         }
 
         public void setDisplayResolution (int width, int height) {
@@ -330,7 +382,7 @@ public class SubtitleView extends FrameLayout {
             }
             int w = bitmap.getWidth();
             int h = bitmap.getHeight();
-
+            /*
             if (wmax > 0 && w * w_scale > wmax) {
                 w_scale = ((float)wmax) / w;
             }
@@ -342,7 +394,7 @@ public class SubtitleView extends FrameLayout {
             Log.d(TAG, "bitmap width: " + w + ", height: " + h
                     + ", w_scale: " + Float.toString(w_scale)
                     + ", h_scale: " + Float.toString(h_scale));
-
+            */
             Matrix matrix = new Matrix();
             matrix.postScale (w_scale, h_scale);
             Bitmap resizedBitmap = Bitmap.createBitmap (bitmap, 0, 0, w, h, matrix, true);
@@ -395,7 +447,7 @@ public class SubtitleView extends FrameLayout {
             /*if((getSubTypeDetial() == 0) ||(getSubTypeDetial() == -1)) {
                 return;
             }
-            else */if (getSubTypeDetial() == SUBTITLE_PGS) {
+            else */if(getSubTypeDetial() == SUBTITLE_PGS || getSubTypeDetial() == SUBTITLE_DVB || getSubTypeDetial() == SUBTITLE_TMD_TXT) {
                 Log.i (TAG, "[tick]data:" + data + ",dataPgsAValid:" + dataPgsAValid + ",dataPgsBValid:" + dataPgsBValid + ",modifytime:" + modifytime);
                 if (resetForSeek) {
                     this.removeAllViews();

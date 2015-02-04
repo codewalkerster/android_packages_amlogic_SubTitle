@@ -47,6 +47,9 @@ static char *subfile_buffer;
 static int buffer_size;
 static unsigned subfile_read;
 
+//init pts rate
+int ptsrate = 24;
+
 static inline int subtitle_uni_Utf16toUtf8(const UTF16 *in, int inLen, UTF8 *out, int outMax)
 /* Above code is created by AfControlWizard */
 {
@@ -733,8 +736,8 @@ subtitle_t *internal_sub_read_line_microdvd(int fd, subtitle_t *current)
     char line2[LINE_LEN + 1];
     char *p, *next;
     int i;
-    float ptsrate = 0;
-    ptsrate = get_subtitle_fps() / 100;
+    /*int ptsrate = 0;
+    /*ptsrate = get_subtitle_fps() / 100;
 
     if (get_subtitle_fps() % 100)
         ptsrate ++;
@@ -744,7 +747,7 @@ subtitle_t *internal_sub_read_line_microdvd(int fd, subtitle_t *current)
         ptsrate = 24; //30;
     }
 
-    log_print("--------internal_sub_read_line_microdvd---get frame rate: %f--\n", ptsrate);
+    log_print("--------internal_sub_read_line_microdvd---get frame rate: %f--\n", ptsrate);*/
     current->end = 0;
 
     do
@@ -756,6 +759,10 @@ subtitle_t *internal_sub_read_line_microdvd(int fd, subtitle_t *current)
     }
     while ((sscanf(line, "{%ld}{}%[^\r\n]", &(current->start), line2) < 2) &&
             (sscanf(line, "{%ld}{%ld}%[^\r\n]", &(current->start), &(current->end), line2) < 3));
+
+    if ((current->start && current->start == 1) || (current->start && current->end && current->start == current->end == 1)) {
+        ptsrate = atoi(line2);
+    }
 
     p = line2;
     next = p, i = 0;
@@ -788,6 +795,58 @@ subtitle_t *internal_sub_read_line_microdvd(int fd, subtitle_t *current)
     current->start = current->start * 100 / ptsrate;
     current->end = current->end * 100 / ptsrate;
     log_print("time  %d %d \n", current->start, current->end);
+    return current;
+}
+
+subtitle_t *internal_sub_read_line_mpl1(int fd, subtitle_t *current)
+{
+    char line[LINE_LEN + 1];
+    char line2[LINE_LEN + 1];
+    char *p, *next;
+    int tmp;
+    int i;
+
+    do
+    {
+        if (!internal_subf_gets(line, fd)) return NULL;
+    }
+    while ((sscanf(line, "%ld,%ld,%ld,%[^\r\n]", &(current->start), &(current->end), &tmp, line2) < 4));
+
+    //parse pts rate
+    if ((current->start && current->start == 1) || (current->start && current->end && current->start == current->end == 1)) {
+        ptsrate = atoi(line2);
+    }
+
+    current->start = (current->start * 100) /ptsrate;
+    current->end = (current->end * 100) /ptsrate;
+    p = line2;
+    next = p, i = 0;
+
+    while (1)
+    {
+        next = internal_sub_readtext(next, &(current->text.text[i]));
+
+        if (!next)
+        {
+            break;
+        }
+
+        if (current->text.text[i] == ERR)
+        {
+            return ERR;
+        }
+
+        i++;
+
+        if (i >= SUB_MAX_TEXT)
+        {
+            log_print(("Too many lines in a subtitle\n"));
+            current->text.lines = i;
+            return current;
+        }
+    }
+
+    current->text.lines = ++i;
     return current;
 }
 
@@ -1130,8 +1189,7 @@ subtitle_t *internal_sub_read_line_vplayer(int fd, subtitle_t *current)
 
     while (!current->text.text[0])
     {
-        if (!internal_subf_gets(line, fd))
-        {
+        if (!internal_subf_gets(line, fd)) {
             return NULL;
         }
 
@@ -1144,11 +1202,11 @@ subtitle_t *internal_sub_read_line_vplayer(int fd, subtitle_t *current)
 
         if (!current->start)
         {
-            continue;
+            //continue;
+            current->start = 0;
         }
 
         p = &line[plen];
-        //log_print("plen %d, p %s\n", plen, p);
         i = 0;
 
         if (*p != '|')
@@ -1158,7 +1216,6 @@ subtitle_t *internal_sub_read_line_vplayer(int fd, subtitle_t *current)
             while (1)
             {
                 next = internal_sub_readtext(next, &(current->text.text[i]));
-
                 if (current->text.text[i] == ERR)
                 {
                     return ERR;
@@ -1467,8 +1524,10 @@ subtitle_t *internal_sub_read_line_pjs(int fd, subtitle_t *current)
     }
 
     /* the files I have are in tenths of second */
-    current->start *= 10;
-    current->end *= 10;
+    //current->start *= 10;
+    //current->end *= 10;
+    current->start = (current->start * 100) /ptsrate;
+    current->end = (current->end * 100) /ptsrate;
 
     /* walk to the beggining of the string */
     for (; *s; s++)
@@ -1482,6 +1541,9 @@ subtitle_t *internal_sub_read_line_pjs(int fd, subtitle_t *current)
 
         if (*s) s++;
     }
+
+    /* skip spaces */
+    for (; *s && isspace(*s); s++);
 
     if (*s != '"')
     {
@@ -1665,13 +1727,13 @@ subtitle_t *internal_sub_read_line_aqt(int fd, subtitle_t *current)
             break;
         }
     }
-
+/*
     if (previous_aqt_sub != NULL)
     {
         previous_aqt_sub->end = current->start - 1;
     }
 
-    previous_aqt_sub = current;
+    previous_aqt_sub = current;*/
 
     if (!internal_subf_gets(line, fd))
     {
@@ -1694,6 +1756,11 @@ subtitle_t *internal_sub_read_line_aqt(int fd, subtitle_t *current)
         next = internal_sub_readtext(next, &(current->text.text[i]));
 
         if (!next)
+        {
+            break;
+        }
+
+        if (strlen(next) == 0)
         {
             break;
         }
@@ -1722,6 +1789,23 @@ subtitle_t *internal_sub_read_line_aqt(int fd, subtitle_t *current)
         return NULL;
     }
 
+    while (1)
+    {
+        // try to locate next subtitle
+        if (!internal_subf_gets(line, fd))
+        {
+            return NULL;
+        }
+
+        if (!(sscanf(line, "-->> %ld", &(current->end)) < 1))
+        {
+            break;
+        }
+    }
+
+    current->start = (current->start * 100) /ptsrate;
+    current->end = (current->end * 100) /ptsrate;
+
     return current;
 }
 
@@ -1749,12 +1833,12 @@ subtitle_t *internal_sub_read_line_subrip09(int fd, subtitle_t *current)
 
     current->start = a1 * 360000 + a2 * 6000 + a3 * 100;
 
-    if (internal_previous_subrip09_sub != NULL)
+    /*if (internal_previous_subrip09_sub != NULL)
     {
         internal_previous_subrip09_sub->end = current->start - 1;
     }
 
-    internal_previous_subrip09_sub = current;
+    internal_previous_subrip09_sub = current;*/
 
     if (!internal_subf_gets(line, fd))
     {
@@ -1796,6 +1880,21 @@ subtitle_t *internal_sub_read_line_subrip09(int fd, subtitle_t *current)
         internal_previous_subrip09_sub = NULL;
         return NULL;
     }
+
+    while (1)
+    {
+        // try to locate next subtitle
+        if (!internal_subf_gets(line, fd))
+        {
+            return NULL;
+        }
+
+        if (!((len = sscanf(line, "[%d:%d:%d]", &a1, &a2, &a3)) < 3))
+        {
+            break;
+        }
+    }
+    current->end = a1 * 360000 + a2 * 6000 + a3 * 100;
 
     return current;
 }
@@ -2095,6 +2194,11 @@ static int internal_sub_autodetect(int fd)
             return SUB_MICRODVD;
         }
 
+        if (sscanf(line, "%d,%d,%d", &i, &i, &i) == 3)
+        {
+            return SUB_MPL1;
+        }
+
         if (sscanf(line, "[%d][%d]", &i, &i) == 2)
         {
             return SUB_MPL2;
@@ -2169,6 +2273,11 @@ static int internal_sub_autodetect(int fd)
             return SUB_PJS;
         }
 
+        if (sscanf(line, "%d,%d, \"%c", &i, &i, (char *) &i) == 3)
+        {
+            return SUB_PJS;
+        }
+
         if (sscanf(line, "FORMAT=%d", &i) == 1)
         {
             return SUB_MPSUB;
@@ -2229,6 +2338,8 @@ SUBAPI void internal_sub_close(subdata_t *subdata)
 
 SUBAPI subdata_t *internal_sub_open(char *filename, unsigned int rate, char *charset)
 {
+    list_t *entry;
+
     int fd = 0;
     subtitle_t *sub, *sub_read;
     subdata_t *subdata;
@@ -2249,9 +2360,12 @@ SUBAPI subdata_t *internal_sub_open(char *filename, unsigned int rate, char *cha
         { internal_sub_read_line_subviewer3, NULL, "subviewer 3.0" },
         { internal_sub_read_line_subrip09, NULL, "subrip 0.9" },
         { internal_sub_read_line_jacosub, NULL, "jacosub" },
+        { internal_sub_read_line_mpl1, NULL, "mpl1" },
         { internal_sub_read_line_mpl2, NULL, "mpl2" }
     };
     subreader_t *srp;
+
+    //log_print("[internal_sub_open] filename= %s, charset=%s\n", filename, charset);
 
     if (filename == NULL)
     {
@@ -2378,6 +2492,8 @@ SUBAPI subdata_t *internal_sub_open(char *filename, unsigned int rate, char *cha
         subfile_buffer = NULL;
     }
 
+    ptsrate = 15;//24;//dafault value
+
     while (1)
     {
         sub = (subtitle_t *)MALLOC(sizeof(subtitle_t));
@@ -2413,11 +2529,18 @@ SUBAPI subdata_t *internal_sub_open(char *filename, unsigned int rate, char *cha
             /* 10ms to pts conversion */
             sub->start = sub_ms2pts(sub->start);
             sub->end = sub_ms2pts(sub->end);
+            //log_print("[internal_sub_open]0(%d, %d) %s\n", sub->start, sub->end, sub->text.text[0]);
             //log_print("return: %s\n", sub->text.text[0]);
             list_add_tail(&sub->list, &subdata->list);
             subdata->sub_num++;
         }
     }
+
+    /*
+    list_for_each(entry, &subdata->list) {
+        subtitle_t *subt = list_entry(entry, subtitle_t, list);
+        log_print("[internal_sub_open](%d,%d)%s\n",subt->start,subt->end, subt->text.text[0]);
+    }*/
 
     if (subfile_buffer)
     {

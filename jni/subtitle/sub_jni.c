@@ -8,7 +8,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <pthread.h>
-
+#include <Amsyswrite.h>
 
 #include "sub_set_sys.h"
 #include "vob_sub.h"
@@ -28,10 +28,12 @@ int sub_thread = 0;
 int subThreadRunning = 0;
 int subThreadSleeping = 0;
 extern lock_t sublock;
+extern void amDumpMemoryAddresses(int fd);
 JNIEXPORT jobject JNICALL parseSubtitleFile
 (JNIEnv *env, jclass cl, jstring filename, jstring encode)
 {
     jclass cls = (*env)->FindClass(env, "com/subtitleparser/SubtitleFile");
+    LOGE("parseSubtitleFile enter");
 
     if (!cls)
     {
@@ -82,6 +84,7 @@ JNIEXPORT jobject JNICALL parseSubtitleFile
     {
         i++;
         subtitle_t *subt = list_entry(entry, subtitle_t, list);
+        LOGE("[parseSubtitleFile](%d,%d)",subt->start,subt->end);
         textBuf = (char *)malloc(subt->text.lines * 512);
 
         if (textBuf == NULL)
@@ -101,6 +104,7 @@ JNIEXPORT jobject JNICALL parseSubtitleFile
         jbyteArray array = (*env)->NewByteArray(env, strlen(textBuf));
         (*env)->SetByteArrayRegion(env, array, 0, strlen(textBuf), textBuf);
         //jtext = (*env)->NewStringUTF(env, textBuf); //may cause err.
+        LOGE("[parseSubtitleFile](%d,%d)%s",subt->start / 90,subt->end / 90, textBuf);
         (*env)->CallVoidMethod(env, obj, mid, i, subt->start / 90, subt->end / 90, array, encode);
         (*env)->DeleteLocalRef(env, array);
         free(textBuf);
@@ -137,6 +141,37 @@ JNIEXPORT jint JNICALL getInSubtitleTotal
     return 0;
 }
 
+static jstring string2jstring(JNIEnv* env, const char* pat)
+{
+   jclass strClass = (*env)->FindClass(env, "java/lang/String");
+   jmethodID ctorID = (*env)->GetMethodID(env, strClass, "<init>", "([BLjava/lang/String;)V");
+   jbyteArray bytes = (*env)->NewByteArray(env, strlen(pat));
+   (*env)->SetByteArrayRegion(env, bytes, 0, strlen(pat), (jbyte*)pat);
+   jstring encoding = (*env)->NewStringUTF(env, "utf-8");
+   return (jstring)(*env)->NewObject(env, strClass, ctorID, bytes, encoding);
+}
+
+JNIEXPORT jstring JNICALL getInSubtitleTitle
+    (JNIEnv *env, jclass cl)
+{
+    jstring jstr;
+    char content[2048] = {0,};
+    get_subtitle_title_info(content, 2048);
+    LOGE("jni getInSubtitleTitle!content:%s\n",content);
+    jstr = string2jstring(env, content);
+    return jstr;
+}
+
+JNIEXPORT jstring JNICALL getInSubtitleLanguage
+    (JNIEnv *env, jclass cl)
+{
+    jstring jstr;
+    char content[2048] = {0,};
+    get_subtitle_language(content, 2048);
+    LOGE("jni getInSubtitleLanguage!content:%s\n",content);
+    jstr = string2jstring(env, content);
+    return jstr;
+}
 static
 JNIEXPORT jint JNICALL setInSubtitleNumber
 (JNIEnv *env, jclass cl, jint index, jstring name)
@@ -185,6 +220,13 @@ JNIEXPORT void JNICALL setSubtitleNumber
     }
 }
 
+static
+JNIEXPORT void JNICALL nativeDump
+  (JNIEnv *env, jclass cl, jint fd)
+{
+    LOGE("jni nativeDump!");
+    amDumpMemoryAddresses(fd);
+}
 
 JNIEXPORT void JNICALL closeInSubView(JNIEnv *env, jclass cl)
 {
@@ -197,7 +239,7 @@ JNIEXPORT void JNICALL closeInSubView(JNIEnv *env, jclass cl)
 
 JNIEXPORT jint JNICALL getInSubType(JNIEnv *env, jclass cl)
 {
-    return get_sub_type_for_pgs();
+    return get_inter_sub_type();
 }
 
 JNIEXPORT jobject JNICALL getrawdata
@@ -236,6 +278,14 @@ JNIEXPORT jobject JNICALL getrawdata
         return NULL;
     }
 
+    jmethodID constrfortt = (*env)->GetMethodID(env, cls, "<init>", "([BIIIILjava/lang/String;)V");
+
+    if (!constrfortt)
+    {
+        LOGE("com/subtitleparser/subtypes/RawData: failed to get  constructor method's ID");
+        return NULL;
+    }
+
     LOGE("start get packet\n\n");
     int sub_pkt = get_inter_spu_packet(msec * 90 + get_subtitle_startpts());
     LOGI("subtitle get start pts is %x\n\n", get_subtitle_startpts());
@@ -266,6 +316,28 @@ JNIEXPORT jobject JNICALL getrawdata
         LOGE("getrawdata: NewObject  finish");
         add_read_position();
 
+        if (!obj)
+        {
+            LOGE("parseSubtitleFile: failed to create an object");
+            return NULL;
+        }
+        return obj;
+    }
+    else if(get_inter_spu_type()==SUBTITLE_TMD_TXT)
+    {
+        int sub_size = get_inter_spu_size();
+        LOGE("getrawdata: get_inter_spu_type()=SUBTITLE_SSA size  %d ",sub_size);
+        if (sub_size <= 0)
+        {
+            return NULL;
+        }
+        jbyteArray array= (*env)->NewByteArray(env,sub_size);
+        (*env)->SetByteArrayRegion(env,array,0, sub_size, get_inter_spu_data());
+
+        int sub_start_pts= (get_inter_spu_pts()- get_subtitle_startpts())/90;
+        jobject obj = (*env)->NewObject(env, cls, constrfortt,array,0,sub_size,sub_start_pts,0,0);
+        LOGE("getrawdata: NewObject  finish");
+        add_read_position();
         if (!obj)
         {
             LOGE("parseSubtitleFile: failed to create an object");
@@ -310,51 +382,14 @@ JNIEXPORT jobject JNICALL getrawdata
     {
         LOGE("getrawdata: get_inter_spu_type()=SUBTITLE_DVB");
         int sub_size = get_inter_spu_size();
-
-        if (sub_size <= 0)
-        {
-            LOGE("sub_size invalid \n\n");
-            return NULL;
-        }
-
-        LOGI("sub_size is %d, \n\n", sub_size);
-        int *inter_sub_data = NULL;
-        inter_sub_data = malloc(sub_size * 4);
-
-        if (inter_sub_data == NULL)
-        {
-            LOGE("malloc sub_size fail \n\n");
-            return NULL;
-        }
-
-        memset(inter_sub_data, 0x0, sub_size * 4);
-        LOGI("start get new array\n\n");
-        jintArray array = (*env)->NewIntArray(env, sub_size);
-
-        if (!array)
-        {
-            LOGE("new int array fail \n\n");
-            return NULL;
-        }
-
-        parser_inter_spu2(inter_sub_data);
-        int *resize_data = malloc(get_inter_spu_resize_size() * 4);
-
-        if (resize_data == NULL)
-        {
-            free(inter_sub_data);
-            return NULL;
-        }
-
-        fill_resize_data(resize_data, inter_sub_data);
-        LOGE("end parser_inter_spu\n\n");
-        (*env)->SetIntArrayRegion(env, array, 0, get_inter_spu_resize_size(), resize_data);
-        LOGE("start get new object resize_data=%x, \n\n", resize_data);
-        free(inter_sub_data);
-        free(resize_data);
-        LOGE("## after free resize_data \n\n");
-        jobject obj = (*env)->NewObject(env, cls, constr, array, 1, get_inter_spu_width(),
-                                        get_inter_spu_height(), (get_inter_spu_delay() - get_subtitle_startpts()) / 90, 0);
+        LOGI("sub_size is %d, \n\n",sub_size);
+        int start_time= (get_inter_spu_pts()- get_subtitle_startpts())/90;
+        int delay_time = (get_inter_spu_delay()-get_subtitle_startpts())/90;
+        LOGE("sub start time is %dms, width is %dms\n", start_time, get_inter_spu_width());
+        jintArray array= (*env)->NewIntArray(env,sub_size);
+        (*env)->SetIntArrayRegion(env,array,0,sub_size, get_inter_spu_data());
+        jobject obj =  (*env)->NewObject(env, cls, constrforpgs,array,1,get_inter_spu_width(),
+        get_inter_spu_height(),sub_size, start_time,delay_time,0);
         add_read_position();
 
         if (!obj)
@@ -643,8 +678,11 @@ static JNINativeMethod insubMethods[] =
 {
     /* name, signature, funcPtr */
     { "getInSubtitleTotalByJni", "()I", (void *)getInSubtitleTotal},
+    { "getInSubtitleTitleByJni", "()Ljava/lang/String;", (void*)getInSubtitleTitle},
+    { "getInSubtitleLanguageByJni", "()Ljava/lang/String;", (void*)getInSubtitleLanguage},
     { "getCurrentInSubtitleIndexByJni", "()I", (void *)getCurrentInSubtitleIndex },
     { "setSubtitleNumberByJni", "(I)V", (void *)setSubtitleNumber},
+    { "nativeDumpByJni", "(I)V", (void*) nativeDump },
     //      { "FileChangedByJni", "(Ljava/lang/String;)V",                          (void*)playfileChanged },
 
 };

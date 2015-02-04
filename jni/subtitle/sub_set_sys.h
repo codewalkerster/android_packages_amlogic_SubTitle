@@ -14,6 +14,8 @@ int get_subtitle_data();
 int get_subtitle_startpts();
 int get_subtitle_fps();
 int get_subtitle_subtype();
+int get_subtitle_language(char *valstr, int size);
+int get_subtitle_title_info(char *valstr, int size);
 
 #endif
 

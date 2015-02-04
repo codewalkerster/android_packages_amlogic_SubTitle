@@ -27,8 +27,10 @@ import android.app.AlertDialog;
 import android.webkit.URLUtil;
 import android.widget.*;
 import java.io.File;
+import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.lang.RuntimeException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -655,6 +657,56 @@ public class SubTitleService extends ISubTitleService.Stub {
             return name;
         }
 
+        public String getSubName(int idx) {
+            if (Debug()) Log.i(TAG,"[getSubName]idx:"+idx);
+            String name = null;
+            if (subtitleUtils != null && getSubTotal() > 0) {
+                name = subtitleUtils.getSubPath(idx);
+                if (name != null) {
+                    int index = name.lastIndexOf("/");
+                    if (index >= 0) {
+                        name = name.substring(index + 1);
+                    }
+                }
+                if (name.equals("INSUB")) {
+                    name = subtitleUtils.getInSubName(idx);
+                }
+            }
+            if (Debug()) Log.i(TAG,"[getSubName]name:"+name);
+            return name;
+        }
+
+        public String getSubLanguage(int idx) {
+            if (Debug()) Log.i(TAG,"[getSubLanguage]idx:"+idx);
+            String language = null;
+            int index = 0;
+            if (subtitleUtils != null && getSubTotal() > 0) {
+                language = subtitleUtils.getSubPath(idx);
+                if (language != null) {
+                    index = language.lastIndexOf(".");
+                    if (index >= 0) {
+                        language = language.substring(0, index);
+                        index = language.lastIndexOf(".");
+                        if (index >= 0) {
+                            language = language.substring(index + 1);
+                        }
+                    }
+                }
+                if (language.equals("INSUB")) {
+                    language = subtitleUtils.getInSubLanguage(idx);
+                }
+            }
+            if (language != null) {// if no language, getSubName (skip file path)
+                index = language.lastIndexOf("/");
+                if (index >= 0) {
+                    //language = language.substring(index + 1);
+                    language = getSubName(idx);
+                }
+            }
+            if (Debug()) Log.i(TAG,"[getSubLanguage]language:"+language);
+            return language;
+        }
+
         public void showSub (int position) {
             if (Debug()) Log.i (TAG, "[showSubContent]position:" + position + ",subShowState:" + subShowState + ",mHandler:" + mHandler);
             if (position > 0 && mHandler != null) {
@@ -773,6 +825,14 @@ public class SubTitleService extends ISubTitleService.Stub {
             if (mHandler != null) {
                 Message msg = mHandler.obtainMessage (RESET_FOR_SEEK);
                 mHandler.sendMessageDelayed (msg, MSG_SEND_DELAY);
+            }
+        }
+
+        @Override
+        public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
+            Log.i(TAG,"[dump]fd:"+fd.getInt$()+",subtitleUtils:"+subtitleUtils);
+            if (subtitleUtils != null) {
+                subtitleUtils.nativeDump(fd.getInt$());
             }
         }
 

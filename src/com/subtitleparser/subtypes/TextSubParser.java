@@ -55,6 +55,7 @@ class TextSubApi extends SubtitleApi {
             try {
                 if (false == isSubOverlap) {
                     cur = SubFile.curSubtitle();
+                    Log.i("TextSubApi","[getdata]millisec:"+millisec+",cur.getBegin().getMilValue():"+cur.getBegin().getMilValue()+",cur.getEnd().getMilValue():"+cur.getEnd().getMilValue());
                     if (millisec >= cur.getBegin().getMilValue()
                             && millisec <= cur.getEnd().getMilValue()) {
                         st = SubFile.curSubtitle().getText();
@@ -74,6 +75,7 @@ class TextSubApi extends SubtitleApi {
                             st = "";
                         }
                     }
+                    Log.i("TextSubApi","[getdata]st:"+st);
                 }
                 else {
                     cur = SubFile.curSubtitle();

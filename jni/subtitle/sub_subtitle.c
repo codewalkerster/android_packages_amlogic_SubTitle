@@ -115,7 +115,7 @@ typedef struct
 } subtitle_data_t;
 static subtitle_data_t inter_subtitle_data[MAX_SUBTITLE_PACKET_WRITE];
 
-static int subtitle_type_for_pgs = 0;
+static int inter_subtitle_type = 0;
 
 static unsigned short DecodeRL(unsigned short RLData, unsigned short *pixelnum, unsigned short *pixeldata)
 {
@@ -675,7 +675,29 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
                 LOGI("CODEC_ID_SSA   size is:    %u ,data is:    %s, current_length=%d\n", spu->buffer_size, spu->spu_data, current_length);
                 ret = 0;
                 break;
-
+            case 0x17005:
+                duration_pts = spu_buf_piece[rd_oft++]<<24;
+                duration_pts |= spu_buf_piece[rd_oft++]<<16;
+                duration_pts |= spu_buf_piece[rd_oft++]<<8;
+                duration_pts |= spu_buf_piece[rd_oft++];
+                sublen = 1000;
+                spu->subtitle_type = SUBTITLE_TMD_TXT;
+                spu->buffer_size = current_length+1;
+                spu->spu_data = malloc( spu->buffer_size );
+                memset(spu->spu_data,0,spu->buffer_size);
+                spu->pts = current_pts;
+                spu->m_delay = duration_pts;
+                if (duration_pts != 0) {
+                    spu->m_delay += current_pts;
+                }
+                rd_oft += 2;
+                current_length -= 2;
+                if (current_length == 0)
+                    ret = -1;
+                memcpy(spu->spu_data, spu_buf_piece+rd_oft, current_length);
+                LOGI("CODEC_ID_TIME_TEXT   size is:    %u ,data is:    %s, current_length=%d\n",spu->buffer_size,spu->spu_data, current_length);
+                ret = 0;
+                break;
             default:
                 ret = -1;
                 break;
@@ -705,6 +727,7 @@ int release_spu(AML_SPUVAR *spu)
 {
     if (spu->spu_data)
         free(spu->spu_data);
+    spu->spu_data = NULL;
 
     return 0;
 }
@@ -784,6 +807,7 @@ int write_subtitle_file(AML_SPUVAR *spu)
 
     if (inter_subtitle_data[file_position].data)
         free(inter_subtitle_data[file_position].data);
+    inter_subtitle_data[file_position].data = NULL;
 
     inter_subtitle_data[file_position].subtitle_type = spu->subtitle_type;
     inter_subtitle_data[file_position].data = spu->spu_data;
@@ -806,12 +830,21 @@ int write_subtitle_file(AML_SPUVAR *spu)
 
     if (spu->subtitle_type == SUBTITLE_PGS)
     {
-        subtitle_type_for_pgs = SUBTITLE_PGS;
+        inter_subtitle_type = SUBTITLE_PGS;
         file_position = ADD_SUBTITLE_POSITION(file_position);
+    }
+    else if(spu->subtitle_type == SUBTITLE_DVB)
+    {
+        inter_subtitle_type = SUBTITLE_DVB;
+        file_position = ADD_SUBTITLE_POSITION(file_position);
+    }
+    else if(spu->subtitle_type == SUBTITLE_TMD_TXT)
+    {
+        inter_subtitle_type = SUBTITLE_TMD_TXT;
     }
     else
     {
-        subtitle_type_for_pgs = 0;
+        inter_subtitle_type = 0;
     }
 
     lp_unlock(&sublock);
@@ -868,9 +901,9 @@ int get_inter_spu_type()
     return inter_subtitle_data[read_position].subtitle_type;
 }
 
-int get_sub_type_for_pgs()
+int get_inter_sub_type()
 {
-    return subtitle_type_for_pgs;
+    return inter_subtitle_type;
 }
 
 int get_subtitle_buffer_size()
@@ -915,8 +948,23 @@ int get_inter_spu_size()
         LOGI("## subtitle width is %d: subtitle height is %d, buffer width is %d, size=%d,\n", subtitle_width, subtitle_height, buffer_width, buffer_width * subtitle_height);
         return buffer_width * subtitle_height;
     }
+    else if(get_inter_spu_type()==SUBTITLE_TMD_TXT)
+    {
+        LOGI(" inter_subtitle_data[%d] data_size is 0x%x\n",read_position,inter_subtitle_data[read_position].data_size);
+        return inter_subtitle_data[read_position].data_size;
+    }
 
     return 0;
+}
+
+void free_inter_spu_data()
+{
+    if (inter_subtitle_data[read_position].data)
+    {
+        free(inter_subtitle_data[read_position].data);
+        inter_subtitle_data[read_position].data = NULL;
+    }
+    return;
 }
 
 char *get_inter_spu_data()

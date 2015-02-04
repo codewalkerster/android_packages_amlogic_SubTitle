@@ -11,10 +11,13 @@ import android.os.SystemProperties;
 
 public class SubtitleUtils {
         public native int getInSubtitleTotalByJni();
+        public native String getInSubtitleTitleByJni();
+        public native String getInSubtitleLanguageByJni();
 
         //public native int setInSubtitleNumberByJni(int  ms);
         public native void setSubtitleNumberByJni (int  idx);
         public native int getCurrentInSubtitleIndexByJni();
+        public native void nativeDumpByJni(int fd);
         //  public native void FileChangedByJni(String name);
 
         private String filename = null;
@@ -36,6 +39,11 @@ public class SubtitleUtils {
             "xml",
             "idx",
             "sub",
+            "pjs",
+            "aqt",
+            "mpl",
+            "js",
+            "jss",
             /* "may be need add new types--------------" */
         };
         public  SubtitleUtils() {
@@ -92,6 +100,64 @@ public class SubtitleUtils {
             }
             return null;*/
         }
+
+    // inner subtitle language and title string format:
+    //1,eng;2,chi;
+    //1,simplified chinese;2,english;3,xxx;
+    private String parseInSubStr(int index, String string) {
+        int idx = 0;
+        String str = string;
+
+        if (index > getInSubTotal()) {
+            return null;
+        }
+
+        for (int i = 0; i < index; i++) {
+            idx = str.indexOf(";");
+            if (idx >= 0) {
+                str = str.substring(idx + 1);
+            }
+        }
+        idx = str.indexOf(";");
+        if (idx >= 0) {
+            str = str.substring(0, idx);
+        }
+
+        idx = str.indexOf(",");
+        if (idx >= 0) {
+            str = str.substring(idx + 1);
+        }
+
+        return str;
+    }
+
+    public String getInSubName(int index) {
+        int idx = 0;
+        String name = null;
+        String str = null;
+
+        if (getInSubTotal() > 0) {
+            str = getInSubtitleTitle();
+        }
+
+        name = parseInSubStr(index, str);
+
+        return name;
+    }
+
+    public String getInSubLanguage(int index) {
+        int idx = 0;
+        String language = null;
+        String str = null;
+
+        if (getInSubTotal() > 0) {
+            str = getInSubtitleLanguage();
+        }
+
+        language = parseInSubStr(index, str);
+
+        return language;
+    }
 
         public SubID getSubID (int index) {
             if (subfile == null) {
@@ -172,6 +238,16 @@ public class SubtitleUtils {
         private  int  accountInSubtitleNumber() {
             return getInSubtitleTotalByJni();
         }
+
+
+        private String getInSubtitleTitle() {
+            return getInSubtitleTitleByJni();
+        }
+
+        private String getInSubtitleLanguage() {
+            return getInSubtitleLanguageByJni();
+        }
+
         //wait to finish.
         public void setInSubtitleNumber (int index) {
             //setInSubtitleNumberByJni(index);
@@ -181,6 +257,12 @@ public class SubtitleUtils {
             setSubtitleNumberByJni (index);
             return;
         }
+
+        public void nativeDump(int fd){
+            nativeDumpByJni(fd);
+            return;
+        }
+
         private int accountIdxSubtitleNumber (String filename) {
             int idxcount = 0;
             String inputString = null;

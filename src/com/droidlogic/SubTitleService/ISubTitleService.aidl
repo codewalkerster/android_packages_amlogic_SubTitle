@@ -25,5 +25,7 @@ interface ISubTitleService
     void hide();
     void display();
     String getCurName();
+    String getSubName(int idx);
+    String getSubLanguage(int idx);
     boolean load(String path);
 }

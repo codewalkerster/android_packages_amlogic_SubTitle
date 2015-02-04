@@ -280,9 +280,9 @@ public class SubtitleFile extends LinkedList {
             SubtitleLine sl = null;
             SubtitleTime startTime = null;
             SubtitleTime endTime = null;
-            Log.d ("subtitleFile", "appendSubtitleFile" + text);
             startTime = new SubtitleTime (start / 3600000, ( (start / 1000) % 3600) / 60, (start / 1000) % 60, start % 1000);
             endTime = new SubtitleTime (end / 3600000, ( (end / 1000) % 3600) / 60, (end / 1000) % 60, end % 1000);
+            Log.d ("subtitleFile", "appendSubtitleFile:(" + start + "," + end + ")" + text);
             text = text.replaceAll ("\\{\\\\fn.*?\\}", "");
             text = text.replaceAll ("\\{\\\\r\\}", "");
             text = text.replaceAll ("\\{\\\\fs.*?\\}", "");
@@ -310,6 +310,7 @@ public class SubtitleFile extends LinkedList {
             }
             startTime = new SubtitleTime (start / 3600000, ( (start / 1000) % 3600) / 60, (start / 1000) % 60, start % 1000);
             endTime = new SubtitleTime (end / 3600000, ( (end / 1000) % 3600) / 60, (end / 1000) % 60, end % 1000);
+            Log.d ("subtitleFile", "appendSubtitleFile:(" + start + "," + end + ")" + text);
             text = text.replaceAll ("\\{\\\\fn.*?\\}", "");
             text = text.replaceAll ("\\{\\\\r\\}", "");
             text = text.replaceAll ("\\{\\\\fs.*?\\}", "");

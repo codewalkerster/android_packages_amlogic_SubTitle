@@ -22,8 +22,9 @@
 #define SUB_SUBVIEWER3  11
 #define SUB_SUBRIP09    12
 #define SUB_JACOSUB     13
-#define SUB_MPL2        14
-#define SUB_DIVX        15
+#define SUB_MPL1        14
+#define SUB_MPL2        15
+#define SUB_DIVX        16
 
 /* Maximal length of line of a subtitle */
 #define LINE_LEN                    1000

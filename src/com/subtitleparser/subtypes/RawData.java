@@ -15,6 +15,16 @@ public class RawData {
         public RawData (int[] data, int t, int w, int h, int size, int start, int delay, String st) { // ([BILjava/lang/String;)V
             rawdata = data; type = t; width = w; height = h; sub_size = size; sub_start = start; sub_delay = delay; codec = st; subtitlestring = null;
         }
+
+        public RawData(byte[] data,int t,int size,int start,int delay,String st){
+            type=t;sub_size=size;sub_start=start;sub_delay=delay;codec=st;
+            try {
+                subtitlestring = new String((byte[])data,"UTF8");
+            }catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+        }
+
         public RawData (byte[] data, int delay, String st) {
             type = 0;
             sub_delay = delay;

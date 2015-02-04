@@ -108,6 +108,7 @@ class SsaApi extends SubtitleApi {
                             st = str;
                         }
                     }
+                    st=st.replaceAll( ".*\\{(.*?)\\}","");
                     st = st.replaceAll ("\\{(.*?)\\}", "");
                     st = st.replaceAll ("\\\\N", "\\\n");
                     st = st.replaceAll ("\\\\h", "");

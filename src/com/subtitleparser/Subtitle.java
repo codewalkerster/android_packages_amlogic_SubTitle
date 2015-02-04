@@ -46,6 +46,7 @@ public class Subtitle {
             SUB_SUBVIEWER3 ,
             SUB_SUBRIP09  ,
             SUB_JACOSUB  ,
+            SUB_MPL1  ,
             SUB_MPL2  ,
             SUB_DIVX  ,
             SUB_IDXSUB,
@@ -207,6 +208,7 @@ public class Subtitle {
                 case SUB_SUBVIEWER3 :
                 case SUB_SUBRIP09  :
                 case SUB_JACOSUB  :
+                case SUB_MPL1  :
                 case SUB_MPL2  :
                 case SUB_DIVX:
                     Log.i ("SubtitleFile", "------------parseSubtitleFileByJni-----------" + fileName);

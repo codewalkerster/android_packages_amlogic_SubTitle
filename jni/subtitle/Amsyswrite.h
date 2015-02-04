@@ -13,7 +13,7 @@ extern "C" {
     int amSystemControlReadSysfs(const char *path, char *value);
     int amSystemControlReadNumSysfs(const char *path, char *value, int size);
     int amSystemControlWriteSysfs(const char *path, char *value);
-
+    void amDumpMemoryAddresses(int fd);
 
 
 #ifdef  __cplusplus

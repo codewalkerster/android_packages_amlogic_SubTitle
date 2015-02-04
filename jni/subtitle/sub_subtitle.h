@@ -18,6 +18,7 @@
 #define SUBTITLE_MKV_VOB  4
 #define SUBTITLE_SSA  5     //add yjf
 #define SUBTITLE_DVB  6
+#define SUBTITLE_TMD_TXT 7
 
 typedef struct
 {

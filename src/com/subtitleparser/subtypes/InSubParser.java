@@ -31,7 +31,8 @@ class InSubApi extends SubtitleApi {
         private final int SUBTITLE_MKV_STR = 3;
         private final int SUBTITLE_MKV_VOB = 4;
         private final int SUBTITLE_SSA = 5;
-
+        private final int SUBTITLE_DVB = 6;
+        private final int SUBTITLE_TMD_TXT = 7;
         private static final String SUBTITLE_FILE = "/data/subtitle.db";
         private static final String WRITE_SUBTITLE_FILE = "/data/subtitle_img.jpeg";
         private static int subtitle_packet_size = (4 + 1 + 4 + 4 + 2 + 2 + 2 + 2 + 2 + 4 + 720 * 576 / 4);
@@ -74,7 +75,7 @@ class InSubApi extends SubtitleApi {
             /*if(getInSubType() == 0) {
                 return null;
             }
-            else */if (getInSubType() == SUBTITLE_PGS) {
+            else */if(getInSubType() == SUBTITLE_PGS || getInSubType() == SUBTITLE_DVB || getInSubType() == SUBTITLE_TMD_TXT) {
                 if (inter_data != null) {
                     if (inter_data.sub_start > 0) {
                         if (inter_data.sub_size > 0) {

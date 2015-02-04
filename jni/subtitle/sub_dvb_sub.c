@@ -422,8 +422,10 @@ static void delete_regions(DVBSubContext *ctx)
         region = ctx->region_list;
         ctx->region_list = region->next;
         delete_region_display_list(ctx, region);
-        av_free(region->pbuf);
-        av_free(region);
+        if (region->pbuf)
+            av_free(region->pbuf);
+        if (region)
+            av_free(region);
     }
 }
 
@@ -1295,7 +1297,7 @@ static void dvbsub_parse_page_segment(const uint8_t *buf, int buf_size)
     page_state = ((*buf++) >> 2) & 3;
     LOGI("Page time out %ds, state %d\n", ctx->time_out, page_state);
 
-    if (page_state == 2)
+    if (page_state == 1 || page_state == 2)
     {
         delete_regions(ctx);
         delete_objects(ctx);
@@ -1517,7 +1519,7 @@ static int dvbsub_display_end_segment(AML_SPUVAR *spu, const uint8_t *buf, int b
     int i;
     int offset_x = 0, offset_y = 0;
     sub->end_display_time = ctx->time_out * 1000;
-    spu->m_delay = spu->pts + sub->end_display_time;
+    spu->m_delay = spu->pts + sub->end_display_time*90;
 
     if (display_def)
     {
@@ -1671,6 +1673,7 @@ int dvbsub_decode(AML_SPUVAR *spu, const uint8_t *psrc, const int size)
 
                 case DVBSUB_DISPLAYDEFINITION_SEGMENT:
                     dvbsub_parse_display_definition_segment(p, segment_length);
+                break;
 
                 case DVBSUB_DISPLAY_SEGMENT:
                     data_size = dvbsub_display_end_segment(spu, p, segment_length, sub);
@@ -1686,19 +1689,32 @@ int dvbsub_decode(AML_SPUVAR *spu, const uint8_t *psrc, const int size)
         p += segment_length;
     }
 
-    if ((spu->spu_width == 0) && (spu->spu_height == 0))
-    {
-        LOGI("## dvbsub_decode: not sub data ----------\n");
-        return -1;
-    }
+    //if ((spu->spu_width == 0) && (spu->spu_height == 0)) {
+    //    LOGI("## dvbsub_decode: not sub data ----------\n");
+    //    return -1;
+    //}
 
     return p - buf;
 }
 
 static int read_spu_buf(int read_handle, char *buf, int len)
 {
+    LOGI("read_spu_buf len = %d\n", len);
+
+    if (len > 3*1024*1024)
+        abort();
     subtitle_read_sub_data_fd(read_handle, buf, len);
     return len;
+}
+
+/* check subtitle hw buffer has enough data to read */
+static int check_sub_buffer_length(int read_handle, int size)
+{
+    LOGI("[check_sub_buffer_length]read_handle:%d, size:%d\n",read_handle,size);
+    if (subtitle_get_sub_size_fd(read_handle) >= size)
+        return 1;
+
+    return 0;
 }
 
 int get_dvb_spu(AML_SPUVAR *spu, int read_handle)
@@ -1836,34 +1852,31 @@ int get_dvb_spu(AML_SPUVAR *spu, int read_handle)
                     spu->buffer_size = DVB_SUB_SIZE;
                     spu->spu_data = malloc(DVB_SUB_SIZE);
                     spu->pts = dvb_pts;
+                    read_spu_buf(read_handle, tmpbuf, 2);
+                    dvb_packet_length -= 2;
+                    dvb_temp_pts = ((tmpbuf[0]<<8) | tmpbuf[1]);
                     buf = malloc(dvb_packet_length);
                     read_spu_buf(read_handle, buf, 2);
                     dvb_temp_pts = ((buf[0] << 8) | buf[1]);
 
                     if (dvb_temp_pts != 0)
-                    {
-                        spu->m_delay = spu->pts + dvb_temp_pts;
+                    if (buf) {
+                        LOGI("dvb_packet_length is %d, pts is %x, delay is %x,\n",dvb_packet_length, spu->pts, dvb_temp_pts);
                     }
-
-                    LOGI("dvb_packet_length is %d, pts is %x, delay is %x,\n", dvb_packet_length, spu->pts, dvb_temp_pts);
-
-                    if (buf)
-                    {
+                    else {
+                        LOGI("dvb_packet_length buf malloc fail!!!,\n");
+                    }
+                    if (buf) {
                         memset(buf, 0x0, dvb_packet_length);
-
+                        while (!check_sub_buffer_length(read_handle, dvb_packet_length)) {
+                            //usleep(10000);
+                            LOGI("waiting for hw buffer getting enough data for decoder");
+                        }
                         if (read_spu_buf(read_handle, buf, dvb_packet_length) == dvb_packet_length)
                         {
                             LOGI("start decode dvb subtitle\n\n");
                             ret = dvbsub_decode(spu, buf, dvb_packet_length);
-
-                            if (dvb_sub_valid_flag == 1)
-                            {
-                                write_subtitle_file(spu);
-                            }
-                            else
-                            {
-                                add_sub_end_time(spu->pts);
-                            }
+                            write_subtitle_file(spu);
                         }
 
                         free(buf);
@@ -1906,12 +1919,10 @@ aml_soft_demux:
             dvb_temp_pts |= tmpbuf[12] << 16;
             dvb_temp_pts |= tmpbuf[13] << 8;
             dvb_temp_pts |= tmpbuf[14];
-            spu->m_delay = dvb_temp_pts;
-
-            if (dvb_temp_pts != 0)
-            {
-                spu->m_delay += dvb_pts;
-            }
+            //spu->m_delay = dvb_temp_pts;
+            //if (dvb_temp_pts != 0) {
+            //    spu->m_delay += dvb_pts;
+            //}
 
             spu->subtitle_type = SUBTITLE_DVB;
             spu->buffer_size = DVB_SUB_SIZE;
@@ -1931,14 +1942,7 @@ aml_soft_demux:
             LOGI("## dvb: (width=%d,height=%d), (x=%d,y=%d), dvb_sub_valid_flag=%d,---------\n",
                  spu->spu_width, spu->spu_height, spu->spu_start_x, spu->spu_start_y, dvb_sub_valid_flag);
 
-            if (dvb_sub_valid_flag == 1)
-            {
-                write_subtitle_file(spu);
-            }
-            else
-            {
-                add_sub_end_time(spu->pts);
-            }
+            write_subtitle_file(spu);
 
             if (pdata)
             {

@@ -25,6 +25,13 @@ int get_sysfs_int(const char *path)
     return amsysfs_get_sysfs_int(path);
 }
 
+
+int get_sysfs_str(const char *path, char *valstr, int size)
+{
+    return amsysfs_get_sysfs_str(path, valstr, size);
+}
+
+
 int set_subtitle_enable(int enable)
 {
     log_print("[%s::%d] %d,----- \n", __FUNCTION__, __LINE__, enable);
@@ -41,6 +48,17 @@ int get_subtitle_num()
 {
     return get_sysfs_int("/sys/class/subtitle/total");
 }
+
+int get_subtitle_language(char *valstr, int size)
+{
+    return get_sysfs_str("/sys/class/subtitle/sub_language", valstr, size);
+}
+
+int get_subtitle_title_info(char *valstr, int size)
+{
+    return get_sysfs_str("/sys/class/subtitle/sub_title_info", valstr, size);
+}
+
 
 int set_subtitle_curr(int curr)
 {

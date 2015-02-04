@@ -13,6 +13,8 @@
 #include <Amsyswrite.h>
 #include <unistd.h>
 
+#include <MemoryLeakTrackUtilTmp.h>
+#include <fcntl.h>
 
 using namespace android;
 
@@ -229,4 +231,9 @@ int amSystemControlWriteSysfs(const char *path, char *value)
 
     //ALOGD("[false]amSystemControlWriteSysfs%s,",path);
     return -1;
+}
+void amDumpMemoryAddresses(int fd) {
+    ALOGE("[amDumpMemoryAddresses]fd:%d\n",fd);
+    dumpMemoryAddresses(fd);
+    close(fd);
 }
