@@ -853,7 +853,7 @@ public class SubTitleService extends ISubTitleService.Stub {
                         }
                         break;
                     case OPEN:
-                        if (subShowState == SUB_OFF) {
+                        if (subShowState == SUB_OFF && subtitleUtils != null) {
                             subTitleView.startSubThread(); //open insub parse thread
                             subID = subtitleUtils.getSubID (curSubId);
                             if (Debug()) Log.i(TAG, "[handleMessage] curSubId: " + curSubId + ",subID:" + subID);
