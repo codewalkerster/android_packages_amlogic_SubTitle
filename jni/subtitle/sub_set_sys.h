@@ -1,7 +1,6 @@
 #ifndef _SUBTITLE_SET_DISP_H_
 #define _SUBTITLE_SET_DISP_H_
 
-
 int get_subtitle_enable();
 int get_subtitle_num();
 int get_subtitle_curr();
@@ -17,5 +16,5 @@ int get_subtitle_subtype();
 int get_subtitle_language(char *valstr, int size);
 int get_subtitle_title_info(char *valstr, int size);
 
+int get_sysfs_str(const char *path, char *valstr, int size);
 #endif
-

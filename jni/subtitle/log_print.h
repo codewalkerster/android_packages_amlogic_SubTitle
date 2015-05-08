@@ -21,7 +21,6 @@ if the level<global_level print out
 
 #define  DEBUG_PN() log_print("[%s:%d]\n", __FUNCTION__, __LINE__)
 
-
 void log_close(void);
 int log_open(const char *name);
 

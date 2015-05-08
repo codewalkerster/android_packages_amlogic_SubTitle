@@ -84,7 +84,6 @@ struct buf_status
     unsigned int write_pointer;
 };
 
-
 struct vdec_status
 {
     unsigned int width;
@@ -108,10 +107,10 @@ struct am_io_param
     union
     {
         int data;
-        int id;//get bufstatus? //or others
+        int id;     //get bufstatus? //or others
     };
 
-    int len; //buffer size;
+    int len;        //buffer size;
 
     union
     {
@@ -124,5 +123,4 @@ struct am_io_param
 void set_vdec_func(int (*vdec_func)(struct vdec_status *));
 void set_adec_func(int (*adec_func)(struct adec_status *));
 
-#endif /* AMSTREAM_H */
-
+#endif              /* AMSTREAM_H */

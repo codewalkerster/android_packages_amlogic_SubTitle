@@ -17,38 +17,31 @@
 int subtitle_poll_sub_fd(int sub_fd, int timeout)
 {
     struct pollfd sub_poll_fd[1];
-
     if (sub_fd <= 0)
     {
         return 0;
     }
-
     sub_poll_fd[0].fd = sub_fd;
     sub_poll_fd[0].events = POLLOUT;
     return poll(sub_poll_fd, 1, timeout);
 }
 
-
 int subtitle_get_sub_size_fd(int sub_fd)
 {
     int sub_size, r;
     r = ioctl(sub_fd, AMSTREAM_IOC_SUB_LENGTH, (unsigned long)&sub_size);
-
     if (r < 0)
         return 0;
     else
         return sub_size;
 }
 
-
 int subtitle_read_sub_data_fd(int sub_fd, char *buf, unsigned int length)
 {
     int data_size = length, r, read_done = 0;
-
     while (data_size)
     {
         r = read(sub_fd, buf + read_done, data_size);
-
         if (r < 0)
             return 0;
         else
@@ -57,9 +50,9 @@ int subtitle_read_sub_data_fd(int sub_fd, char *buf, unsigned int length)
             read_done += r;
         }
     }
-
     return 0;
 }
+
 #if 0
 int update_read_pointer(int sub_handle, int flag)
 {
@@ -68,36 +61,27 @@ int update_read_pointer(int sub_handle, int flag)
         LOGE("pgs handle invalid\n\n");
         return sub_handle;
     }
-
     int r = ioctl(sub_handle, AMSTREAM_IOC_UPDATE_POINTER, flag);
-
     if (r < 0)
     {
         LOGE("send AMSTREAM_IOC_UPDATE_POINTER failed\n");
         return r;
     }
-
     return 0;
 }
 
 int subtitle_read_sub_data_fd_update(int sub_fd, unsigned int *length)
 {
     int data_size = *length, r, read_done = 0;
-
     if (data_size <= 0)
         return 0;
-
     char *skip_buf = malloc(data_size);
-
     if (skip_buf == NULL)
         return 0;
-
     update_read_pointer(sub_fd, 0);
-
     while (data_size)
     {
         r = read(sub_fd, skip_buf + read_done, data_size);
-
         if (r < 0)
         {
             *length = 0;
@@ -109,14 +93,13 @@ int subtitle_read_sub_data_fd_update(int sub_fd, unsigned int *length)
         {
             data_size -= r;
             read_done += r;
-
             if (data_size > 0)
             {
-                LOGI("still data_size %d, %d\n\n\n", data_size, read_done);
+                LOGI("still data_size %d, %d\n\n\n", data_size,
+                     read_done);
             }
         }
     }
-
     *length = 0;
     free(skip_buf);
     update_read_pointer(sub_fd, 1);

@@ -16,18 +16,15 @@ typedef struct
     char palette_update_flag;
     char palette_Id_ref;
     char number;
-    char item_flag; //cropped |=0x80, forced |= 0x40
+    char item_flag;     //cropped |=0x80, forced |= 0x40
 
-    /**/
-    int window_width_offset;
+    /**/ int window_width_offset;
     int window_height_offset;
     int window_width;
     int window_height;
-    /**/
-    int image_width;
+    /**/ int image_width;
     int image_height;
-    /**/
-    int palette[0x100];
+    /**/ int palette[0x100];
     unsigned char *rle_buf;
     int rle_buf_size;
     int rle_rd_off;
@@ -86,9 +83,8 @@ typedef struct
     int pgs_item_count;
     int pgs_display_index;
 
-    /**/
-    PGS_subtitle_showdata showdata;
-    /*end*/
+    /**/ PGS_subtitle_showdata showdata;
+    /*end */
 } subtitlepgs_t;
 
 typedef struct draw_result

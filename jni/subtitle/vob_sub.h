@@ -25,7 +25,7 @@ typedef enum
 {
     FSTA_DSP = 0,
     STA_DSP = 1,
-    STP_DSP  = 2,
+    STP_DSP = 2,
     SET_COLOR = 3,
     SET_CONTR = 4,
     SET_DAREA = 5,
@@ -39,7 +39,7 @@ typedef enum
 
 typedef struct _SP_DCSQT
 {
-    unsigned m_Delay;       // Delay befor execution
+    unsigned m_Delay;   // Delay befor execution
     //ushort        m_OffsetToThis;  Offset to start of this CDSQT
     //ushort        m_OffsetToNext;  Offset to next CDSQT. 0 if none
     //CommandsV m_Commands;      The commands;
@@ -62,12 +62,12 @@ typedef struct _VOB_SPUVAR
     unsigned short spu_start_y;
     unsigned short spu_width;
     unsigned short spu_height;
-    unsigned short top_pxd_addr;  // CHIP_T25
+    unsigned short top_pxd_addr;    // CHIP_T25
     unsigned short bottom_pxd_addr; // CHIP_T25
 
     unsigned mem_start; // CHIP_T25
-    unsigned mem_end; // CHIP_T25
-    unsigned mem_size; // CHIP_T25
+    unsigned mem_end;   // CHIP_T25
+    unsigned mem_size;  // CHIP_T25
     unsigned mem_rp;
     unsigned mem_wp;
     unsigned mem_rp2;
@@ -88,16 +88,10 @@ typedef struct
     int width;
     int height;
     unsigned short colorcode;
-    unsigned short  contrast;
+    unsigned short contrast;
     unsigned prtData;
     unsigned cls;
 } Vob_subtitle_showdata;
-
-
-
-
-
-
 
 extern VOB_SPUVAR uVobSPU;
 extern SP_DCSQT TheDCSQT;
@@ -105,15 +99,14 @@ extern char *vob_pixData1;
 extern unsigned short *vob_ptrPXDRead;
 extern Vob_subtitle_showdata vob_subtitle_config;
 
-extern int doVobSubCmd(VOB_SUB_FRAME *subFrame, unsigned short m_SubPicSize, unsigned curAVtime);
+extern int doVobSubCmd(VOB_SUB_FRAME *subFrame, unsigned short m_SubPicSize,
+                       unsigned curAVtime);
 extern unsigned char vob_FillPixel(int n);
-
-
 
 typedef struct
 {
 
-    unsigned int pts100; /* from idx */
+    unsigned int pts100;    /* from idx */
 
     off_t filepos;
 
@@ -122,8 +115,6 @@ typedef struct
     //unsigned char *data;
 
 } packet_t;
-
-
 
 typedef struct
 {
@@ -140,8 +131,6 @@ typedef struct
 
 } packet_queue_t;
 
-
-
 typedef struct
 {
 
@@ -156,8 +145,6 @@ typedef struct
     unsigned long pos;
 
 } rar_stream_t;
-
-
 
 typedef struct
 {
@@ -175,8 +162,6 @@ typedef struct
     unsigned int packet_size;
 
 } mpeg_t;
-
-
 
 typedef struct
 {
@@ -207,8 +192,6 @@ typedef struct
 
 } vobsub_t;
 
-
-
 typedef struct
 {
 
@@ -224,8 +207,6 @@ typedef struct
 
     unsigned short *vob_ptrPXDRead;
 
-
-
     vobsub_t *vobsub;
 
     mpeg_t *mpeg;
@@ -233,8 +214,6 @@ typedef struct
     char *cur_idx_url;
 
     int cur_track_id;
-
-
 
     unsigned duration;
 
@@ -246,20 +225,13 @@ typedef struct
 
     char next_filepos;
 
-    /*end*/
+    /*end */
 
 } subtitlevobsub_t;
-
 
 extern int init_subtitle(char *fileurl);
 
 extern subtitlevobsub_t *getIdxSubData(int ptms);
 
-
-
-
-
-
-
 /*@}*/
-#endif /* VOB_SUB_H */
+#endif              /* VOB_SUB_H */

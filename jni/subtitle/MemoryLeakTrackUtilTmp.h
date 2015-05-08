@@ -16,12 +16,13 @@
 #ifndef MEMORY_LEAK_TRACK_UTIL_H
 #define MEMORY_LEAK_TRACK_UTIL_H
 
-namespace android {
-/*
- * Dump the memory address of the calling process to the given fd.
- */
-extern void dumpMemoryAddresses(int fd);
+namespace android
+{
+    /*
+     * Dump the memory address of the calling process to the given fd.
+     */
+    extern void dumpMemoryAddresses(int fd);
 
 };
 
-#endif  // MEMORY_LEAK_TRACK_UTIL_H
+#endif              // MEMORY_LEAK_TRACK_UTIL_H

@@ -10,7 +10,7 @@
 #define VOB_SUB_WIDTH 1920
 #define VOB_SUB_HEIGHT 1280
 #define VOB_SUB_SIZE VOB_SUB_WIDTH*VOB_SUB_HEIGHT/4
-#define DVB_SUB_SIZE VOB_SUB_WIDTH*VOB_SUB_HEIGHT
+#define DVB_SUB_SIZE VOB_SUB_WIDTH*VOB_SUB_HEIGHT*4
 
 #define SUBTITLE_VOB      1
 #define SUBTITLE_PGS      2
@@ -19,6 +19,11 @@
 #define SUBTITLE_SSA  5     //add yjf
 #define SUBTITLE_DVB  6
 #define SUBTITLE_TMD_TXT 7
+
+#define SUB_INIT        0
+#define SUB_PLAYING     1
+#define SUB_STOP        2
+#define SUB_EXIT       3
 
 typedef struct
 {
@@ -56,11 +61,11 @@ typedef struct
     unsigned rgba_pattern3;
 } AML_SPUVAR;
 
-
 int get_spu(AML_SPUVAR *spu, int sub_fd);
 int release_spu(AML_SPUVAR *spu);
 int get_inter_spu();
-unsigned char spu_fill_pixel(unsigned short *pixelIn, char *pixelOut, AML_SPUVAR *sub_frame, int n);
+unsigned char spu_fill_pixel(unsigned short *pixelIn, char *pixelOut,
+                             AML_SPUVAR *sub_frame, int n);
 int add_sub_end_time(int end_time);
 int subtitle_thread_create();
 int init_subtitle_file();

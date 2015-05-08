@@ -7,7 +7,6 @@
  * data: 2013-08-15 Lujian.Hu@amlogic.com
  */
 
-
 #ifndef _DVB_SUB_H
 #define _DVB_SUB_H
 #include <stdint.h>
@@ -29,74 +28,76 @@
 #include "sub_control.h"
 
 #if defined(ALT_BITSTREAM_READER_LE) && !defined(ALT_BITSTREAM_READER)
-#   define ALT_BITSTREAM_READER
+#define ALT_BITSTREAM_READER
 #endif
 
 #if !defined(A32_BITSTREAM_READER) && !defined(ALT_BITSTREAM_READER)
-#   if defined(ARCH_ARM) && !defined(HAVE_FAST_UNALIGNED)
-#       define A32_BITSTREAM_READER
-#   else
-#       define ALT_BITSTREAM_READER
+#if defined(ARCH_ARM) && !defined(HAVE_FAST_UNALIGNED)
+#define A32_BITSTREAM_READER
+#else
+#define ALT_BITSTREAM_READER
 //#define A32_BITSTREAM_READER
-#   endif
+#endif
 #endif
 
 #ifndef AV_RB16
-#   define AV_RB16(x)                           \
+#define AV_RB16(x)                           \
     ((((const uint8_t*)(x))[0] << 8) |          \
      ((const uint8_t*)(x))[1])
 #endif
 #ifndef AV_RB32
-#   define AV_RB32(x)                                \
+#define AV_RB32(x)                                \
     (((uint32_t)((const uint8_t*)(x))[0] << 24) |    \
      (((const uint8_t*)(x))[1] << 16) |    \
      (((const uint8_t*)(x))[2] <<  8) |    \
      ((const uint8_t*)(x))[3])
 #endif
 #ifndef NEG_USR32
-#   define NEG_USR32(a,s) (((uint32_t)(a))>>(32-(s)))
+#define NEG_USR32(a,s) (((uint32_t)(a))>>(32-(s)))
 #endif
 #ifdef __GNUC__
-#    define AV_GCC_VERSION_AT_LEAST(x,y) (__GNUC__ > x || __GNUC__ == x && __GNUC_MINOR__ >= y)
+#define AV_GCC_VERSION_AT_LEAST(x,y) (__GNUC__ > x || __GNUC__ == x && __GNUC_MINOR__ >= y)
 #else
-#    define AV_GCC_VERSION_AT_LEAST(x,y) 0
+#define AV_GCC_VERSION_AT_LEAST(x,y) 0
 #endif
 
 #ifndef av_const
 #if AV_GCC_VERSION_AT_LEAST(2,6)
-#    define av_const __attribute__((const))
+#define av_const __attribute__((const))
 #else
-#    define av_const
+#define av_const
 #endif
 #endif
 
 #ifndef av_always_inline
 #if AV_GCC_VERSION_AT_LEAST(3,1)
-#    define av_always_inline __attribute__((always_inline)) inline
+#define av_always_inline __attribute__((always_inline)) inline
 #else
-#    define av_always_inline inline
+#define av_always_inline inline
 #endif
 #endif
 
 #ifndef av_cold
 #if AV_GCC_VERSION_AT_LEAST(4,3)
-#    define av_cold __attribute__((cold))
+#define av_cold __attribute__((cold))
 #else
-#    define av_cold
+#define av_cold
 #endif
 #endif
 
 #ifndef sign_extend
 static inline av_const int sign_extend(int val, unsigned bits)
 {
-    return (val << ((8 * sizeof(int)) - bits)) >> ((8 * sizeof(int)) - bits);
+    return (val << ((8 * sizeof(int)) - bits)) >> ((8 * sizeof(int)) -
+            bits);
 }
 #endif
 
 #ifndef zero_extend
 static inline av_const unsigned zero_extend(unsigned val, unsigned bits)
 {
-    return (val << ((8 * sizeof(int)) - bits)) >> ((8 * sizeof(int)) - bits);
+    return (val << ((8 * sizeof(int)) - bits)) >> ((8 * sizeof(int)) -
+            bits);
 }
 #endif
 
@@ -121,8 +122,10 @@ static av_always_inline av_const uint32_t av_bswap32(uint32_t x)
 static inline uint64_t av_const av_bswap64(uint64_t x)
 {
 #if 0
-    x = ((x << 8) & 0xFF00FF00FF00FF00ULL) | ((x >> 8) & 0x00FF00FF00FF00FFULL);
-    x = ((x << 16) & 0xFFFF0000FFFF0000ULL) | ((x >> 16) & 0x0000FFFF0000FFFFULL);
+    x = ((x << 8) & 0xFF00FF00FF00FF00ULL) | ((x >> 8) &
+            0x00FF00FF00FF00FFULL);
+    x = ((x << 16) & 0xFFFF0000FFFF0000ULL) | ((x >> 16) &
+            0x0000FFFF0000FFFFULL);
     return (x >> 32) | (x << 32);
 #else
     union
@@ -178,53 +181,52 @@ typedef struct GetBitContext
 } GetBitContext;
 
 #ifdef ALT_BITSTREAM_READER
-#   define MIN_CACHE_BITS 25
+#define MIN_CACHE_BITS 25
 
-#   define OPEN_READER(name, gb)                \
+#define OPEN_READER(name, gb)                \
     unsigned int name##_index = (gb)->index;    \
     av_unused unsigned int name##_cache
 
-#   define CLOSE_READER(name, gb) (gb)->index = name##_index
+#define CLOSE_READER(name, gb) (gb)->index = name##_index
 
-# ifdef ALT_BITSTREAM_READER_LE
-#   define UPDATE_CACHE(name, gb) \
+#ifdef ALT_BITSTREAM_READER_LE
+#define UPDATE_CACHE(name, gb) \
     name##_cache = AV_RL32(((const uint8_t *)(gb)->buffer)+(name##_index>>3)) >> (name##_index&0x07)
 
-#   define SKIP_CACHE(name, gb, num) name##_cache >>= (num)
-# else
-#   define UPDATE_CACHE(name, gb) \
+#define SKIP_CACHE(name, gb, num) name##_cache >>= (num)
+#else
+#define UPDATE_CACHE(name, gb) \
     name##_cache = AV_RB32(((const uint8_t *)(gb)->buffer)+(name##_index>>3)) << (name##_index&0x07)
 
-#   define SKIP_CACHE(name, gb, num) name##_cache <<= (num)
-# endif
+#define SKIP_CACHE(name, gb, num) name##_cache <<= (num)
+#endif
 
 // FIXME name?
-#   define SKIP_COUNTER(name, gb, num) name##_index += (num)
+#define SKIP_COUNTER(name, gb, num) name##_index += (num)
 
-#   define SKIP_BITS(name, gb, num) do {        \
+#define SKIP_BITS(name, gb, num) do {        \
         SKIP_CACHE(name, gb, num);              \
         SKIP_COUNTER(name, gb, num);            \
     } while (0)
 
-#   define LAST_SKIP_BITS(name, gb, num) SKIP_COUNTER(name, gb, num)
-#   define LAST_SKIP_CACHE(name, gb, num)
+#define LAST_SKIP_BITS(name, gb, num) SKIP_COUNTER(name, gb, num)
+#define LAST_SKIP_CACHE(name, gb, num)
 
-# ifdef ALT_BITSTREAM_READER_LE
-#   define SHOW_UBITS(name, gb, num) zero_extend(name##_cache, num)
+#ifdef ALT_BITSTREAM_READER_LE
+#define SHOW_UBITS(name, gb, num) zero_extend(name##_cache, num)
 
-#   define SHOW_SBITS(name, gb, num) sign_extend(name##_cache, num)
-# else
-#   define SHOW_UBITS(name, gb, num) NEG_USR32(name##_cache, num)
+#define SHOW_SBITS(name, gb, num) sign_extend(name##_cache, num)
+#else
+#define SHOW_UBITS(name, gb, num) NEG_USR32(name##_cache, num)
 
-#   define SHOW_SBITS(name, gb, num) NEG_SSR32(name##_cache, num)
-# endif
+#define SHOW_SBITS(name, gb, num) NEG_SSR32(name##_cache, num)
+#endif
 
-#   define GET_CACHE(name, gb) ((uint32_t)name##_cache)
+#define GET_CACHE(name, gb) ((uint32_t)name##_cache)
 
 /**
  * Read 1-25 bits.
  */
-
 
 static inline int get_bits_count(const GetBitContext *s)
 {
@@ -238,22 +240,22 @@ static inline void skip_bits_long(GetBitContext *s, int n)
 
 #elif defined A32_BITSTREAM_READER
 
-#   define MIN_CACHE_BITS 32
+#define MIN_CACHE_BITS 32
 
-#   define OPEN_READER(name, gb)                        \
+#define OPEN_READER(name, gb)                        \
     int name##_bit_count        = (gb)->bit_count;      \
     uint32_t name##_cache0      = (gb)->cache0;         \
     uint32_t name##_cache1      = (gb)->cache1;         \
     uint32_t *name##_buffer_ptr = (gb)->buffer_ptr
 
-#   define CLOSE_READER(name, gb) do {          \
+#define CLOSE_READER(name, gb) do {          \
         (gb)->bit_count  = name##_bit_count;    \
         (gb)->cache0     = name##_cache0;       \
         (gb)->cache1     = name##_cache1;       \
         (gb)->buffer_ptr = name##_buffer_ptr;   \
     } while (0)
 
-#   define UPDATE_CACHE(name, gb) do {                                  \
+#define UPDATE_CACHE(name, gb) do {                                  \
         if(name##_bit_count > 0){                                       \
             const uint32_t next = av_be2ne32(*name##_buffer_ptr);       \
             name##_cache0 |= NEG_USR32(next, name##_bit_count);         \
@@ -264,38 +266,38 @@ static inline void skip_bits_long(GetBitContext *s, int n)
     } while (0)
 
 #if ARCH_X86
-#   define SKIP_CACHE(name, gb, num)                            \
+#define SKIP_CACHE(name, gb, num)                            \
     __asm__("shldl %2, %1, %0          \n\t"                    \
             "shll  %2, %1              \n\t"                    \
             : "+r" (name##_cache0), "+r" (name##_cache1)        \
             : "Ic" ((uint8_t)(num)))
 #else
-#   define SKIP_CACHE(name, gb, num) do {               \
+#define SKIP_CACHE(name, gb, num) do {               \
         name##_cache0 <<= (num);                        \
         name##_cache0 |= NEG_USR32(name##_cache1,num);  \
         name##_cache1 <<= (num);                        \
     } while (0)
 #endif
 
-#   define SKIP_COUNTER(name, gb, num) name##_bit_count += (num)
+#define SKIP_COUNTER(name, gb, num) name##_bit_count += (num)
 
-#   define SKIP_BITS(name, gb, num) do {        \
+#define SKIP_BITS(name, gb, num) do {        \
         SKIP_CACHE(name, gb, num);              \
         SKIP_COUNTER(name, gb, num);            \
     } while (0)
 
-#   define LAST_SKIP_BITS(name, gb, num)  SKIP_BITS(name, gb, num)
-#   define LAST_SKIP_CACHE(name, gb, num) SKIP_CACHE(name, gb, num)
+#define LAST_SKIP_BITS(name, gb, num)  SKIP_BITS(name, gb, num)
+#define LAST_SKIP_CACHE(name, gb, num) SKIP_CACHE(name, gb, num)
 
-#   define SHOW_UBITS(name, gb, num) NEG_USR32(name##_cache0, num)
+#define SHOW_UBITS(name, gb, num) NEG_USR32(name##_cache0, num)
 
-#   define SHOW_SBITS(name, gb, num) NEG_SSR32(name##_cache0, num)
+#define SHOW_SBITS(name, gb, num) NEG_SSR32(name##_cache0, num)
 
-#   define GET_CACHE(name, gb) name##_cache0
+#define GET_CACHE(name, gb) name##_cache0
 
 static inline int get_bits_count(const GetBitContext *s)
 {
-    return ((uint8_t *)s->buffer_ptr - s->buffer) * 8 - 32 + s->bit_count;
+    return ((uint8_t *) s->buffer_ptr - s->buffer) * 8 - 32 + s->bit_count;
 }
 
 static inline void skip_bits_long(GetBitContext *s, int n)
@@ -377,21 +379,19 @@ static inline void init_get_bits(GetBitContext *s,
                                  const uint8_t *buffer, int bit_size)
 {
     int buffer_size = (bit_size + 7) >> 3;
-
     if (buffer_size < 0 || bit_size < 0)
     {
         buffer_size = bit_size = 0;
         buffer = NULL;
     }
-
-    s->buffer       = buffer;
+    s->buffer = buffer;
     s->size_in_bits = bit_size;
-    s->buffer_end   = buffer + buffer_size;
+    s->buffer_end = buffer + buffer_size;
 #ifdef ALT_BITSTREAM_READER
-    s->index        = 0;
+    s->index = 0;
 #elif defined A32_BITSTREAM_READER
-    s->buffer_ptr   = (uint32_t *)((intptr_t)buffer & ~3);
-    s->bit_count    = 32 +     8 * ((intptr_t)buffer &  3);
+    s->buffer_ptr = (uint32_t *)((intptr_t) buffer & ~3);
+    s->bit_count = 32 + 8 * ((intptr_t) buffer & 3);
     skip_bits_long(s, 0);
 #endif
 }
@@ -400,7 +400,7 @@ enum AVSubtitleType
 {
     SUBTITLE_NONE,
 
-    SUBTITLE_BITMAP,                ///< A bitmap, pict will be set
+    SUBTITLE_BITMAP,    ///< A bitmap, pict will be set
 
     /**
      * Plain text, the text field must be set by the decoder and is
@@ -422,18 +422,18 @@ enum AVSubtitleType
 typedef struct AVPicture
 {
     uint8_t *data[4];
-    int linesize[4];       ///< number of bytes per line
+    int linesize[4];    ///< number of bytes per line
 } AVPicture;
 
 #define AVPALETTE_SIZE 1024
 
 typedef struct AVSubtitleRect
 {
-    int x;         ///< top left corner  of pict, undefined when pict is not set
-    int y;         ///< top left corner  of pict, undefined when pict is not set
-    int w;         ///< width            of pict, undefined when pict is not set
-    int h;         ///< height           of pict, undefined when pict is not set
-    int nb_colors; ///< number of colors in pict, undefined when pict is not set
+    int x;          ///< top left corner  of pict, undefined when pict is not set
+    int y;          ///< top left corner  of pict, undefined when pict is not set
+    int w;          ///< width            of pict, undefined when pict is not set
+    int h;          ///< height           of pict, undefined when pict is not set
+    int nb_colors;      ///< number of colors in pict, undefined when pict is not set
 
     /**
      * data+linesize for the bitmap of this subtitle.
@@ -442,7 +442,7 @@ typedef struct AVSubtitleRect
     AVPicture pict;
     enum AVSubtitleType type;
 
-    char *text;                     ///< 0 terminated plain UTF-8 text
+    char *text;     ///< 0 terminated plain UTF-8 text
 
     /**
      * 0 terminated ASS/SSA compatible event line.
@@ -454,12 +454,12 @@ typedef struct AVSubtitleRect
 
 typedef struct AVSubtitle
 {
-    uint16_t format; /* 0 = graphics */
-    uint32_t start_display_time; /* relative to packet pts, in ms */
-    uint32_t end_display_time; /* relative to packet pts, in ms */
+    uint16_t format;    /* 0 = graphics */
+    uint32_t start_display_time;    /* relative to packet pts, in ms */
+    uint32_t end_display_time;  /* relative to packet pts, in ms */
     unsigned num_rects;
     AVSubtitleRect **rects;
-    int64_t pts;    ///< Same as packet pts, in AV_TIME_BASE
+    int64_t pts;        ///< Same as packet pts, in AV_TIME_BASE
 } AVSubtitle;
 
 int dvbsub_decode(AML_SPUVAR *spu, const uint8_t *psrc, const int size);
@@ -483,28 +483,29 @@ void av_freep(void **arg)
 {
     if (*arg)
         free(*arg);
-
     *arg = NULL;
 }
+
 void av_free(void *arg)
 {
     if (arg)
         free(arg);
 }
+
 void *av_mallocz(unsigned int size)
 {
     void *ptr = malloc(size);
-
     if (ptr)
         memset(ptr, 0, size);
-
     return ptr;
 }
 
 static inline uint32_t bytestream_get_be32(const uint8_t **ptr)
 {
     uint32_t tmp;
-    tmp = (*ptr)[3] | ((*ptr)[2] << 8) | ((*ptr)[1] << 16) | ((*ptr)[0] << 24);
+    tmp =
+        (*ptr)[3] | ((*ptr)[2] << 8) | ((*ptr)[1] << 16) | ((*ptr)[0] <<
+                24);
     *ptr += 4;
     return tmp;
 }
@@ -512,7 +513,7 @@ static inline uint32_t bytestream_get_be32(const uint8_t **ptr)
 static inline uint32_t bytestream_get_be24(const uint8_t **ptr)
 {
     uint32_t tmp;
-    tmp = (*ptr)[2] | ((*ptr)[1] << 8) | ((*ptr)[0] << 16) ;
+    tmp = (*ptr)[2] | ((*ptr)[1] << 8) | ((*ptr)[0] << 16);
     *ptr += 3;
     return tmp;
 }
@@ -535,4 +536,3 @@ static inline uint8_t bytestream_get_byte(const uint8_t **ptr)
 #endif
 
 #endif
-

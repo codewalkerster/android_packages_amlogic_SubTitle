@@ -9,7 +9,6 @@
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
-
 static int global_level = 5;
 
 int log_open(const char *name)
@@ -26,14 +25,11 @@ void log_lprint(const int level, const char *fmt, ...)
 {
     char *buf = NULL;
     va_list ap;
-
     if (level > global_level)
         return;
-
     va_start(ap, fmt);
     vasprintf(&buf, fmt, ap);
     va_end(ap);
-
     if (buf)
     {
         LOGI("%s", buf);
@@ -61,7 +57,6 @@ void log_lprint(const int level, const char *fmt, ...)
 static int log_fd = -1;
 static int global_level = 5;
 
-
 static int get_system_time(char *timebuf)
 {
     time_t cur_time;
@@ -76,31 +71,31 @@ int log_open(const char *name)
 {
     if (name == NULL)
     {
-        /*print to console*/
+        /*print to console */
         log_fd = -1;
         return 0;
     }
-
     if ((log_fd = open(name, O_CREAT | O_RDWR | O_TRUNC, 0644)) < 0)
         return -1;
-
     lseek(log_fd, 0, SEEK_SET);
     return 0;
 }
+
 int change_print_level(int level)
 {
     return global_level = level;
 }
+
 void log_close(void)
 {
     if (log_fd >= 0)
         close(log_fd);
 }
+
 static void check_file_size(void)
 {
     off_t size;
     size = lseek(log_fd, 0, SEEK_CUR);
-
     if (size > MAX_LOG_SIZE)
     {
         lseek(log_fd, 0, SEEK_SET);
@@ -114,14 +109,11 @@ void log_lprint(const int level, const char *fmt, ...)
     static int log_index = 0;
     va_list ap;
     char systime[32];
-
     if (level > global_level)
         return;
-
     va_start(ap, fmt);
     vasprintf(&buf, fmt, ap);
     va_end(ap);
-
     if (log_fd > 0)
     {
         char sbuf[16];
@@ -139,7 +131,6 @@ void log_lprint(const int level, const char *fmt, ...)
         fprintf(stdout, "%s", buf);
         fflush(stdout);
     }
-
     if (buf)
         free(buf);
 }

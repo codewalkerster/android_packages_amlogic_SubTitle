@@ -59,22 +59,22 @@ typedef struct
 
 struct subdata_s
 {
-    list_t  list;            /* head node of subtitle_t list */
-    list_t  list_temp;
+    list_t list;        /* head node of subtitle_t list */
+    list_t list_temp;
 
-    int     sub_num;
-    int     sub_error;
-    int     sub_format;
+    int sub_num;
+    int sub_error;
+    int sub_format;
 };
 
 struct subtitle_s
 {
-    list_t      list;         /* linked list */
-    int         start;        /* start time */
-    int         end;          /* end time */
-    subtext_t   text;         /* subtitle text */
-    unsigned char *subdata;   /* data for divx bmp subtitle*/
-} ;
+    list_t list;        /* linked list */
+    int start;      /* start time */
+    int end;        /* end time */
+    subtext_t text;     /* subtitle text */
+    unsigned char *subdata; /* data for divx bmp subtitle */
+};
 
 typedef struct subtitle_s subtitle_t;
 typedef struct subdata_s subdata_t;
@@ -135,23 +135,27 @@ typedef struct _DivXSubPictHdr_HD
 #define sub_ms2pts(x) ((x) * 900)
 
 SUBAPI extern void internal_sub_close(subdata_t *subdata);
-SUBAPI extern subdata_t *internal_sub_open(char *filename, unsigned rate, char *charset);
-SUBAPI extern char *internal_sub_filenames(char *filename, unsigned perfect_match);
-SUBAPI extern subtitle_t *internal_sub_search(subdata_t *subdata, subtitle_t *ref, int pts);
+SUBAPI extern subdata_t *internal_sub_open(char *filename, unsigned rate,
+        char *charset);
+SUBAPI extern char *internal_sub_filenames(char *filename,
+        unsigned perfect_match);
+SUBAPI extern subtitle_t *internal_sub_search(subdata_t *subdata,
+        subtitle_t *ref, int pts);
 SUBAPI extern int internal_sub_get_starttime(subtitle_t *subt);
 SUBAPI extern int internal_sub_get_endtime(subtitle_t *subt);
 SUBAPI extern subtext_t *internal_sub_get_text(subtitle_t *subt);
-SUBAPI extern subtitle_t *internal_divx_sub_add(subdata_t *subdata, unsigned char *data);
+SUBAPI extern subtitle_t *internal_divx_sub_add(subdata_t *subdata,
+        unsigned char *data);
 SUBAPI extern void internal_divx_sub_delete(subdata_t *subdata, int pts);
 SUBAPI extern void internal_divx_sub_flush(subdata_t *subdata);
 
 /*The struct use fot notify the ui layer the audio information of the clip */
 typedef struct _CLIP_AUDIO_INFO
 {
-    unsigned int audio_info; /* audio codec info */
-    unsigned int audio_cur_play_index;   /* audio play current index */
-    unsigned int total_audio_stream; /* total audio stream number */
+    unsigned int audio_info;    /* audio codec info */
+    unsigned int audio_cur_play_index;  /* audio play current index */
+    unsigned int total_audio_stream;    /* total audio stream number */
 } Clip_Audio_Info;
 
 /*@}*/
-#endif /* SUB_API_H */
+#endif              /* SUB_API_H */

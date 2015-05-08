@@ -79,7 +79,7 @@ public class SubtitleView extends FrameLayout {
             SubManager.getinstance();
         }
 
-        public void setImgSubRatio(float ratioW, float ratioH, int maxW, int maxH) {
+        public void setImgSubRatio (float ratioW, float ratioH, int maxW, int maxH) {
             wscale = ratioW;
             hscale = ratioH;
             wmax = maxW;
@@ -114,8 +114,7 @@ public class SubtitleView extends FrameLayout {
             needSubTitleShow = flag;
             if (flag == false) {
                 setVisibility (INVISIBLE);
-            }
-            else {
+            } else {
                 setVisibility (VISIBLE);
             }
         }
@@ -223,14 +222,13 @@ public class SubtitleView extends FrameLayout {
             if (data != null) {
                 if (data.subSize() > 0) {
                     if (data.gettype() == 1) {
-                        evaluteScale (data.getSubBitmap());
+                        evaluteScale (data.getSubBitmap() );
                         Bitmap inter_bitmap = creatBitmapByScale (data.getSubBitmap(), wscale, hscale, wmax, hmax);
-                        if ( (inter_bitmap != null) && (mImageView != null)) {
+                        if ( (inter_bitmap != null) && (mImageView != null) ) {
                             mImageView.setImageBitmap (inter_bitmap);
                             this.addView (mImageView);
                         }
-                    }
-                    else {
+                    } else {
                         String sttmp = data.getSubString();
                         if (sttmp != null) {
                             sttmp = sttmp.replaceAll ("\r", "");
@@ -239,7 +237,7 @@ public class SubtitleView extends FrameLayout {
                                 sttmp_2[ sttmp_2.length - 1] = 0x20;
                             }
                             if (mTextView != null) {
-                                mTextView.setText (new String (sttmp_2));
+                                mTextView.setText (new String (sttmp_2) );
                                 this.addView (mTextView);
                             }
                         }
@@ -255,14 +253,13 @@ public class SubtitleView extends FrameLayout {
             stopOsdTimeout();
             if (data != null) {
                 if (data.gettype() == 1) {
-                    evaluteScale (data.getSubBitmap());
+                    evaluteScale (data.getSubBitmap() );
                     Bitmap inter_bitmap = creatBitmapByScale (data.getSubBitmap(), wscale, hscale, wmax, hmax);
-                    if ( (inter_bitmap != null) && (mImageView != null)) {
+                    if ( (inter_bitmap != null) && (mImageView != null) ) {
                         mImageView.setImageBitmap (inter_bitmap);
                         this.addView (mImageView);
                     }
-                }
-                else {
+                } else {
                     String sttmp = data.getSubString();
                     sttmp = sttmp.replaceAll ("\r", "");
                     byte sttmp_2[] = sttmp.getBytes();
@@ -270,7 +267,7 @@ public class SubtitleView extends FrameLayout {
                         sttmp_2[ sttmp_2.length - 1] = 0x20;
                     }
                     if (mTextView != null) {
-                        mTextView.setText (new String (sttmp_2));
+                        mTextView.setText (new String (sttmp_2) );
                         this.addView (mTextView);
                     }
                 }
@@ -283,14 +280,14 @@ public class SubtitleView extends FrameLayout {
         private static final int MSG_SUB_SHOW_TIME_OUT = 0xd1;
         protected void startSubShowTimeout() {
             final Handler handler = new Handler() {
-                public void handleMessage(Message msg) {
+                public void handleMessage (Message msg) {
                     switch (msg.what) {
                         case MSG_SUB_SHOW_TIME_OUT:
                             SubtitleView.this.removeAllViews();
                             SubtitleView.this.requestLayout();
-                        break;
+                            break;
                     }
-                    super.handleMessage(msg);
+                    super.handleMessage (msg);
                 }
             };
 
@@ -298,7 +295,7 @@ public class SubtitleView extends FrameLayout {
                 public void run() {
                     Message message = Message.obtain();
                     message.what = MSG_SUB_SHOW_TIME_OUT;
-                    handler.sendMessage(message);
+                    handler.sendMessage (message);
                 }
             };
 
@@ -307,13 +304,14 @@ public class SubtitleView extends FrameLayout {
                 timer = new Timer();
             }
             if (timer != null) {
-                timer.schedule(task, 5*1000); //5s
+                timer.schedule (task, 5 * 1000); //5s
             }
         }
 
         private void stopOsdTimeout() {
-            if (timer != null)
+            if (timer != null) {
                 timer.cancel();
+            }
             timer = null;
         }
 
@@ -353,23 +351,22 @@ public class SubtitleView extends FrameLayout {
             max_width = (video_width > bitmap_width) ? video_width : bitmap_width;
             max_height = (video_height > max_height) ? video_height : max_height;
             if ( (display_width <= 0) || (display_height <= 0)
-                    || (max_width <= 0) || (max_height <= 0)) {
+                    || (max_width <= 0) || (max_height <= 0) ) {
                 return;
             }
-            if ( (max_width <= display_width) && (max_height <= display_height)) {
+            if ( (max_width <= display_width) && (max_height <= display_height) ) {
                 return;
             }
             if (this.getWidth() == display_width) {
                 w_scale = ( (float) display_width) / max_width;
                 h_scale = ( (float) display_height) / max_height;
-            }
-            else if (this.getWidth() == display_height) {
+            } else if (this.getWidth() == display_height) {
                 w_scale = ( (float) display_height) / max_width;
                 h_scale = ( (float) display_width) / max_height;
             }
             //Log.d(TAG, "w_scale: " + Float.toString(w_scale));
             //Log.d(TAG, "h_scale: " + Float.toString(h_scale));
-            if ( (w_scale < 0.000f) || (h_scale < 0.000f)) {
+            if ( (w_scale < 0.000f) || (h_scale < 0.000f) ) {
                 return;
             }
             wscale = w_scale;
@@ -409,7 +406,7 @@ public class SubtitleView extends FrameLayout {
         private void getDataForPsgA (int curTime) {
             data = SubManager.getinstance().getSubData (curTime);
             if (data != null) {
-                if ( (data.subSize() > 0) && (data.beginTime() > 0)) {
+                if ( (data.subSize() > 0) && (data.beginTime() > 0) ) {
                     dataPgsA = data;
                     dataPgsAValid = true;
                     dataPgsBValid = false; //after get dataPgsA, should get dataPgsB then
@@ -447,7 +444,7 @@ public class SubtitleView extends FrameLayout {
             /*if((getSubTypeDetial() == 0) ||(getSubTypeDetial() == -1)) {
                 return;
             }
-            else */if(getSubTypeDetial() == SUBTITLE_PGS || getSubTypeDetial() == SUBTITLE_DVB || getSubTypeDetial() == SUBTITLE_TMD_TXT) {
+            else */if (getSubTypeDetial() == SUBTITLE_PGS || getSubTypeDetial() == SUBTITLE_DVB || getSubTypeDetial() == SUBTITLE_TMD_TXT) {
                 Log.i (TAG, "[tick]data:" + data + ",dataPgsAValid:" + dataPgsAValid + ",dataPgsBValid:" + dataPgsBValid + ",modifytime:" + modifytime);
                 if (resetForSeek) {
                     this.removeAllViews();
@@ -462,11 +459,9 @@ public class SubtitleView extends FrameLayout {
                 if (data == null) {
                     if (dataPgsAValid == false) {
                         getDataForPsgA (modifytime);
-                    }
-                    else if (dataPgsBValid == false) {
+                    } else if (dataPgsBValid == false) {
                         getDataForPsgB (modifytime);
-                    }
-                    else {
+                    } else {
                         // TODO:
                         //dataPgsAValid = true
                         //dataPgsBValid = true
@@ -474,55 +469,53 @@ public class SubtitleView extends FrameLayout {
                         //error status
                         Log.i (TAG, "dataPgsAValid = true, dataPgsBValid = true, data = null, error status");
                     }
-                }
-                else { //data != null
-                    if ( (dataPgsBValid == true) && (dataPgsAShowed == true))  {
-                        Log.i (TAG, "[tick]dataPgsB.beginTime():" + dataPgsB.beginTime());
-                        if (modifytime >= dataPgsB.beginTime()) {
+                } else { //data != null
+                    if ( (dataPgsBValid == true) && (dataPgsAShowed == true) ) {
+                        Log.i (TAG, "[tick]dataPgsB.beginTime():" + dataPgsB.beginTime() );
+                        if (modifytime >= dataPgsB.beginTime() ) {
                             redraw (dataPgsB);
                             dataPgsAShowed = false;
                             //dataPgsBShowed = true;
                             dataPgsAValid = false; //current showing dataPgsB, reset dataPgsAValid and get dataPgsA in any case
                             getDataForPsgA (modifytime);
-                        }
-                        else {
+                        } else {
                             // TODO:
                             //dataPgsBValid = true means dataPgsAValid is true meanwhile, handle in dataPgsAValid = true case
+                            if (dataPgsB.beginTime() - modifytime >= 10 * 1000) {
+                                resetForSeek();
+                            }
                         }
-                    }
-                    else if (dataPgsAValid == true) {
+                    } else if (dataPgsAValid == true) {
                         //enter this case means dataPgsBValid=fasle, should get dataPgsB
-                        Log.i (TAG, "[tick]dataPgsA.beginTime():" + dataPgsA.beginTime());
-                        if (modifytime >= dataPgsA.beginTime()) {
+                        Log.i (TAG, "[tick]dataPgsA.beginTime():" + dataPgsA.beginTime() );
+                        if (modifytime >= dataPgsA.beginTime() ) {
                             redraw (dataPgsA);
                             dataPgsAShowed = true;
-                        }
-                        else {
+                        } else {
                             // TODO:
                             // here means dataPgsA is valid, but current time still small than dataPgsA start time
+                            if (dataPgsA.beginTime() - modifytime >= 10 * 1000) {
+                                resetForSeek();
+                            }
                         }
                         if (dataPgsBValid == false) {
                             getDataForPsgB (modifytime);
                         }
-                    }
-                    else {
+                    } else {
                         //dataPgsAValid = false, dataPgsBValid = false, should get dataPgsA immediately
                         getDataForPsgA (modifytime);
                     }
                 }
-            }
-            else {
+            } else {
                 if (data != null) {
-                    if ( (modifytime >= data.beginTime()) && (modifytime <= data.endTime())) {
+                    if ( (modifytime >= data.beginTime() ) && (modifytime <= data.endTime() ) ) {
                         if (getVisibility() == View.GONE) {
                             return ;
                         }
-                    }
-                    else {
+                    } else {
                         data = SubManager.getinstance().getSubData (modifytime);
                     }
-                }
-                else {
+                } else {
                     data = SubManager.getinstance().getSubData (modifytime);
                 }
                 redraw();

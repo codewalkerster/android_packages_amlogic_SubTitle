@@ -17,7 +17,7 @@ public class SubtitleUtils {
         //public native int setInSubtitleNumberByJni(int  ms);
         public native void setSubtitleNumberByJni (int  idx);
         public native int getCurrentInSubtitleIndexByJni();
-        public native void nativeDumpByJni(int fd);
+        public native void nativeDumpByJni (int fd);
         //  public native void FileChangedByJni(String name);
 
         private String filename = null;
@@ -59,7 +59,7 @@ public class SubtitleUtils {
                 filename = name;
                 //          FileChangedByJni(name);
                 subfile = new File (filename);
-                if (SystemProperties.getBoolean ("sys.extSubtitle.enable", true)) {
+                if (SystemProperties.getBoolean ("sys.extSubtitle.enable", true) ) {
                     accountExSubtitleNumber();
                 }
             }
@@ -71,7 +71,7 @@ public class SubtitleUtils {
 
         public int getSubTotal() {
             for (int i = 0; i < exSubtotle; i++) {
-                Log.v ("Subfile list ", i + ":" + getSubPath (i));
+                Log.v ("Subfile list ", i + ":" + getSubPath (i) );
             }
             return exSubtotle + accountInSubtitleNumber();
         }
@@ -83,11 +83,10 @@ public class SubtitleUtils {
             if (subfile == null) {
                 return null ;
             }
-            if (index < getInSubTotal()) {
+            if (index < getInSubTotal() ) {
                 return "INSUB";
-            }
-            else if (index < (exSubtotle + accountInSubtitleNumber())) {
-                return strlist.get (index - getInSubTotal()).filename;
+            } else if (index < (exSubtotle + accountInSubtitleNumber() ) ) {
+                return strlist.get (index - getInSubTotal() ).filename;
             }
             return null;
             /*if(index<exSubtotle)
@@ -101,73 +100,82 @@ public class SubtitleUtils {
             return null;*/
         }
 
-    // inner subtitle language and title string format:
-    //1,eng;2,chi;
-    //1,simplified chinese;2,english;3,xxx;
-    private String parseInSubStr(int index, String string) {
-        int idx = 0;
-        String str = string;
+        public String getInSubPath (int idx) {
+            String titleTmp = getInSubtitleTitle();
 
-        if (index > getInSubTotal()) {
+            if (titleTmp != null) {
+                String[] title = titleTmp.split (";");
+                if (idx < title.length) {
+                    return title[idx];
+                }
+            }
+
             return null;
         }
+        // inner subtitle language and title string format:
+        //1,eng;2,chi;
+        //1,simplified chinese;2,english;3,xxx;
+        private String parseInSubStr (int index, String string) {
+            int idx = 0;
+            String str = string;
 
-        for (int i = 0; i < index; i++) {
-            idx = str.indexOf(";");
-            if (idx >= 0) {
-                str = str.substring(idx + 1);
+            if (index > getInSubTotal() ) {
+                return null;
             }
-        }
-        idx = str.indexOf(";");
-        if (idx >= 0) {
-            str = str.substring(0, idx);
-        }
 
-        idx = str.indexOf(",");
-        if (idx >= 0) {
-            str = str.substring(idx + 1);
-        }
+            for (int i = 0; i < index; i++) {
+                idx = str.indexOf (";");
+                if (idx >= 0) {
+                    str = str.substring (idx + 1);
+                }
+            }
+            idx = str.indexOf (";");
+            if (idx >= 0) {
+                str = str.substring (0, idx);
+            }
 
-        return str;
-    }
+            idx = str.indexOf (",");
+            if (idx >= 0) {
+                str = str.substring (idx + 1);
+            }
 
-    public String getInSubName(int index) {
-        int idx = 0;
-        String name = null;
-        String str = null;
-
-        if (getInSubTotal() > 0) {
-            str = getInSubtitleTitle();
+            return str;
         }
 
-        name = parseInSubStr(index, str);
+        public String getInSubName (int index) {
+            int idx = 0;
+            String name = null;
+            String str = getInSubtitleTitle();
 
-        return name;
-    }
+            if (str != null) {
+                name = parseInSubStr (index, str);
+            }
 
-    public String getInSubLanguage(int index) {
-        int idx = 0;
-        String language = null;
-        String str = null;
-
-        if (getInSubTotal() > 0) {
-            str = getInSubtitleLanguage();
+            return name;
         }
 
-        language = parseInSubStr(index, str);
+        public String getInSubLanguage (int index) {
+            int idx = 0;
+            String language = null;
+            String str = null;
 
-        return language;
-    }
+            if (getInSubTotal() > 0) {
+                str = getInSubtitleLanguage();
+            }
+
+            language = parseInSubStr (index, str);
+
+            return language;
+        }
 
         public SubID getSubID (int index) {
             if (subfile == null) {
                 return null ;
             }
-            if (index < getInSubTotal()) {
+            if (index < getInSubTotal() ) {
                 return new SubID ("INSUB", index);
-            }
-            else if (index < getSubTotal()) {
-                return strlist.get (index - getInSubTotal());
+            } else if (index < getSubTotal() ) {
+                return strlist.get (index - getInSubTotal() );
             }
             return null;
             /*
@@ -189,19 +197,18 @@ public class SubtitleUtils {
             int idxindex = 0;
             boolean skipLrc = false;
             int exSubIndex = getInSubTotal();
-            if (DirFile.isDirectory()) {
-            for (String file : DirFile.list()) {
-                    if ( (file.toLowerCase()).startsWith (prefix.toLowerCase())) {
-                    for (String ext : extensions) {
-                            if (file.toLowerCase().endsWith (ext)) {
+            if (DirFile.isDirectory() ) {
+for (String file : DirFile.list() ) {
+                    if ( (file.toLowerCase() ).startsWith (prefix.toLowerCase() ) ) {
+for (String ext : extensions) {
+                            if (file.toLowerCase().endsWith (ext) ) {
                                 if (supportLrc == true) {
                                     skipLrc = false;
-                                }
-                                else {
+                                } else {
                                     skipLrc = file.toLowerCase().endsWith ("lrc"); //shield lrc file
                                 }
                                 if (!skipLrc) {
-                                    strlist.add (new SubID (DirFile.getAbsolutePath() + "/" + file, exSubIndex));
+                                    strlist.add (new SubID (DirFile.getAbsolutePath() + "/" + file, exSubIndex) );
                                     exSubIndex++;
                                 }
                                 break;
@@ -209,24 +216,23 @@ public class SubtitleUtils {
                         }
                     }
                 }
-            for (SubID file : strlist) {
-                    if (file.filename.toLowerCase().endsWith ("idx")) {
+for (SubID file : strlist) {
+                    if (file.filename.toLowerCase().endsWith ("idx") ) {
                         strlist.remove (idxindex);
                         Log.v ("before: ", "" + file);
                         String st = file.filename.substring (0, file.filename.length() - 3);
                         for (int i = 0; i < strlist.size(); i++) {
                             if (strlist.get (i).filename.toLowerCase().endsWith ("sub") &&
                                     strlist.get (i).filename.startsWith (st) &&
-                                    strlist.get (i).filename.length() == file.filename.length()) {
-                                Log.v ("accountExSubtitleNumber: ", "clear " + strlist.get (i));
+                                    strlist.get (i).filename.length() == file.filename.length() ) {
+                                Log.v ("accountExSubtitleNumber: ", "clear " + strlist.get (i) );
                                 strlist.remove (i);
                             }
                         }
                         accountIdxSubtitleNumber (file.filename);
                         exSubtotle = strlist.size();
                         break;
-                    }
-                    else {
+                    } else {
                         idxindex++;
                     }
                 }
@@ -258,8 +264,8 @@ public class SubtitleUtils {
             return;
         }
 
-        public void nativeDump(int fd){
-            nativeDumpByJni(fd);
+        public void nativeDump (int fd) {
+            nativeDumpByJni (fd);
             return;
         }
 
@@ -268,8 +274,7 @@ public class SubtitleUtils {
             String inputString = null;
             try {
                 inputString = FileIO.file2string (filename, "GBK");
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
                 return idxcount;
@@ -277,10 +282,10 @@ public class SubtitleUtils {
             String n = "\\" + System.getProperty ("line.separator");
             Pattern p = Pattern.compile ("id:(.*?),\\s*" + "index:\\s*(\\d*)");
             Matcher m = p.matcher (inputString);
-            while (m.find()) {
+            while (m.find() ) {
                 idxcount++;
-                Log.v ("accountIdxSubtitleNumber", "id:" + m.group (1) + " index:" + m.group (2));
-                strlist.add (new SubID (filename, Integer.parseInt (m.group (2))));
+                Log.v ("accountIdxSubtitleNumber", "id:" + m.group (1) + " index:" + m.group (2) );
+                strlist.add (new SubID (filename, Integer.parseInt (m.group (2) ) ) );
             }
             return idxcount;
         }
