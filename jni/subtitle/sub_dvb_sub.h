@@ -40,6 +40,14 @@
 #endif
 #endif
 
+#ifndef av_unused
+#if defined(__GNUC__)
+#    define av_unused __attribute__((unused))
+#else
+#    define av_unused
+#endif
+#endif
+
 #ifndef AV_RB16
 #define AV_RB16(x)                           \
     ((((const uint8_t*)(x))[0] << 8) |          \

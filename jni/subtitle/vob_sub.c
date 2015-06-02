@@ -1288,7 +1288,7 @@ static void show_vob_subtitle(subtitlevobsub_t *subtitlevobsub)
     subtitlevobsub->vob_subtitle_config.contrast =
         subtitlevobsub->VobSPU.spu_alpha;
     subtitlevobsub->vob_subtitle_config.prtData =
-        (unsigned)subtitlevobsub->vob_pixData;
+        (unsigned long)subtitlevobsub->vob_pixData;
     if (subtitlevobsub->VobSPU.display_pending == 0
             || subtitlevobsub->VobSPU.displaying)
     {
@@ -1951,19 +1951,15 @@ static int SubtitleVOBSub_ShowSubtitle(subtitlevobsub_t *subtitlevobsub,
                                         {
                                             subtitlevobsub->
                                             vob_ptrPXDRead
-                                                =
-                                                    (unsigned
-                                                     short
-                                                     *)
-                                                    ((unsigned)(rawsubdata) + subtitlevobsub->VobSPU.top_pxd_addr);
+                                                = (unsigned long *)((unsigned long)(rawsubdata) + subtitlevobsub->VobSPU.top_pxd_addr);
                                             vob_fill_pixel(subtitlevobsub, 1);  // 1 for odd, 2 for even
                                             subtitlevobsub->
                                             vob_ptrPXDRead
                                                 =
                                                     (unsigned
-                                                     short
+                                                     long
                                                      *)
-                                                    ((unsigned)(rawsubdata) + subtitlevobsub->VobSPU.bottom_pxd_addr);
+                                                    ((unsigned long)(rawsubdata) + subtitlevobsub->VobSPU.bottom_pxd_addr);
                                             vob_fill_pixel(subtitlevobsub, 2);  // 1 for odd, 2 for even
                                             show_vob_subtitle
                                             (subtitlevobsub);

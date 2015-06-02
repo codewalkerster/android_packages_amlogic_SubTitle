@@ -551,8 +551,8 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
                 FillPixel(ptrPXDRead, spu->spu_data, 1, spu,
                           avihandle->field_offset);
                 ptrPXDRead =
-                    (unsigned short *)((int)(&avihandle->rleData) +
-                                       (int)(avihandle->field_offset));
+                    (unsigned long *)((unsigned long)(&avihandle->rleData) +
+                                       (unsigned long)(avihandle->field_offset));
                 FillPixel(ptrPXDRead, spu->spu_data + VOB_SUB_SIZE / 2,
                           2, spu, avihandle->field_offset);
                 ret = 0;
@@ -615,8 +615,8 @@ int get_spu(AML_SPUVAR *spu, int read_sub_fd)
                 FillPixel(ptrPXDRead, spu->spu_data, 1, spu,
                           avihandle_hd->field_offset);
                 ptrPXDRead =
-                    (unsigned short *)((int)(&avihandle_hd->rleData) +
-                                       (int)(avihandle_hd->
+                    (unsigned long *)((unsigned long)(&avihandle_hd->rleData) +
+                                       (unsigned long)(avihandle_hd->
                                              field_offset));
                 FillPixel(ptrPXDRead, spu->spu_data + VOB_SUB_SIZE / 2,
                           2, spu, avihandle_hd->field_offset);
@@ -890,8 +890,7 @@ int write_subtitle_file(AML_SPUVAR *spu)
 
 int read_subtitle_file()
 {
-    LOGI("subtitle data address is %x\n\n",
-         (int)inter_subtitle_data[file_position].data);
+    LOGI("subtitle data address is %x\n\n",  inter_subtitle_data[file_position].data);
     return 0;
 }
 
