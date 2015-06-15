@@ -285,6 +285,7 @@ public class SubtitleView extends FrameLayout {
                         case MSG_SUB_SHOW_TIME_OUT:
                             SubtitleView.this.removeAllViews();
                             SubtitleView.this.requestLayout();
+                            stopSubThread();
                             break;
                     }
                     super.handleMessage (msg);
