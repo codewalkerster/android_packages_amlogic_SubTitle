@@ -38,6 +38,15 @@ int init_pgs_subtitle()
     return 0;
 }
 
+int close_pgs_subtitle()
+{
+    if (subtitle_pgs.pgs_info) {
+        free(subtitle_pgs.pgs_info);
+        subtitle_pgs.pgs_info = NULL;
+    }
+    return 0;
+}
+
 static int read_spu_byte(int read_handle, char *byte)
 {
     int ret = 0;
@@ -222,8 +231,8 @@ static unsigned char read_bitmap(unsigned char *buf, int size,
         pgs_info->image_height = (buf[9] << 8) | (buf[10]);
         LOGI("read_bitmap values are %d,%d,%d\n", object_size,
              pgs_info->image_width, pgs_info->image_height);
-        if (pgs_info->rle_buf)
-            free(pgs_info->rle_buf);
+        //if (pgs_info->rle_buf)
+        //    free(pgs_info->rle_buf);
         pgs_info->rle_buf_size = 0;
         pgs_info->rle_rd_off = 0;
         pgs_info->rle_buf = (unsigned char *)malloc(object_size);
@@ -280,12 +289,13 @@ void af_pgs_subtitle_rlebitmap_render(PGS_subtitle_showdata *showdata,
 {
     unsigned char *ptr = NULL;
     unsigned char *end_buf = NULL;
-    ptr = showdata->rle_buf;
-    end_buf = showdata->rle_buf + showdata->rle_buf_size;
     int x, y, count;
     unsigned char color_index;
     if ((showdata == NULL))
         return;
+
+    ptr = showdata->rle_buf;
+    end_buf = showdata->rle_buf + showdata->rle_buf_size;
     showdata->render_height = 0;
     y = 0;
     while ((y < showdata->image_height) && (ptr < end_buf))
@@ -496,6 +506,11 @@ static int pgs_decode(AML_SPUVAR *spu, unsigned char *buf)
                     subtitle_pgs.pgs_info->rle_buf_size;
                 LOGI("decoder pgs data to show\n\n");
                 parser_one_pgs(spu);
+
+                if (pgs_info->rle_buf) {
+                    free(pgs_info->rle_buf);
+                    pgs_info->rle_buf = NULL;
+                }
                 //return 0;
                 return 1;
             }
@@ -777,6 +792,10 @@ DECODE_START:
                             (read_handle) < pgs_packet_length)
                     {
                         pgs_ret = 0;
+                        if (buf) {
+                            free(buf);
+                            buf = NULL;
+                        }
                         goto pgs_decode_end;
                     }
                     if (buf)
@@ -805,6 +824,7 @@ DECODE_START:
                                            buf);
                         }
                         free(buf);
+                        buf = NULL;
                     }
                     if (pgs_ret == 1)
                         goto pgs_decode_end;

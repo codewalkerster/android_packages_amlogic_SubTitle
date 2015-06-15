@@ -1391,6 +1391,7 @@ int close_subtitle()
     LOGI("start to close subtitle \n");
     lp_lock(&sublock);
     dvbsub_close_decoder();
+    close_pgs_subtitle();
     if (restbuf)
     {
         free(restbuf);
