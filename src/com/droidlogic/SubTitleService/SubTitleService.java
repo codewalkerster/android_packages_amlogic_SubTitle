@@ -43,10 +43,12 @@ import com.droidlogic.app.SystemControlManager;
 
 public class SubTitleService extends ISubTitleService.Stub {
         private static final String TAG = "SubTitleService";
+        private boolean mDebug = false;
         private Context mContext;
         private View mSubView = null;
         private WindowManager mWm = null;
         WindowManager.LayoutParams p;
+        private final Object mLock = new Object();
 
         //for subtitle
         private SubtitleUtils subtitleUtils = null;
@@ -91,17 +93,22 @@ public class SubTitleService extends ISubTitleService.Stub {
             initView();
         }
 
-        private boolean Debug() {
-            boolean ret = false;
+        private void checkDebug() {
             if (SystemProperties.getBoolean ("sys.subtitleService.debug", false) ) {
-                ret = true;
+                mDebug = true;
             }
-            return ret;
+        }
+
+        private void LOGI(String msg) {
+            if (mDebug) Log.i(TAG, msg);
+        }
+
+        private void LOGE(String msg) {
+            /*if (mDebug)*/ Log.e(TAG, msg);
         }
 
         private void checkOverlayOpen() {
-            if (Debug() )
-                Log.i (TAG, "[checkOverlayOpen] isOverlayOpen:" + isOverlayOpen);
+            LOGI("[checkOverlayOpen] isOverlayOpen:" + isOverlayOpen);
             if (isOverlayOpen == false) {
                 isOverlayOpen = true;
                 showSubtitleOverlay();
@@ -117,13 +124,11 @@ public class SubTitleService extends ISubTitleService.Stub {
             subTitleView.setTextSize (28);
             subTitleView.setTextStyle (Typeface.NORMAL);
             subTitleView.setViewStatus (true);
-            registerConfigurationChangeReceiver();
+            //registerConfigurationChangeReceiver();
         }
 
         private void showSubtitleOverlay() {
-            if (Debug() ) {
-                Log.i (TAG, "[showSubtitleOverlay]");
-            }
+            LOGI("[showSubtitleOverlay]");
             if (mWm == null) {
                 mWm = (WindowManager) mContext.getSystemService (Context.WINDOW_SERVICE);
             }
@@ -144,7 +149,7 @@ public class SubTitleService extends ISubTitleService.Stub {
                 p.y = 0;
                 p.width = mWScreenx;//ViewGroup.LayoutParams.WRAP_CONTENT;
                 p.height = mWScreeny;//ViewGroup.LayoutParams.WRAP_CONTENT;
-                //if(Debug()) Log.i(TAG,"[showSubtitleOverlay]mWm:"+mWm+",mSubView:"+mSubView);
+                //LOGI("[showSubtitleOverlay]mWm:"+mWm+",mSubView:"+mSubView);
                 if (mWm != null && mSubView != null && p != null) {
                     mWm.addView (mSubView, p);
                 }
@@ -154,15 +159,11 @@ public class SubTitleService extends ISubTitleService.Stub {
         private void registerConfigurationChangeReceiver() {
             IntentFilter intentFilter = new IntentFilter (Intent.ACTION_CONFIGURATION_CHANGED);
             mContext.getApplicationContext().registerReceiver (mConfigurationChangeReceiver, intentFilter);
-            if (Debug() ) {
-                Log.i (TAG, "[registerConfigurationChangeReceiver]mConfigurationChangeReceiver:" + mConfigurationChangeReceiver);
-            }
+            LOGI("[registerConfigurationChangeReceiver]mConfigurationChangeReceiver:" + mConfigurationChangeReceiver);
         }
 
         private void unregisterConfigurationChangeReceiver() {
-            if (Debug() ) {
-                Log.i (TAG, "[unregisterConfigurationChangeReceiver]mConfigurationChangeReceiver:" + mConfigurationChangeReceiver);
-            }
+            LOGI("[unregisterConfigurationChangeReceiver]mConfigurationChangeReceiver:" + mConfigurationChangeReceiver);
             if (mConfigurationChangeReceiver != null) {
                 mContext.getApplicationContext().unregisterReceiver (mConfigurationChangeReceiver);
                 mConfigurationChangeReceiver = null;
@@ -176,9 +177,7 @@ public class SubTitleService extends ISubTitleService.Stub {
         };
 
         private void updateSubWinLayoutParams() {
-            if (Debug() ) {
-                Log.i (TAG, "[updateSubtitleWinLayoutParams]subShowState:" + subShowState);
-            }
+            LOGI("[updateSubtitleWinLayoutParams]subShowState:" + subShowState);
             if (subShowState == SUB_OFF) {
                 return;
             }
@@ -204,9 +203,7 @@ public class SubTitleService extends ISubTitleService.Stub {
             p.y = 0;
             p.width = mWScreenx;//ViewGroup.LayoutParams.WRAP_CONTENT;
             p.height = mWScreeny;//ViewGroup.LayoutParams.WRAP_CONTENT;
-            if (Debug() ) {
-                Log.i (TAG, "[updateSubtitleWinLayoutParams]p.width:" + p.width + ",p.height:" + p.height);
-            }
+            LOGI("[updateSubtitleWinLayoutParams]p.width:" + p.width + ",p.height:" + p.height);
             if (mWm != null) {
                 mWm.removeView (mSubView);
                 mWm.addView (mSubView, p);
@@ -214,9 +211,7 @@ public class SubTitleService extends ISubTitleService.Stub {
         }
 
         private void showOptionOverlay() {
-            if (Debug() ) {
-                Log.i (TAG, "[showOptionOverlay]");
-            }
+            LOGI("[showOptionOverlay]");
             int total = getSubTotal();
             if (total == 0) {
                 Toast.makeText (mContext,
@@ -250,14 +245,10 @@ public class SubTitleService extends ISubTitleService.Stub {
             lv.setOnItemClickListener (new OnItemClickListener() {
                 public void onItemClick (AdapterView<?> parent, View view, int pos, long id) {
                     if (pos == 0) { //first is close subtitle showing
-                        if (Debug() ) {
-                            Log.i (TAG, "[option select]close subtitle showing");
-                        }
+                        LOGI("[option select]close subtitle showing");
                         sendHideMsg();
                     } else if (pos > 0) {
-                        if (Debug() ) {
-                            Log.i (TAG, "[option select]select subtitle " + (pos - 1) );
-                        }
+                        LOGI("[option select][option select]select subtitle " + (pos - 1) );
                         curSubId = (pos - 1);
                         sendCloseMsg(); // TODO: maybe have bug for opening the same subtitle after hide
                         sendOpenMsg();
@@ -270,67 +261,10 @@ public class SubTitleService extends ISubTitleService.Stub {
             });
         }
 
-        private List<Map<String, Object>> getListData() {
-            List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
-            boolean clsItmAdded = false;
-            int total = getSubTotal();
-            String trackStr = mContext.getResources().getString (R.string.opt_sub_track);
-            String closeStr = mContext.getResources().getString (R.string.opt_close);
-            if (Debug() ) {
-                Log.i (TAG, "[getListData]total:" + total);
-            }
-            for (int i = 0; i < total; i++) {
-                if (!clsItmAdded) {
-                    //add close subtitle item
-                    Map<String, Object> mapCls = new HashMap<String, Object>();
-                    clsItmAdded = true;
-                    mapCls.put ("item_text", closeStr);
-                    if (Debug() ) {
-                        Log.i (TAG, "[getListData]map.put:" + closeStr + ",curOptSelect:" + curOptSelect);
-                    }
-                    if (curOptSelect == 0) {
-                        mapCls.put ("item_img", R.drawable.item_img_sel);
-                    } else {
-                        mapCls.put ("item_img", R.drawable.item_img_unsel);
-                    }
-                    list.add (mapCls);
-                }
-                Map<String, Object> map = new HashMap<String, Object>();
-                String subTrackStr = trackStr + Integer.toString (i);
-                //Log.i(TAG,"[getListData]subTrackStr:"+subTrackStr);
-                map.put ("item_text", subTrackStr);
-                if (Debug() ) {
-                    Log.i (TAG, "[getListData]map.put[" + i + "]:" + subTrackStr + ",curOptSelect:" + curOptSelect);
-                }
-                if (curOptSelect == (i + 1) ) {
-                    map.put ("item_img", R.drawable.item_img_sel);
-                } else {
-                    map.put ("item_img", R.drawable.item_img_unsel);
-                }
-                list.add (map);
-            }
-            return list;
-        }
-
-        private void updateListDisplay() {
-            Map<String, Object> list_item;
-            for (int i = 0; i < lv.getAdapter().getCount(); i++) {
-                list_item = (Map<String, Object>) lv.getAdapter().getItem (i);
-                if (curOptSelect == i) {
-                    list_item.put ("item_img", R.drawable.item_img_sel);
-                } else {
-                    list_item.put ("item_img", R.drawable.item_img_unsel);
-                }
-            }
-            ( (BaseAdapter) lv.getAdapter() ).notifyDataSetChanged();
-        }
-
         private String setSublanguage() {
             String type = null;
             String able = mContext.getResources().getConfiguration().locale.getCountry();
-            if (Debug() ) {
-                Log.i (TAG, "[setSublanguage] Country: " + able);
-            }
+            LOGI("[setSublanguage] Country: " + able);
             if (able.equals ("TW") ) {
                 type = "BIG5";
             } else if (able.equals ("JP") ) {
@@ -366,12 +300,12 @@ public class SubTitleService extends ISubTitleService.Stub {
             dirPath = Environment.getExternalStorageDirectory().getPath() + "/" + Environment.DIRECTORY_DOWNLOADS;
             File base = new File (dirPath);
             if (!base.isDirectory() && !base.mkdir() ) {
-                Log.e (TAG, "[downLoadXmlFile] unable to create external downloads directory " + base.getPath() );
+                LOGE("[downLoadXmlFile] unable to create external downloads directory " + base.getPath() );
                 return filePath;
             }
             try {
                 if (!URLUtil.isNetworkUrl (strURL) ) {
-                    Log.i (TAG, "[downLoadXmlFile] is not network Url, strURL: " + strURL);
+                    LOGI("[downLoadXmlFile] is not network Url, strURL: " + strURL);
                 } else {
                     URL myURL = new URL (strURL);
                     URLConnection conn = myURL.openConnection();
@@ -382,7 +316,7 @@ public class SubTitleService extends ISubTitleService.Stub {
                     }
                     if (fileName != null) {
                         filePath = dirPath + "/" + fileName;
-                        Log.i (TAG, "[downLoadXmlFile] filePath: " + filePath);
+                        LOGI("[downLoadXmlFile] filePath: " + filePath);
                         File file = new File (filePath);
                         if (!file.exists() ) {
                             file.createNewFile();
@@ -416,27 +350,20 @@ public class SubTitleService extends ISubTitleService.Stub {
                 Runnable r = new Runnable() {
                     public void run() {
                         try {
+                            mLoadPath = null;
                             String pathTmp = downLoadXmlFile (urlPath);
                             String pathExtTmp = pathTmp.substring (pathTmp.lastIndexOf ('.') + 1);
-                            if (Debug() ) {
-                                Log.i (TAG, "[load] pathExtTmp: " + pathExtTmp + ", pathTmp:" + pathTmp);
-                            }
+                            LOGI("[load] pathExtTmp: " + pathExtTmp + ", pathTmp:" + pathTmp);
                             if (SubtitleUtils.extensions != null) {
-for (String ext : SubtitleUtils.extensions) {
-                                    if (Debug() ) {
-                                        Log.i (TAG, "[load] ext:" + ext);
-                                    }
+                                for (String ext : SubtitleUtils.extensions) {
+                                    LOGI("[load] ext:" + ext);
                                     if (pathExtTmp.toLowerCase().equals (ext) ) {
                                         mLoadPath = pathTmp;
                                         sendCloseMsg();
                                         sendLoadMsg();
                                         break;
-                                    } else {
-                                        mLoadPath = null;
                                     }
                                 }
-                            } else {
-                                mLoadPath = null;
                             }
                         } catch (Exception e) {
                             Log.e (TAG, e.getMessage(), e);
@@ -446,21 +373,11 @@ for (String ext : SubtitleUtils.extensions) {
                 new Thread (r).start();
             } else {
                 String pathExt = path.substring (path.lastIndexOf ('.') + 1);
-                if (Debug() ) {
-                    Log.i (TAG, "[load] pathExt: " + pathExt + ", path:" + path);
-                }
+                LOGI("[load] pathExt: " + pathExt + ", path:" + path);
                 if (SubtitleUtils.extensions != null) {
-for (String ext : SubtitleUtils.extensions) {
-                        if (Debug() ) {
-                            Log.i (TAG, "[load] ext:" + ext);
-                        }
+                    for (String ext : SubtitleUtils.extensions) {
+                        LOGI("[load] ext:" + ext);
                         if (pathExt.toLowerCase().equals (ext) ) {
-                            //if(mSubTotal < 0) {
-                            //mSubTotal = 1;
-                            //}
-                            //else {
-                            //mSubTotal += 1;
-                            //}
                             mLoadPath = path;
                             sendCloseMsg();
                             sendLoadMsg();
@@ -478,9 +395,7 @@ for (String ext : SubtitleUtils.extensions) {
         }
 
         /*public*/private void openFile (SubID subID) {
-            if (Debug() ) {
-                Log.i (TAG, "[openFile] subID: " + subID);
-            }
+            LOGI("[openFile] subID: " + subID);
             if (subID == null) {
                 return;
             }
@@ -488,25 +403,19 @@ for (String ext : SubtitleUtils.extensions) {
                 if (subTitleView.setFile (subID, setSublanguage() ) == Subtitle.SUBTYPE.SUB_INVALID) {
                     return;
                 }
-                if (Debug() ) {
-                    Log.i (TAG, "[openFile] subtitleUtils: " + subtitleUtils + ",getSubTotal():" + getSubTotal() + ",subID.index:" + subID.index);
-                }
+                LOGI("[openFile] subtitleUtils: " + subtitleUtils + ",getSubTotal():" + getSubTotal() + ",subID.index:" + subID.index);
                 if (subtitleUtils != null && getSubTotal() > 0) {
                     subtitleUtils.setSubtitleNumber (subID.index);
                 }
             } catch (Exception e) {
-                if (Debug() ) {
-                    Log.d (TAG, "open:error");
-                }
+                LOGE("open:error");
                 subTitleView = null;
                 e.printStackTrace();
             }
         }
 
         public void open (String path) {
-            if (Debug() ) {
-                Log.i (TAG, "[open] path: " + path);
-            }
+            LOGI("[open] path: " + path);
             if (d != null) {
                 d.dismiss();
             }
@@ -525,9 +434,7 @@ for (String ext : SubtitleUtils.extensions) {
                     mSubTotal = -1;
                     mSubTotal = prepareSubTotal();
                     curSubId = subtitleUtils.getCurrentInSubtitleIndexByJni(); //get inner subtitle current index as default, 0 is always, if there is no inner subtitle, 0 indicate the first external subtitle
-                    if (Debug() ) {
-                        Log.i (TAG, "[open] curSubId: " + curSubId);
-                    }
+                    LOGI("[open] curSubId: " + curSubId);
                     sendOpenMsg();
                     sendInitSelectMsg();
                     //load("http://milleni.ercdn.net/9_test/double_lang_test.xml"); for test
@@ -537,56 +444,46 @@ for (String ext : SubtitleUtils.extensions) {
         }
 
         public void close() {
-            if (Debug() ) {
-                Log.i (TAG, "[close] subTitleView: " + subTitleView + ", mWm:" + mWm + ", mSubView:" + mSubView);
-            }
-            if (subtitleUtils != null) {
-                subtitleUtils.setSubtitleNumber (0);
-                subtitleUtils = null;
-            }
-            if (mWm != null) {
-                isOverlayOpen = false;
-                if (mSubView != null) {
-                    if (Debug() ) {
-                        Log.i (TAG, "[close] mWm.removeView(mSubView)");
-                    }
-                    mWm.removeView (mSubView);
-                    mWm = null;
+            LOGI("[close] subTitleView: " + subTitleView + ", mWm:" + mWm + ", mSubView:" + mSubView);
+            synchronized (mLock) {
+                if (subtitleUtils != null) {
+                    subtitleUtils.setSubtitleNumber (0);
+                    subtitleUtils = null;
                 }
+                if (mWm != null) {
+                    isOverlayOpen = false;
+                    if (mSubView != null) {
+                        LOGI("[close] mWm.removeView(mSubView)");
+                        mWm.removeView (mSubView);
+                        mWm = null;
+                    }
+                }
+                mLoadPath = null;
+                mSubTotal = -1;
+                sendCloseMsg();
             }
-            mLoadPath = null;
-            mSubTotal = -1;
-            sendCloseMsg();
             //subShowState = SUB_OFF;
         }
 
         private int prepareSubTotal() {
-            if (Debug() ) {
-                Log.i (TAG, "[prepareSubTotal] subtitleUtils:" + subtitleUtils);
-            }
+            LOGI("[prepareSubTotal] subtitleUtils:" + subtitleUtils);
             int total = -1;
             if (mSubTotal == -1) {
                 if (subtitleUtils != null) {
                     total = subtitleUtils.getSubTotal();
-                    if (Debug() ) {
-                        Log.i (TAG, "[prepareSubTotal] mSubTotal:" + mSubTotal);
-                    }
+                    LOGI("[prepareSubTotal] mSubTotal:" + mSubTotal);
                 }
             }
             return total;
         }
 
         public int getSubTotal() {
-            if (Debug() ) {
-                Log.i (TAG, "[getSubTotal] mSubTotal:" + mSubTotal);
-            }
+            LOGI("[getSubTotal] mSubTotal:" + mSubTotal);
             return mSubTotal;
         }
 
         public void nextSub() { // haven't test
-            if (Debug() ) {
-                Log.i (TAG, "[nextSub]curSubId:" + curSubId + ",getSubTotal():" + getSubTotal() + ",subtitleUtils:" + subtitleUtils);
-            }
+            LOGI("[nextSub]curSubId:" + curSubId + ",getSubTotal():" + getSubTotal() + ",subtitleUtils:" + subtitleUtils);
             if (subtitleUtils != null && getSubTotal() > 0) {
                 curSubId++;
                 if (curSubId >= getSubTotal() ) {
@@ -598,9 +495,7 @@ for (String ext : SubtitleUtils.extensions) {
         }
 
         public void preSub() { // haven't test
-            if (Debug() ) {
-                Log.i (TAG, "[preSub]curSubId:" + curSubId + ",getSubTotal():" + getSubTotal() + ",subtitleUtils:" + subtitleUtils);
-            }
+            LOGI("[preSub]curSubId:" + curSubId + ",getSubTotal():" + getSubTotal() + ",subtitleUtils:" + subtitleUtils);
             if (subtitleUtils != null && getSubTotal() > 0) {
                 curSubId--;
                 if (curSubId < 0) {
@@ -612,9 +507,7 @@ for (String ext : SubtitleUtils.extensions) {
         }
 
         public void openIdx (int idx) {
-            if (Debug() ) {
-                Log.i (TAG, "[openIdx]idx:" + idx);
-            }
+            LOGI("[openIdx]idx:" + idx);
             if (subtitleUtils != null && getSubTotal() > 0) {
                 curSubId = idx;
                 sendCloseMsg();
@@ -627,9 +520,7 @@ for (String ext : SubtitleUtils.extensions) {
             if (subTitleView != null) {
                 ret = subTitleView.getSubType();
             }
-            if (Debug() ) {
-                Log.i (TAG, "[getSubType]ret:" + ret);
-            }
+            LOGI("[getSubType]ret:" + ret);
             return ret;
         }
 
@@ -638,9 +529,7 @@ for (String ext : SubtitleUtils.extensions) {
             if (subTitleView != null) {
                 ret = subTitleView.getSubTypeStr();
             }
-            if (Debug() ) {
-                Log.i (TAG, "[getSubTypeStr]ret:" + ret);
-            }
+            LOGI("[getSubTypeStr]ret:" + ret);
             return ret;
         }
 
@@ -649,9 +538,7 @@ for (String ext : SubtitleUtils.extensions) {
             if (subTitleView != null) {
                 ret = subTitleView.getSubTypeDetial();
             }
-            if (Debug() ) {
-                Log.i (TAG, "[getSubTypeDetial]ret:" + ret);
-            }
+            LOGI("[getSubTypeDetial]ret:" + ret);
             return ret;
         }
 
@@ -692,9 +579,7 @@ for (String ext : SubtitleUtils.extensions) {
         }
 
         public void setImgSubRatio (float ratioW, float ratioH, int maxW, int maxH) {
-            if (Debug() ) {
-                Log.i (TAG, "[setImgSubRatio] ratioW:" + ratioW + ", ratioH:" + ratioH + ",maxW:" + maxW + ",maxH:" + maxH);
-            }
+            LOGI("[setImgSubRatio] ratioW:" + ratioW + ", ratioH:" + ratioH + ",maxW:" + maxW + ",maxH:" + maxH);
             if (subTitleView != null) {
                 subTitleView.setImgSubRatio (ratioW, ratioH, maxW, maxH);
             }
@@ -704,18 +589,14 @@ for (String ext : SubtitleUtils.extensions) {
             String name = null;
             SubID subID = subtitleUtils.getSubID (curSubId);
             if (subID != null) {
-                if (Debug() ) {
-                    Log.i (TAG, "[getCurName]subID.filename:" + subID.filename);
-                }
+                LOGI("[getCurName]subID.filename:" + subID.filename);
                 name = subID.filename;
             }
             return name;
         }
 
         public String getSubName (int idx) {
-            if (Debug() ) {
-                Log.i (TAG, "[getSubName]idx:" + idx);
-            }
+            LOGI("[getSubName]idx:" + idx);
             String name = null;
             if (subtitleUtils != null && getSubTotal() > 0) {
                 name = subtitleUtils.getSubPath (idx);
@@ -729,16 +610,12 @@ for (String ext : SubtitleUtils.extensions) {
                     name = subtitleUtils.getInSubName (idx);
                 }
             }
-            if (Debug() ) {
-                Log.i (TAG, "[getSubName]name:" + name);
-            }
+            LOGI("[getSubName]name:" + name);
             return name;
         }
 
         public String getSubLanguage (int idx) {
-            if (Debug() ) {
-                Log.i (TAG, "[getSubLanguage]idx:" + idx);
-            }
+            LOGI("[getSubLanguage]idx:" + idx);
             String language = null;
             int index = 0;
             if (subtitleUtils != null && getSubTotal() > 0) {
@@ -764,32 +641,24 @@ for (String ext : SubtitleUtils.extensions) {
                     language = getSubName (idx);
                 }
             }
-            if (Debug() ) {
-                Log.i (TAG, "[getSubLanguage]language:" + language);
-            }
+            LOGI("[getSubLanguage]language:" + language);
             return language;
         }
 
         public void showSub (int position) {
-            if (Debug() ) {
-                Log.i (TAG, "[showSubContent]position:" + position + ",subShowState:" + subShowState + ",mHandler:" + mHandler);
-            }
+            LOGI("[showSubContent]position:" + position + ",subShowState:" + subShowState + ",mHandler:" + mHandler);
             if (position > 0 && mHandler != null) {
                 if (subShowState == SUB_ON) {
                     Message msg = mHandler.obtainMessage (SHOW_CONTENT);
                     msg.arg1 = position;
-                    if (Debug() ) {
-                        Log.i (TAG, "[showSubContent]sendMessage msg:" + msg);
-                    }
+                    LOGI("[showSubContent]sendMessage msg:" + msg);
                     mHandler.sendMessageDelayed (msg, MSG_SEND_DELAY);
                 }
             }
         }
 
         public void option() {
-            if (Debug() ) {
-                Log.i (TAG, "[option]");
-            }
+            LOGI("[option]");
             if (mHandler != null) {
                 Message msg = mHandler.obtainMessage (OPT_SHOW);
                 mHandler.sendMessageDelayed (msg, MSG_SEND_DELAY);
@@ -899,7 +768,7 @@ for (String ext : SubtitleUtils.extensions) {
 
         @Override
         public void dump (FileDescriptor fd, PrintWriter pw, String[] args) {
-            Log.i (TAG, "[dump]fd:" + fd.getInt$() + ",subtitleUtils:" + subtitleUtils);
+            LOGI("[dump]fd:" + fd.getInt$() + ",subtitleUtils:" + subtitleUtils);
             if (subtitleUtils != null) {
                 subtitleUtils.nativeDump (fd.getInt$() );
             }
@@ -908,9 +777,7 @@ for (String ext : SubtitleUtils.extensions) {
         private Handler mHandler = new Handler() {
             @Override
             public void handleMessage (Message msg) {
-                if (Debug() ) {
-                    Log.i (TAG, "[handleMessage]msg.what:" + msg.what + ",subShowState:" + subShowState);
-                }
+                LOGI("[handleMessage]msg.what:" + msg.what + ",subShowState:" + subShowState);
                 switch (msg.what) {
                     case SHOW_CONTENT:
                         if (subShowState == SUB_ON) {
@@ -924,21 +791,19 @@ for (String ext : SubtitleUtils.extensions) {
                         }
                         break;
                     case OPEN:
-                        if (subShowState == SUB_OFF && subtitleUtils != null) {
-                            subTitleView.startSubThread(); //open insub parse thread
-                            subID = subtitleUtils.getSubID (curSubId);
-                            if (Debug() ) {
-                                Log.i (TAG, "[handleMessage] curSubId: " + curSubId + ",subID:" + subID);
+                        synchronized (mLock) {
+                            if (subShowState == SUB_OFF && subtitleUtils != null) {
+                                subID = subtitleUtils.getSubID (curSubId);
+                                subTitleView.startSubThread(); //open insub parse thread
+                                LOGI("[handleMessage] curSubId: " + curSubId + ",subID:" + subID);
+                                openFile (subID);
+                                subShowState = SUB_ON;
                             }
-                            openFile (subID);
-                            subShowState = SUB_ON;
                         }
                         break;
                     case CLOSE:
                         if (subTitleView != null) {
-                            if (Debug() ) {
-                                Log.i (TAG, "[handleMessage]closeSubtitle");
-                            }
+                            LOGI("[handleMessage]closeSubtitle");
                             subTitleView.stopSubThread(); //close insub parse thread
                             subTitleView.closeSubtitle();
                             subTitleView.setVisibility (View.VISIBLE);
@@ -954,17 +819,13 @@ for (String ext : SubtitleUtils.extensions) {
                         break;
                     case INITSELECT:
                         if (getSubTotal() > 0) {
-                            if (Debug() ) {
-                                Log.i (TAG, "[open] subShowState: " + subShowState);
-                            }
+                            LOGI("[open] subShowState: " + subShowState);
                             if (subShowState == SUB_OFF) {
                                 curOptSelect = 0;
                             } else {
                                 curOptSelect = curSubId + 1; //skip close item, subtitle is open default
                             }
-                            if (Debug() ) {
-                                Log.i (TAG, "[open] curOptSelect: " + curOptSelect);
-                            }
+                            LOGI("[open] curOptSelect: " + curOptSelect);
                         }
                         break;
                     case SET_TXT_COLOR:
@@ -1029,20 +890,14 @@ for (String ext : SubtitleUtils.extensions) {
                         showOptionOverlay();
                         break;
                     case LOAD:
-                        if (Debug() ) {
-                            Log.i (TAG, "[handleMessage]loadSubtitleFile subShowState:" + subShowState + ",subTitleView:" + subTitleView + ",mLoadPath:" + mLoadPath);
-                        }
+                        LOGI("[handleMessage]loadSubtitleFile subShowState:" + subShowState + ",subTitleView:" + subTitleView + ",mLoadPath:" + mLoadPath);
                         if (subShowState == SUB_OFF && subTitleView != null && mLoadPath != null) {
-                            if (Debug() ) {
-                                Log.i (TAG, "[handleMessage]loadSubtitleFile mLoadPath:" + mLoadPath);
-                            }
+                            LOGI("[handleMessage]loadSubtitleFile mLoadPath:" + mLoadPath);
                             try {
                                 subTitleView.loadSubtitleFile (mLoadPath, setSublanguage() );
                                 subShowState = SUB_ON;
                             } catch (Exception e) {
-                                if (Debug() ) {
-                                    Log.d (TAG, "load:error");
-                                }
+                                LOGE("load:error");
                                 subTitleView = null;
                                 e.printStackTrace();
                             }
@@ -1051,5 +906,57 @@ for (String ext : SubtitleUtils.extensions) {
                 }
             }
         };
+
+        private List<Map<String, Object>> getListData() {
+            List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+            boolean clsItmAdded = false;
+            int total = getSubTotal();
+            String trackStr = mContext.getResources().getString (R.string.opt_sub_track);
+            String closeStr = mContext.getResources().getString (R.string.opt_close);
+
+            LOGI("[getListData]total:" + total);
+            for (int i = 0; i < total; i++) {
+                if (!clsItmAdded) {
+                    //add close subtitle item
+                    Map<String, Object> mapCls = new HashMap<String, Object>();
+                    clsItmAdded = true;
+                    mapCls.put ("item_text", closeStr);
+                    LOGI("[getListData]map.put:" + closeStr + ",curOptSelect:" + curOptSelect);
+                    if (curOptSelect == 0) {
+                        mapCls.put ("item_img", R.drawable.item_img_sel);
+                    } else {
+                        mapCls.put ("item_img", R.drawable.item_img_unsel);
+                    }
+                    list.add (mapCls);
+                }
+                Map<String, Object> map = new HashMap<String, Object>();
+                String subTrackStr = trackStr + Integer.toString (i);
+                //Log.i(TAG,"[getListData]subTrackStr:"+subTrackStr);
+                map.put ("item_text", subTrackStr);
+                LOGI("[getListData]map.put[" + i + "]:" + subTrackStr + ",curOptSelect:" + curOptSelect);
+
+                if (curOptSelect == (i + 1) ) {
+                    map.put ("item_img", R.drawable.item_img_sel);
+                } else {
+                    map.put ("item_img", R.drawable.item_img_unsel);
+                }
+                list.add (map);
+            }
+            return list;
+        }
+
+        private void updateListDisplay() {
+            Map<String, Object> list_item;
+            for (int i = 0; i < lv.getAdapter().getCount(); i++) {
+                list_item = (Map<String, Object>) lv.getAdapter().getItem (i);
+                if (curOptSelect == i) {
+                    list_item.put ("item_img", R.drawable.item_img_sel);
+                } else {
+                    list_item.put ("item_img", R.drawable.item_img_unsel);
+                }
+            }
+            ( (BaseAdapter) lv.getAdapter() ).notifyDataSetChanged();
+        }
+
 }
 
