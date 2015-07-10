@@ -72,6 +72,7 @@ public class FileIO {
             Pattern JACOSUB_Pattern = Pattern.compile ("\\d+:\\d+:\\d+.\\d+ \\d+:\\d+:\\d+.\\d+");
             Pattern JACOSUB_Pattern_2 = Pattern.compile ("@\\d+ @\\d+");
             Pattern VPLAYER_Pattern = Pattern.compile ("\\d+:\\d+:\\d+[: ]");
+            Pattern VPLAYER_Pattern_2 = Pattern.compile ("\\d+:\\d+:\\d+.\\d+[: ]");
             Pattern PJS_Pattern = Pattern.compile ("\\d+\\d+,\"");
             Pattern PJS_Pattern_2 = Pattern.compile ("\\d+,+.*\\d+,");
             Pattern MPSUB_Pattern = Pattern.compile ("FORMAT=\\d+");
@@ -164,6 +165,11 @@ public class FileIO {
                             break;
                         }
                         matcher = VPLAYER_Pattern.matcher (line);
+                        if (matcher.find()) {
+                            type = Subtitle.SUBTYPE.SUB_VPLAYER;
+                            break;
+                        }
+                        matcher = VPLAYER_Pattern_2.matcher (line);
                         if (matcher.find()) {
                             type = Subtitle.SUBTYPE.SUB_VPLAYER;
                             break;
