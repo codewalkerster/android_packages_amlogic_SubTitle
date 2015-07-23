@@ -440,24 +440,26 @@ public class SubtitleView extends FrameLayout {
                 return;
             }
             //add for pgs
-            SubData datatmp = null;
-            int modifytime = millisec + timeoffset;
-            /*if((getSubTypeDetial() == 0) ||(getSubTypeDetial() == -1)) {
-                return;
-            }
-            else */if (getSubTypeDetial() == SUBTITLE_PGS || getSubTypeDetial() == SUBTITLE_DVB || getSubTypeDetial() == SUBTITLE_TMD_TXT) {
-                Log.i (TAG, "[tick]data:" + data + ",dataPgsAValid:" + dataPgsAValid + ",dataPgsBValid:" + dataPgsBValid + ",modifytime:" + modifytime);
-                if (resetForSeek) {
-                    this.removeAllViews();
-                    this.requestLayout();
-                    data = null;
-                    dataPgsAValid = false;
-                    dataPgsBValid = false;
-                    dataPgsAShowed = false;
-                    dataPgsBShowed = false;
-                    resetForSeek = false;
-                }
-                if (data == null) {
+        SubData datatmp = null;
+        if (resetForSeek) {
+            this.removeAllViews();
+            this.requestLayout();
+            data = null;
+            dataPgsAValid = false;
+            dataPgsBValid = false;
+            dataPgsAShowed = false;
+            dataPgsBShowed = false;
+            resetForSeek = false;
+            SubManager.getinstance().resetForSeek();
+        }
+
+        int modifytime = millisec + timeoffset;
+        /*if((getSubTypeDetial() == 0) ||(getSubTypeDetial() == -1)) {
+            return;
+        }
+        else */if (getSubTypeDetial() == SUBTITLE_PGS || getSubTypeDetial() == SUBTITLE_DVB || getSubTypeDetial() == SUBTITLE_TMD_TXT) {
+            Log.i(TAG,"[tick]data:"+data+",dataPgsAValid:"+dataPgsAValid+",dataPgsBValid:"+dataPgsBValid+",modifytime:"+modifytime);
+            if (data == null) {
                     if (dataPgsAValid == false) {
                         getDataForPsgA (modifytime);
                     } else if (dataPgsBValid == false) {
@@ -478,29 +480,19 @@ public class SubtitleView extends FrameLayout {
                             dataPgsAShowed = false;
                             //dataPgsBShowed = true;
                             dataPgsAValid = false; //current showing dataPgsB, reset dataPgsAValid and get dataPgsA in any case
-                            getDataForPsgA (modifytime);
-                        } else {
-                            // TODO:
-                            //dataPgsBValid = true means dataPgsAValid is true meanwhile, handle in dataPgsAValid = true case
-                            if (dataPgsB.beginTime() - modifytime >= 10 * 1000) {
-                                resetForSeek();
-                            }
+                            getDataForPsgA(modifytime);
                         }
-                    } else if (dataPgsAValid == true) {
+                    }
+                    else if (dataPgsAValid == true) {
                         //enter this case means dataPgsBValid=fasle, should get dataPgsB
-                        Log.i (TAG, "[tick]dataPgsA.beginTime():" + dataPgsA.beginTime() );
-                        if (modifytime >= dataPgsA.beginTime() ) {
-                            redraw (dataPgsA);
+                        Log.i(TAG,"[tick]dataPgsA.beginTime():"+dataPgsA.beginTime());
+                        if (modifytime >= dataPgsA.beginTime()) {
+                            redraw(dataPgsA);
                             dataPgsAShowed = true;
-                        } else {
-                            // TODO:
-                            // here means dataPgsA is valid, but current time still small than dataPgsA start time
-                            if (dataPgsA.beginTime() - modifytime >= 10 * 1000) {
-                                resetForSeek();
-                            }
                         }
+
                         if (dataPgsBValid == false) {
-                            getDataForPsgB (modifytime);
+                            getDataForPsgB(modifytime);
                         }
                     } else {
                         //dataPgsAValid = false, dataPgsBValid = false, should get dataPgsA immediately
@@ -509,7 +501,7 @@ public class SubtitleView extends FrameLayout {
                 }
             } else {
                 if (data != null) {
-                    if ( (modifytime >= data.beginTime() ) && (modifytime <= data.endTime() ) ) {
+                    if ((modifytime >= data.beginTime()) && (modifytime <= data.endTime())) {
                         if (getVisibility() == View.GONE) {
                             return ;
                         }

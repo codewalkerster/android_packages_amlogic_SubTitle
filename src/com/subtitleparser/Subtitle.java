@@ -146,9 +146,14 @@ public class Subtitle {
             stopSubThreadByJni();
         }
 
+        public void resetForSeek() {
+            resetForSeekByjni();
+        }
+
         public static native SubtitleFile parseSubtitleFileByJni (String fileName, String encode);
         native void startSubThreadByJni();
         native void stopSubThreadByJni();
+        native void resetForSeekByjni();
 
 
 

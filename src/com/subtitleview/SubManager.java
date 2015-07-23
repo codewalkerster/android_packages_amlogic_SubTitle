@@ -199,4 +199,10 @@ public class SubManager {
             }
             return null;
         }
+
+    public void resetForSeek() {
+        if (subtitle != null) {
+            subtitle.resetForSeek();
+        }
+    }
 }

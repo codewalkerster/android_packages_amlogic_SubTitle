@@ -643,6 +643,11 @@ JNIEXPORT void JNICALL stopSubThread(JNIEnv *env, jclass cl)
     }
 }
 
+JNIEXPORT void JNICALL  resetForSeek(JNIEnv *env, jclass cl)
+{
+    init_subtitle_file();
+}
+
 static JNINativeMethod gMethods[] =
 {
     /* name, signature, funcPtr */
@@ -653,6 +658,7 @@ static JNINativeMethod gMethods[] =
     },
     {"startSubThreadByJni", "()V", (void *)startSubThread},
     {"stopSubThreadByJni", "()V", (void *)stopSubThread},
+    { "resetForSeekByjni", "()V",(void*) resetForSeek},
 };
 
 static JNINativeMethod insubMethods[] =
