@@ -952,8 +952,7 @@ int get_inter_spu_packet(int pts)
             }
         }
         if ((inter_subtitle_data[read_position].subtitle_pts > pts)
-                || inter_subtitle_data[read_position].subtitle_pts <
-                (pts - 10 * 90000))
+                || (inter_subtitle_data[read_position].subtitle_pts + 10 * 90000) < pts)
         {
             lp_unlock(&sublock);
             return -1;
