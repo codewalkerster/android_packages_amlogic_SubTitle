@@ -135,8 +135,9 @@ public class TextSubParser implements SubtitleParser {
 
             SubtitleFile file = Subtitle.parseSubtitleFileByJni (filename, encode);
             if (file == null) {
-                Log.i ("TextSubParser", "------------err-----------");
-                throw new MalformedSubException ("text sub parser return NULL!");
+                Log.e("TextSubParser", "------------err-----------");
+                //throw new MalformedSubException ("text sub parser return NULL!");
+                return null;
             }
             else
             {
