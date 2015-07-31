@@ -1351,7 +1351,7 @@ subtitle_t *internal_sub_read_line_ssa(int fd, subtitle_t *current)
      * http://www.eswat.demon.co.uk is where the SSA specs can be found
      */
     int comma;
-    static int max_comma = 32;  /* let's use 32 for the case that the */
+    int max_comma = 32;  /* let's use 32 for the case that the */
     /* amount of commas increase with newer SSA versions */
     int hour1, min1, sec1, hunsec1, hour2, min2, sec2, hunsec2, nothing;
     int num;
