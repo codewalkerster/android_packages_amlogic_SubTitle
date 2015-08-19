@@ -84,7 +84,7 @@ int amSystemControlGetPropertyStr(const char *key, char *def, char *value)
     {
         String16 v;
         String16 d(def);
-        scs->getPropertyString(String16(key), d, v);
+        scs->getPropertyString(String16(key), v, d);
         strcpy(value, String8(v).string());
     }
     strcpy(value, def);
