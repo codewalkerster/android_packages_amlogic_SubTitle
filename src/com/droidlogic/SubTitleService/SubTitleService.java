@@ -39,924 +39,729 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.droidlogic.app.SystemControlManager;
-
 public class SubTitleService extends ISubTitleService.Stub {
-        private static final String TAG = "SubTitleService";
-        private boolean mDebug = false;
-        private Context mContext;
-        private View mSubView = null;
-        private WindowManager mWm = null;
-        WindowManager.LayoutParams p;
-        private final Object mLock = new Object();
+    private static final String TAG = "SubTitleService";
+    private static final String SUBTITLE_WIN_TITLE = "com.droidlogic.subtitle.win";
 
-        //for subtitle
-        private SubtitleUtils subtitleUtils = null;
-        private SubtitleView subTitleView = null;
-        private int mSubTotal = -1;
-        private int curSubId = 0;
-        private SubID subID;
+    private static final int OPEN = 0xF0; //random value
+    private static final int SHOW_CONTENT = 0xF1;
+    private static final int CLOSE = 0xF2;
+    private static final int OPT_SHOW = 0xF3;
+    private static final int SET_TXT_COLOR = 0xF4;
+    private static final int SET_TXT_SIZE = 0xF5;
+    private static final int SET_TXT_STYLE = 0xF6;
+    private static final int SET_GRAVITY = 0xF7;
+    private static final int SET_POS_HEIGHT = 0xF8;
+    private static final int HIDE = 0xF9;
+    private static final int DISPLAY = 0xFA;
+    private static final int CLEAR = 0xFB;
+    private static final int RESET_FOR_SEEK = 0xFC;
+    private static final int LOAD = 0xFD;
+    private static final int SUB_OFF = 0;
+    private static final int SUB_ON = 1;
+    private int subShowState = SUB_OFF;
 
-        //for subtitle option
-        private AlertDialog d;
-        private ListView lv;
-        private int curOptSelect = 0;
+    private boolean mDebug = SystemProperties.getBoolean("sys.subtitleService.debug", true);
+    private Context mContext;
+    private View mSubView;
+    private Display mDisplay;
+    private WindowManager mWindowManager;
+    private WindowManager.LayoutParams mWindowLayoutParams;
+    private boolean isViewAdded = false;
 
-        //for load subtitle file by user
-        private String mLoadPath = null;
+    //for subtitle
+    private SubtitleUtils mSubtitleUtils;
+    private SubtitleView subTitleView = null;
+    private int mSubTotal = -1;
+    private int mCurSubId = 0;
 
-        private static final int OPEN = 0xF0; //random value
-        private static final int SHOW_CONTENT = 0xF1;
-        private static final int CLOSE = 0xF2;
-        private static final int OPT_SHOW = 0xF3;
-        private static final int INITSELECT = 0xF4;
-        private static final int SET_TXT_COLOR = 0xF5;
-        private static final int SET_TXT_SIZE = 0xF6;
-        private static final int SET_TXT_STYLE = 0xF7;
-        private static final int SET_GRAVITY = 0xF8;
-        private static final int SET_POS_HEIGHT = 0xF9;
-        private static final int HIDE = 0xFA;
-        private static final int DISPLAY = 0xFB;
-        private static final int CLEAR = 0xFC;
-        private static final int RESET_FOR_SEEK = 0xFD;
-        private static final int LOAD = 0xFE;
-        private static final long MSG_SEND_DELAY = 0; //0s
-        private static final int SUB_OFF = 0;
-        private static final int SUB_ON = 1;
-        private int subShowState = SUB_OFF;
-        private boolean isOverlayOpen = false;
-        SystemControlManager mSystemControl;
+    //for subtitle option
+    private AlertDialog mOptionDialog;
+    private ListView mListView;
+    private int mCurOptSelect = 0;
 
-        public SubTitleService (Context context) {
-            mContext = context;
-            mSystemControl = new SystemControlManager (context);
-            initView();
+    public SubTitleService(Context context) {
+        LOGI("[SubTitleService]");
+        mContext = context;
+        init();
+    }
+
+    private void LOGI(String msg) {
+        if (mDebug) Log.i(TAG, msg);
+    }
+
+    private void init() {
+        //init view
+        mSubView = LayoutInflater.from(mContext).inflate(R.layout.subtitleview, null);
+        subTitleView = (SubtitleView) mSubView.findViewById(R.id.subtitle);
+        subTitleView.clear();
+        subTitleView.setTextColor(Color.WHITE);
+        subTitleView.setTextSize(20);
+        subTitleView.setTextStyle(Typeface.NORMAL);
+        subTitleView.setViewStatus(true);
+
+        //prepare window
+        mWindowManager = (WindowManager)mContext.getSystemService (Context.WINDOW_SERVICE);
+        mDisplay = mWindowManager.getDefaultDisplay();
+        mWindowLayoutParams = new WindowManager.LayoutParams();
+        mWindowLayoutParams.type = LayoutParams.TYPE_SYSTEM_OVERLAY;
+        mWindowLayoutParams.format = PixelFormat.TRANSLUCENT;
+        mWindowLayoutParams.flags = LayoutParams.FLAG_NOT_TOUCH_MODAL
+                  | LayoutParams.FLAG_NOT_FOCUSABLE
+                  | LayoutParams.FLAG_LAYOUT_NO_LIMITS;
+        mWindowLayoutParams.gravity = Gravity.LEFT | Gravity.TOP;
+        mWindowLayoutParams.setTitle(SUBTITLE_WIN_TITLE);
+        mWindowLayoutParams.x = 0;
+        mWindowLayoutParams.y = 0;
+        mWindowLayoutParams.width = mDisplay.getWidth();
+        mWindowLayoutParams.height = mDisplay.getHeight();
+    }
+
+    private void addView() {
+        LOGI("[addView]isViewAdded:" + isViewAdded);
+        if (!isViewAdded) {
+            mWindowManager.addView(mSubView, mWindowLayoutParams);
+            isViewAdded = true;
+        }
+    }
+
+    private void removeView() {
+        LOGI("[removeView]isViewAdded:" + isViewAdded);
+        if (isViewAdded) {
+            mWindowManager.removeView(mSubView);
+            isViewAdded = false;
+        }
+    }
+
+    public void open (String path) {
+        LOGI("[open] path: " + path);
+        if (mOptionDialog != null) {
+            mOptionDialog.dismiss();
         }
 
-        private void checkDebug() {
-            if (SystemProperties.getBoolean ("sys.subtitleService.debug", false) ) {
-                mDebug = true;
+        File file = new File(path);
+        String name = file.getName();
+        if (name == null || (name != null && -1 == name.lastIndexOf('.'))) {
+            return;
+        }
+
+        mSubtitleUtils = new SubtitleUtils(path);
+        mSubTotal = mSubtitleUtils.getSubTotal();
+        mCurSubId = mSubtitleUtils.getCurrentInSubtitleIndexByJni(); //get inner subtitle current index as default, 0 is always, if there is no inner subtitle, 0 indicate the first external subtitle
+        LOGI("[open] mCurSubId: " + mCurSubId);
+        sendOpenMsg(mCurSubId);
+
+        //load("http://milleni.ercdn.net/9_test/double_lang_test.xml"); for test
+        //sendOptionMsg();
+    }
+
+    public void close() {
+        LOGI("[close]");
+        if (mSubtitleUtils != null) {
+            mSubtitleUtils.setSubtitleNumber(0);
+            mSubtitleUtils = null;
+        }
+        mSubTotal = -1;
+        sendCloseMsg();
+    }
+
+    public int getSubTotal() {
+        LOGI("[getSubTotal] mSubTotal:" + mSubTotal);
+        return mSubTotal;
+    }
+
+    public void nextSub() { // haven't test
+        LOGI("[nextSub]mCurSubId:" + mCurSubId + ",mSubTotal:" + mSubTotal);
+        if (mSubTotal > 0) {
+            mCurSubId++;
+            if (mCurSubId >= mSubTotal) {
+                mCurSubId = 0;
             }
+            sendOpenMsg(mCurSubId);
         }
+    }
 
-        private void LOGI(String msg) {
-            if (mDebug) Log.i(TAG, msg);
-        }
-
-        private void LOGE(String msg) {
-            /*if (mDebug)*/ Log.e(TAG, msg);
-        }
-
-        private void checkOverlayOpen() {
-            LOGI("[checkOverlayOpen] isOverlayOpen:" + isOverlayOpen);
-            if (isOverlayOpen == false) {
-                isOverlayOpen = true;
-                showSubtitleOverlay();
+    public void preSub() { // haven't test
+        LOGI("[preSub]mCurSubId:" + mCurSubId + ",mSubTotal:" + mSubTotal);
+        if (mSubTotal > 0) {
+            mCurSubId--;
+            if (mCurSubId < 0) {
+                mCurSubId = mSubTotal - 1;
             }
+            sendOpenMsg(mCurSubId);
         }
+    }
 
-        private void initView() {
-            ///mContext = SubTitleService.this;
-            mSubView = LayoutInflater.from (mContext).inflate (R.layout.subtitleview, null);
-            subTitleView = (SubtitleView) mSubView.findViewById (R.id.subtitle);
-            subTitleView.clear();
-            subTitleView.setTextColor (Color.WHITE);
-            subTitleView.setTextSize (28);
-            subTitleView.setTextStyle (Typeface.NORMAL);
-            subTitleView.setViewStatus (true);
-            //registerConfigurationChangeReceiver();
+    public void openIdx(int idx) {
+        LOGI("[openIdx]idx:" + idx);
+        if (idx > 0 && idx < mSubTotal) {
+            mCurSubId = idx;
+            sendOpenMsg(idx);
         }
+    }
 
-        private void showSubtitleOverlay() {
-            LOGI("[showSubtitleOverlay]");
-            if (mWm == null) {
-                mWm = (WindowManager) mContext.getSystemService (Context.WINDOW_SERVICE);
-            }
-            p = new WindowManager.LayoutParams();
-            p.type = LayoutParams.TYPE_SYSTEM_OVERLAY ;
-            p.format = PixelFormat.TRANSLUCENT;
-            p.flags = LayoutParams.FLAG_NOT_TOUCH_MODAL
-                      | LayoutParams.FLAG_NOT_FOCUSABLE
-                      | LayoutParams.FLAG_LAYOUT_NO_LIMITS;
-            p.gravity = Gravity.LEFT | Gravity.TOP;
-            if (mWm != null) {
-                Display display = mWm.getDefaultDisplay();
-                //DisplayInfo displayinfo = new DisplayInfo();
-                //display.getDisplayInfo(displayinfo);
-                int mWScreenx = display.getWidth();
-                int mWScreeny = display.getHeight();
-                p.x = 0;
-                p.y = 0;
-                p.width = mWScreenx;//ViewGroup.LayoutParams.WRAP_CONTENT;
-                p.height = mWScreeny;//ViewGroup.LayoutParams.WRAP_CONTENT;
-                //LOGI("[showSubtitleOverlay]mWm:"+mWm+",mSubView:"+mSubView);
-                if (mWm != null && mSubView != null && p != null) {
-                    mWm.addView (mSubView, p);
+    public void showSub(int position) {
+        LOGI("[showSub]position:" + position);
+        if (position >= 0) {
+            sendShowSubMsg(position);
+        }
+    }
+
+    public int getSubType() {
+        return subTitleView.getSubType();
+    }
+
+    public String getSubTypeStr() {
+        return subTitleView.getSubTypeStr();
+    }
+
+    public int getSubTypeDetial() {
+        return subTitleView.getSubTypeDetial();
+    }
+
+    public void setTextColor (int color) {
+        sendSetTxtColorMsg(color);
+    }
+
+    public void setTextSize (int size) {
+        sendSetTxtSizeMsg(size);
+    }
+
+    public void setTextStyle (int style) {
+        sendSetTxtStyleMsg(style);
+    }
+
+    public void setGravity (int gravity) {
+        sendSetGravityMsg(gravity);
+    }
+
+    public void setPosHeight (int height) {
+        sendSetPosHeightMsg(height);
+    }
+
+    public void hide() {
+        sendHideMsg();
+    }
+
+    public void display() {
+        sendDisplayMsg();
+    }
+
+    public void clear() {
+        sendClearMsg();
+    }
+
+    public void resetForSeek() {
+        sendResetForSeekMsg();
+    }
+
+    public void option() {
+        sendOptionMsg();
+    }
+
+    public void setImgSubRatio (float ratioW, float ratioH, int maxW, int maxH) {
+        LOGI("[setImgSubRatio] ratioW:" + ratioW + ", ratioH:" + ratioH + ",maxW:" + maxW + ",maxH:" + maxH);
+        subTitleView.setImgSubRatio(ratioW, ratioH, maxW, maxH);
+    }
+
+    public String getCurName() {
+        SubID subID = mSubtitleUtils.getSubID(mCurSubId);
+        if (subID != null) {
+            LOGI("[getCurName]name:" + subID.filename);
+            return subID.filename;
+        }
+        return null;
+    }
+
+    public String getSubName(int idx) {
+        String name = null;
+
+        if (idx > 0 && idx < mSubTotal && mSubtitleUtils != null) {
+            name = mSubtitleUtils.getSubPath(idx);
+            if (name != null) {
+                int index = name.lastIndexOf("/");
+                if (index >= 0) {
+                    name = name.substring(index + 1);
+                }
+                else {
+                    if (name.equals("INSUB")) {
+                        name = mSubtitleUtils.getInSubName(idx);
+                    }
                 }
             }
         }
+        LOGI("[getSubName]idx:" + idx + ",name:" + name);
+        return name;
+    }
 
-        private void registerConfigurationChangeReceiver() {
-            IntentFilter intentFilter = new IntentFilter (Intent.ACTION_CONFIGURATION_CHANGED);
-            mContext.getApplicationContext().registerReceiver (mConfigurationChangeReceiver, intentFilter);
-            LOGI("[registerConfigurationChangeReceiver]mConfigurationChangeReceiver:" + mConfigurationChangeReceiver);
-        }
+    public String getSubLanguage(int idx) {
+        LOGI("[getSubLanguage]idx:" + idx);
+        String language = null;
+        int index = 0;
 
-        private void unregisterConfigurationChangeReceiver() {
-            LOGI("[unregisterConfigurationChangeReceiver]mConfigurationChangeReceiver:" + mConfigurationChangeReceiver);
-            if (mConfigurationChangeReceiver != null) {
-                mContext.getApplicationContext().unregisterReceiver (mConfigurationChangeReceiver);
-                mConfigurationChangeReceiver = null;
-            }
-        }
-
-        private BroadcastReceiver mConfigurationChangeReceiver = new BroadcastReceiver() {
-            public void onReceive (Context context, Intent intent) {
-                updateSubWinLayoutParams();
-            }
-        };
-
-        private void updateSubWinLayoutParams() {
-            LOGI("[updateSubtitleWinLayoutParams]subShowState:" + subShowState);
-            if (subShowState == SUB_OFF) {
-                return;
-            }
-            if (mWm == null) {
-                return;
-            }
-            if (mSubView == null) {
-                return;
-            }
-            if (p == null) {
-                return;
-            }
-            p.type = LayoutParams.TYPE_SYSTEM_OVERLAY ;
-            p.format = PixelFormat.TRANSLUCENT;
-            p.flags = LayoutParams.FLAG_NOT_TOUCH_MODAL
-                      | LayoutParams.FLAG_NOT_FOCUSABLE
-                      | LayoutParams.FLAG_LAYOUT_NO_LIMITS;
-            p.gravity = Gravity.LEFT | Gravity.TOP;
-            Display display = mWm.getDefaultDisplay();
-            int mWScreenx = display.getWidth();
-            int mWScreeny = display.getHeight();
-            p.x = 0;
-            p.y = 0;
-            p.width = mWScreenx;//ViewGroup.LayoutParams.WRAP_CONTENT;
-            p.height = mWScreeny;//ViewGroup.LayoutParams.WRAP_CONTENT;
-            LOGI("[updateSubtitleWinLayoutParams]p.width:" + p.width + ",p.height:" + p.height);
-            if (mWm != null) {
-                mWm.removeView (mSubView);
-                mWm.addView (mSubView, p);
-            }
-        }
-
-        private void showOptionOverlay() {
-            LOGI("[showOptionOverlay]");
-            int total = getSubTotal();
-            if (total == 0) {
-                Toast.makeText (mContext,
-                                mContext.getResources().getText (R.string.no_subtitle_str),
-                                Toast.LENGTH_SHORT).show();
-                return;
-            }
-            View v = View.inflate (mContext, R.layout.option, null);
-            AlertDialog.Builder b = new AlertDialog.Builder (mContext);
-            b.setView (v);
-            b.setTitle (R.string.option_title_str);
-            d = b.create();
-            d.getWindow().setType (WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
-            d.show();
-            //adjust Attributes
-            WindowManager wm = (WindowManager) mContext.getSystemService (Context.WINDOW_SERVICE); //getWindowManager();
-            Display display = wm.getDefaultDisplay();
-            LayoutParams lp = d.getWindow().getAttributes();
-            if (display.getHeight() > display.getWidth() ) {
-                lp.width = (int) (display.getWidth() * 1.0);
-            } else {
-                lp.width = (int) (display.getWidth() * 0.5);
-            }
-            d.getWindow().setAttributes (lp);
-            lv = (ListView) v.findViewById (R.id.list_view);
-            SimpleAdapter adapter = new SimpleAdapter (mContext, getListData(), R.layout.list_item,
-                    new String[] {"item_text", "item_img"},
-                    new int[] {R.id.item_text, R.id.item_img});
-            lv.setAdapter (adapter);
-            /* set listener */
-            lv.setOnItemClickListener (new OnItemClickListener() {
-                public void onItemClick (AdapterView<?> parent, View view, int pos, long id) {
-                    if (pos == 0) { //first is close subtitle showing
-                        LOGI("[option select]close subtitle showing");
-                        sendHideMsg();
-                    } else if (pos > 0) {
-                        LOGI("[option select][option select]select subtitle " + (pos - 1) );
-                        curSubId = (pos - 1);
-                        sendCloseMsg(); // TODO: maybe have bug for opening the same subtitle after hide
-                        sendOpenMsg();
+        if (idx > 0 && idx < mSubTotal && mSubtitleUtils != null) {
+            language = mSubtitleUtils.getSubPath(idx);
+            if (language != null) {
+                index = language.lastIndexOf(".");
+                if (index >= 0) {
+                    language = language.substring(0, index);
+                    index = language.lastIndexOf(".");
+                    if (index >= 0) {
+                        language = language.substring(index + 1);
                     }
-                    curOptSelect = pos;
-                    updateListDisplay();
-                    //if(!Debug()) d.dismiss();
-                    d.dismiss();
                 }
-            });
+            }
+            if (language.equals("INSUB")) {
+                language = mSubtitleUtils.getInSubLanguage(idx);
+            }
+        }
+        if (language != null) { // if no language, getSubName (skip file path)
+            index = language.lastIndexOf("/");
+            if (index >= 0) {
+                language = getSubName(idx);
+            }
+        }
+        LOGI("[getSubLanguage] idx:" + idx + ",language:" + language);
+        return language;
+    }
+
+    private void sendOpenMsg(int idx) {
+        if (mSubtitleUtils != null) {
+            Message msg = mHandler.obtainMessage(OPEN);
+            SubID subID = mSubtitleUtils.getSubID(idx);
+            if (subID != null) {
+                msg.obj = subID;
+                mHandler.sendMessage(msg);
+            }
+        }
+    }
+
+    private void sendCloseMsg() {
+        Message msg = mHandler.obtainMessage(CLOSE);
+        mHandler.sendMessage(msg);
+    }
+
+    private void sendShowSubMsg(int pos) {
+        Message msg = mHandler.obtainMessage(SHOW_CONTENT);
+        msg.arg1 = pos;
+        mHandler.sendMessage(msg);
+    }
+
+    private void sendOptionMsg() {
+        Message msg = mHandler.obtainMessage(OPT_SHOW);
+        if (mSubTotal > 0) {
+            mHandler.sendMessage(msg);
+        }
+    }
+
+    private void sendLoadMsg(String path) {
+        Message msg = mHandler.obtainMessage(LOAD);
+        if (path != null) {
+            msg.obj = path;
+            mHandler.sendMessage(msg);
+        }
+    }
+
+    private void sendSetTxtColorMsg(int color) {
+        Message msg = mHandler.obtainMessage(SET_TXT_COLOR);
+        msg.arg1 = color;
+        mHandler.sendMessage(msg);
+    }
+
+    private void sendSetTxtSizeMsg(int size) {
+        Message msg = mHandler.obtainMessage(SET_TXT_SIZE);
+        msg.arg1 = size;
+        mHandler.sendMessage(msg);
+    }
+
+    private void sendSetTxtStyleMsg(int style) {
+        Message msg = mHandler.obtainMessage(SET_TXT_STYLE);
+        msg.arg1 = style;
+        mHandler.sendMessage(msg);
+    }
+
+    private void sendSetGravityMsg(int gravity) {
+        Message msg = mHandler.obtainMessage(SET_GRAVITY);
+        msg.arg1 = gravity;
+        mHandler.sendMessage(msg);
+    }
+
+    private void sendSetPosHeightMsg(int height) {
+        Message msg = mHandler.obtainMessage(SET_POS_HEIGHT);
+        msg.arg1 = height;
+        mHandler.sendMessage(msg);
+    }
+
+    private void sendHideMsg() {
+        Message msg = mHandler.obtainMessage (HIDE);
+        mHandler.sendMessage(msg);
+    }
+
+    private void sendDisplayMsg() {
+        Message msg = mHandler.obtainMessage(DISPLAY);
+        mHandler.sendMessage(msg);
+    }
+
+    private void sendClearMsg() {
+        Message msg = mHandler.obtainMessage(CLEAR);
+        mHandler.sendMessage(msg);
+    }
+
+    private void sendResetForSeekMsg() {
+        Message msg = mHandler.obtainMessage (RESET_FOR_SEEK);
+        mHandler.sendMessage(msg);
+    }
+
+    private void removeMsg() {
+        mHandler.removeMessages(SHOW_CONTENT);
+        mHandler.removeMessages(OPT_SHOW);
+        mHandler.removeMessages(OPEN);
+        mHandler.removeMessages(LOAD);
+    }
+
+    //http://milleni.ercdn.net/9_test/double_lang_test.xml
+    private String downloadXmlFile(String strURL) {
+        String filePath = null;
+
+        //"/storage/sdcard0/Download";
+        String dirPath = Environment.getExternalStorageDirectory().getPath() + "/" + Environment.DIRECTORY_DOWNLOADS;
+        File baseFile = new File(dirPath);
+        if (!baseFile.isDirectory() && !baseFile.mkdir() ) {
+            Log.e(TAG, "[downloadXmlFile] unable to create external downloads directory " + baseFile.getPath());
+            return null;
         }
 
-        private String setSublanguage() {
-            String type = null;
-            String able = mContext.getResources().getConfiguration().locale.getCountry();
-            LOGI("[setSublanguage] Country: " + able);
-            if (able.equals ("TW") ) {
-                type = "BIG5";
-            } else if (able.equals ("JP") ) {
-                type = "cp932";
-            } else if (able.equals ("KR") ) {
-                type = "cp949";
-            } else if (able.equals ("IT") || able.equals ("FR") || able.equals ("DE") ) {
-                type = "iso88591";
-            } else if (able.equals ("TR") ) {
-                type = "cp1254";
-            } else if (able.equals ("PC") ) {
-                type = "cp1098";    // "cp1097";
+        try {
+            if (!URLUtil.isNetworkUrl(strURL)) {
+                LOGI("[downloadXmlFile] is not network Url, strURL: " + strURL);
             } else {
-                type = "GBK";
-            }
-            return type;
-        }
+                URL myURL = new URL(strURL);
+                URLConnection conn = myURL.openConnection();
+                conn.connect();
+                InputStream is = conn.getInputStream();
+                if (is == null) {
+                    Log.e(TAG, "[downloadXmlFile] stream is null");
+                }
 
-        ////http://milleni.ercdn.net/9_test/double_lang_test.xml
-        private String downLoadXmlFile (String strURL) {
-            String filePath = null;
-            String fileName = null;
-            String dirPath = null;
-            if (strURL == null) {
-                return filePath;
-            }
-            if (strURL.lastIndexOf ("/") > 0) {
-                fileName = strURL.substring (strURL.lastIndexOf ("/") + 1);
-            } else {
-                return filePath;
-            }
-            // "/storage/sdcard0/Download";
-            dirPath = Environment.getExternalStorageDirectory().getPath() + "/" + Environment.DIRECTORY_DOWNLOADS;
-            File base = new File (dirPath);
-            if (!base.isDirectory() && !base.mkdir() ) {
-                LOGE("[downLoadXmlFile] unable to create external downloads directory " + base.getPath() );
-                return filePath;
-            }
-            try {
-                if (!URLUtil.isNetworkUrl (strURL) ) {
-                    LOGI("[downLoadXmlFile] is not network Url, strURL: " + strURL);
-                } else {
-                    URL myURL = new URL (strURL);
-                    URLConnection conn = myURL.openConnection();
-                    conn.connect();
-                    InputStream is = conn.getInputStream();
-                    if (is == null) {
-                        throw new RuntimeException ("stream is null");
+                String fileName = strURL.substring(strURL.lastIndexOf("/") + 1);
+                if (fileName != null) {
+                    filePath = dirPath + "/" + fileName;
+                    LOGI("[downloadXmlFile] filePath: " + filePath);
+                    File file = new File(filePath);
+                    if (!file.exists()) {
+                        file.createNewFile();
+                    } else {
+                        file.delete();
                     }
-                    if (fileName != null) {
-                        filePath = dirPath + "/" + fileName;
-                        LOGI("[downLoadXmlFile] filePath: " + filePath);
-                        File file = new File (filePath);
-                        if (!file.exists() ) {
-                            file.createNewFile();
-                        } else {
-                            file.delete();
+                    FileOutputStream fos = new FileOutputStream(filePath);
+                    byte buf[] = new byte[128];
+                    do {
+                        int numread = is.read(buf);
+                        if (numread <= 0) {
+                            break;
                         }
-                        FileOutputStream fos = new FileOutputStream (filePath);
-                        byte buf[] = new byte[128];
-                        do {
-                            int numread = is.read (buf);
-                            if (numread <= 0) {
+                        fos.write(buf, 0, numread);
+                    } while (true);
+                    is.close();
+                    fos.close();
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return filePath;
+    }
+
+    public boolean load(String path) {
+        boolean ret = false;
+        final String urlPath = path; // for subtitle which should download from net
+
+        if ((path.startsWith("http://") || path.startsWith("https://")) && (path.endsWith("xml"))) {
+            ret = true; // url subtitle return true
+            Runnable r = new Runnable() {
+                public void run() {
+                    try {
+                        String pathTmp = downloadXmlFile(urlPath);
+                        String pathExtTmp = pathTmp.substring(pathTmp.lastIndexOf ('.') + 1);
+                        //LOGI("[load] pathExtTmp: " + pathExtTmp + ", pathTmp:" + pathTmp);
+                        for (String ext : SubtitleUtils.extensions) {
+                            if (pathExtTmp.toLowerCase().equals(ext)) {
+                                sendLoadMsg(pathTmp);
                                 break;
                             }
-                            fos.write (buf, 0, numread);
-                        } while (true);
-                        fos.close();
+                        }
+                    } catch (Exception e) {
+                        Log.e (TAG, e.getMessage(), e);
                     }
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return filePath;
-        }
-
-        public boolean load (String path) {
-            boolean ret = false;
-            // for subtitle which should download from net
-            final String urlPath = path;
-            if ( (urlPath.startsWith ("http://") || urlPath.startsWith ("https://") ) && (urlPath.endsWith ("xml") ) ) {
-                ret = true; // url subtitle return true
-                Runnable r = new Runnable() {
-                    public void run() {
-                        try {
-                            mLoadPath = null;
-                            String pathTmp = downLoadXmlFile (urlPath);
-                            String pathExtTmp = pathTmp.substring (pathTmp.lastIndexOf ('.') + 1);
-                            LOGI("[load] pathExtTmp: " + pathExtTmp + ", pathTmp:" + pathTmp);
-                            if (SubtitleUtils.extensions != null) {
-                                for (String ext : SubtitleUtils.extensions) {
-                                    LOGI("[load] ext:" + ext);
-                                    if (pathExtTmp.toLowerCase().equals (ext) ) {
-                                        mLoadPath = pathTmp;
-                                        sendCloseMsg();
-                                        sendLoadMsg();
-                                        break;
-                                    }
-                                }
-                            }
-                        } catch (Exception e) {
-                            Log.e (TAG, e.getMessage(), e);
-                        }
-                    }
-                };
-                new Thread (r).start();
-            } else {
-                String pathExt = path.substring (path.lastIndexOf ('.') + 1);
-                LOGI("[load] pathExt: " + pathExt + ", path:" + path);
-                if (SubtitleUtils.extensions != null) {
-                    for (String ext : SubtitleUtils.extensions) {
-                        LOGI("[load] ext:" + ext);
-                        if (pathExt.toLowerCase().equals (ext) ) {
-                            mLoadPath = path;
-                            sendCloseMsg();
-                            sendLoadMsg();
-                            ret = true;
-                            break;
-                        } else {
-                            mLoadPath = null;
-                        }
-                    }
-                } else {
-                    mLoadPath = null;
+            };
+            new Thread (r).start();
+        } else {
+            String pathExt = path.substring(path.lastIndexOf ('.') + 1);
+            //LOGI("[load] pathExt: " + pathExt + ", path:" + path);
+            for (String ext : SubtitleUtils.extensions) {
+                if (pathExt.toLowerCase().equals(ext) ) {
+                    sendLoadMsg(path);
+                    ret = true;
+                    break;
                 }
             }
-            return ret;
+        }
+        return ret;
+    }
+
+    private String setSublanguage() {
+        String type = null;
+        String able = mContext.getResources().getConfiguration().locale.getCountry();
+        if (able.equals("TW")) {
+            type = "BIG5";
+        } else if (able.equals("JP")) {
+            type = "cp932";
+        } else if (able.equals("KR")) {
+            type = "cp949";
+        } else if (able.equals("IT") || able.equals("FR") || able.equals("DE")) {
+            type = "iso88591";
+        } else if (able.equals("TR")) {
+            type = "cp1254";
+        } else if (able.equals("PC")) {
+            type = "cp1098";// "cp1097";
+        } else {
+            type = "GBK";
+        }
+        return type;
+    }
+
+    private void openFile(SubID subID) {
+        LOGI("[openFile] subID: " + subID);
+        if (subID == null) {
+            return;
         }
 
-        /*public*/private void openFile (SubID subID) {
-            LOGI("[openFile] subID: " + subID);
-            if (subID == null) {
+        try {
+            if (subTitleView.setFile(subID, setSublanguage()) == Subtitle.SUBTYPE.SUB_INVALID) {
                 return;
             }
-            try {
-                if (subTitleView.setFile (subID, setSublanguage() ) == Subtitle.SUBTYPE.SUB_INVALID) {
-                    return;
-                }
-                LOGI("[openFile] subtitleUtils: " + subtitleUtils + ",getSubTotal():" + getSubTotal() + ",subID.index:" + subID.index);
-                if (subtitleUtils != null && getSubTotal() > 0) {
-                    subtitleUtils.setSubtitleNumber (subID.index);
-                }
-            } catch (Exception e) {
-                LOGE("open:error");
-                subTitleView = null;
-                e.printStackTrace();
+            if (mSubtitleUtils != null) {
+                mSubtitleUtils.setSubtitleNumber(subID.index);
             }
+        } catch (Exception e) {
+            Log.e(TAG, "open:error");
+            e.printStackTrace();
         }
+    }
 
-        public void open (String path) {
-            LOGI("[open] path: " + path);
-            if (d != null) {
-                d.dismiss();
-            }
-            File file = new File (path);
-            String tmp = file.getName();
-            if (tmp != null) {
-                int ext = tmp.lastIndexOf ('.');
-                if (ext == -1) {
-                    subShowState = SUB_OFF;
-                    return;
-                }
-            }
-            synchronized (this) {
-                if (subtitleUtils == null) {
-                    subtitleUtils = new SubtitleUtils (path);
-                    mSubTotal = -1;
-                    mSubTotal = prepareSubTotal();
-                    curSubId = subtitleUtils.getCurrentInSubtitleIndexByJni(); //get inner subtitle current index as default, 0 is always, if there is no inner subtitle, 0 indicate the first external subtitle
-                    LOGI("[open] curSubId: " + curSubId);
-                    sendOpenMsg();
-                    sendInitSelectMsg();
-                    //load("http://milleni.ercdn.net/9_test/double_lang_test.xml"); for test
-                    //option();
-                }
-            }
+    @Override
+    public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
+        LOGI("[dump]fd:" + fd.getInt$() + ",mSubtitleUtils:" + mSubtitleUtils);
+        if (mSubtitleUtils != null) {
+            mSubtitleUtils.nativeDump(fd.getInt$());
         }
+    }
 
-        public void close() {
-            LOGI("[close] subTitleView: " + subTitleView + ", mWm:" + mWm + ", mSubView:" + mSubView);
-            synchronized (mLock) {
-                if (subtitleUtils != null) {
-                    subtitleUtils.setSubtitleNumber (0);
-                    subtitleUtils = null;
-                }
-                if (mWm != null) {
-                    isOverlayOpen = false;
-                    if (mSubView != null) {
-                        LOGI("[close] mWm.removeView(mSubView)");
-                        mWm.removeView (mSubView);
-                        mWm = null;
-                    }
-                }
-                mLoadPath = null;
-                mSubTotal = -1;
-                sendCloseMsg();
-            }
-            //subShowState = SUB_OFF;
-        }
-
-        private int prepareSubTotal() {
-            LOGI("[prepareSubTotal] subtitleUtils:" + subtitleUtils);
-            int total = -1;
-            if (mSubTotal == -1) {
-                if (subtitleUtils != null) {
-                    total = subtitleUtils.getSubTotal();
-                    LOGI("[prepareSubTotal] mSubTotal:" + mSubTotal);
-                }
-            }
-            return total;
-        }
-
-        public int getSubTotal() {
-            LOGI("[getSubTotal] mSubTotal:" + mSubTotal);
-            return mSubTotal;
-        }
-
-        public void nextSub() { // haven't test
-            LOGI("[nextSub]curSubId:" + curSubId + ",getSubTotal():" + getSubTotal() + ",subtitleUtils:" + subtitleUtils);
-            if (subtitleUtils != null && getSubTotal() > 0) {
-                curSubId++;
-                if (curSubId >= getSubTotal() ) {
-                    curSubId = 0;
-                }
-                sendCloseMsg();
-                sendOpenMsg();
-            }
-        }
-
-        public void preSub() { // haven't test
-            LOGI("[preSub]curSubId:" + curSubId + ",getSubTotal():" + getSubTotal() + ",subtitleUtils:" + subtitleUtils);
-            if (subtitleUtils != null && getSubTotal() > 0) {
-                curSubId--;
-                if (curSubId < 0) {
-                    curSubId = getSubTotal() - 1;
-                }
-                sendCloseMsg();
-                sendOpenMsg();
-            }
-        }
-
-        public void openIdx (int idx) {
-            LOGI("[openIdx]idx:" + idx);
-            if (subtitleUtils != null && getSubTotal() > 0) {
-                curSubId = idx;
-                sendCloseMsg();
-                sendOpenMsg();
-            }
-        }
-
-        public int getSubType() {
-            int ret = 0;
-            if (subTitleView != null) {
-                ret = subTitleView.getSubType();
-            }
-            LOGI("[getSubType]ret:" + ret);
-            return ret;
-        }
-
-        public String getSubTypeStr() {
-            String ret = "";
-            if (subTitleView != null) {
-                ret = subTitleView.getSubTypeStr();
-            }
-            LOGI("[getSubTypeStr]ret:" + ret);
-            return ret;
-        }
-
-        public int getSubTypeDetial() {
-            int ret = 0;
-            if (subTitleView != null) {
-                ret = subTitleView.getSubTypeDetial();
-            }
-            LOGI("[getSubTypeDetial]ret:" + ret);
-            return ret;
-        }
-
-        public void setTextColor (int color) {
-            sendSetTxtColorMsg (color);
-        }
-
-        public void setTextSize (int size) {
-            sendSetTxtSizeMsg (size);
-        }
-
-        public void setTextStyle (int style) {
-            sendSetTxtStyleMsg (style);
-        }
-
-        public void setGravity (int gravity) {
-            sendSetGravityMsg (gravity);
-        }
-
-        public void setPosHeight (int height) {
-            sendSetPosHeightMsg (height);
-        }
-
-        public void hide() {
-            sendHideMsg();
-        }
-
-        public void display() {
-            sendDisplayMsg();
-        }
-
-        public void clear() {
-            sendClearMsg();
-        }
-
-        public void resetForSeek() {
-            sendResetForSeekMsg();
-        }
-
-        public void setImgSubRatio (float ratioW, float ratioH, int maxW, int maxH) {
-            LOGI("[setImgSubRatio] ratioW:" + ratioW + ", ratioH:" + ratioH + ",maxW:" + maxW + ",maxH:" + maxH);
-            if (subTitleView != null) {
-                subTitleView.setImgSubRatio (ratioW, ratioH, maxW, maxH);
-            }
-        }
-
-        public String getCurName() {
-            String name = null;
-            SubID subID = subtitleUtils.getSubID (curSubId);
-            if (subID != null) {
-                LOGI("[getCurName]subID.filename:" + subID.filename);
-                name = subID.filename;
-            }
-            return name;
-        }
-
-        public String getSubName (int idx) {
-            LOGI("[getSubName]idx:" + idx);
-            String name = null;
-            if (subtitleUtils != null && getSubTotal() > 0) {
-                name = subtitleUtils.getSubPath (idx);
-                if (name != null) {
-                    int index = name.lastIndexOf ("/");
-                    if (index >= 0) {
-                        name = name.substring (index + 1);
-                    }
-                }
-                if (name.equals ("INSUB") ) {
-                    name = subtitleUtils.getInSubName (idx);
-                }
-            }
-            LOGI("[getSubName]name:" + name);
-            return name;
-        }
-
-        public String getSubLanguage (int idx) {
-            LOGI("[getSubLanguage]idx:" + idx);
-            String language = null;
-            int index = 0;
-            if (subtitleUtils != null && getSubTotal() > 0) {
-                language = subtitleUtils.getSubPath (idx);
-                if (language != null) {
-                    index = language.lastIndexOf (".");
-                    if (index >= 0) {
-                        language = language.substring (0, index);
-                        index = language.lastIndexOf (".");
-                        if (index >= 0) {
-                            language = language.substring (index + 1);
-                        }
-                    }
-                }
-                if (language.equals ("INSUB") ) {
-                    language = subtitleUtils.getInSubLanguage (idx);
-                }
-            }
-            if (language != null) { // if no language, getSubName (skip file path)
-                index = language.lastIndexOf ("/");
-                if (index >= 0) {
-                    //language = language.substring(index + 1);
-                    language = getSubName (idx);
-                }
-            }
-            LOGI("[getSubLanguage]language:" + language);
-            return language;
-        }
-
-        public void showSub (int position) {
-            LOGI("[showSubContent]position:" + position + ",subShowState:" + subShowState + ",mHandler:" + mHandler);
-            if (position > 0 && mHandler != null) {
-                if (subShowState == SUB_ON) {
-                    Message msg = mHandler.obtainMessage (SHOW_CONTENT);
-                    msg.arg1 = position;
-                    LOGI("[showSubContent]sendMessage msg:" + msg);
-                    mHandler.sendMessageDelayed (msg, MSG_SEND_DELAY);
-                }
-            }
-        }
-
-        public void option() {
-            LOGI("[option]");
-            if (mHandler != null) {
-                Message msg = mHandler.obtainMessage (OPT_SHOW);
-                mHandler.sendMessageDelayed (msg, MSG_SEND_DELAY);
-            }
-        }
-
-        private void sendLoadMsg() {
-            if (mHandler != null) {
-                Message msg = mHandler.obtainMessage (LOAD);
-                mHandler.sendMessageDelayed (msg, MSG_SEND_DELAY);
-            }
-        }
-
-        private void sendCloseMsg() {
-            if (mHandler != null) {
-                Message msg = mHandler.obtainMessage (CLOSE);
-                mHandler.sendMessageDelayed (msg, MSG_SEND_DELAY);
-                mHandler.removeMessages (SHOW_CONTENT);
-                mHandler.removeMessages (OPT_SHOW);
-                mHandler.removeMessages (OPEN);
-                mHandler.removeMessages (INITSELECT);
-                mHandler.removeMessages (LOAD);
-            }
-        }
-
-        private void sendOpenMsg() {
-            if (mHandler != null) {
-                Message msg = mHandler.obtainMessage (OPEN);
-                mHandler.sendMessageDelayed (msg, MSG_SEND_DELAY);
-            }
-        }
-
-        private void sendInitSelectMsg() {
-            if (mHandler != null) {
-                Message msg = mHandler.obtainMessage (INITSELECT);
-                mHandler.sendMessageDelayed (msg, MSG_SEND_DELAY);
-            }
-        }
-
-        private void sendSetTxtColorMsg (int color) {
-            if (mHandler != null) {
-                Message msg = mHandler.obtainMessage (SET_TXT_COLOR);
-                msg.arg1 = color;
-                mHandler.sendMessageDelayed (msg, MSG_SEND_DELAY);
-            }
-        }
-
-        private void sendSetTxtSizeMsg (int size) {
-            if (mHandler != null) {
-                Message msg = mHandler.obtainMessage (SET_TXT_SIZE);
-                msg.arg1 = size;
-                mHandler.sendMessageDelayed (msg, MSG_SEND_DELAY);
-            }
-        }
-
-        private void sendSetTxtStyleMsg (int style) {
-            if (mHandler != null) {
-                Message msg = mHandler.obtainMessage (SET_TXT_STYLE);
-                msg.arg1 = style;
-                mHandler.sendMessageDelayed (msg, MSG_SEND_DELAY);
-            }
-        }
-
-        private void sendSetGravityMsg (int gravity) {
-            if (mHandler != null) {
-                Message msg = mHandler.obtainMessage (SET_GRAVITY);
-                msg.arg1 = gravity;
-                mHandler.sendMessageDelayed (msg, MSG_SEND_DELAY);
-            }
-        }
-
-        private void sendSetPosHeightMsg (int height) {
-            if (mHandler != null) {
-                Message msg = mHandler.obtainMessage (SET_POS_HEIGHT);
-                msg.arg1 = height;
-                mHandler.sendMessageDelayed (msg, MSG_SEND_DELAY);
-            }
-        }
-
-        private void sendHideMsg() {
-            if (mHandler != null) {
-                Message msg = mHandler.obtainMessage (HIDE);
-                mHandler.sendMessageDelayed (msg, MSG_SEND_DELAY);
-            }
-        }
-
-        private void sendDisplayMsg() {
-            if (mHandler != null) {
-                Message msg = mHandler.obtainMessage (DISPLAY);
-                mHandler.sendMessageDelayed (msg, MSG_SEND_DELAY);
-            }
-        }
-
-        private void sendClearMsg() {
-            if (mHandler != null) {
-                Message msg = mHandler.obtainMessage (CLEAR);
-                mHandler.sendMessageDelayed (msg, MSG_SEND_DELAY);
-            }
-        }
-
-        private void sendResetForSeekMsg() {
-            if (mHandler != null) {
-                Message msg = mHandler.obtainMessage (RESET_FOR_SEEK);
-                mHandler.sendMessageDelayed (msg, MSG_SEND_DELAY);
-            }
-        }
-
+    private Handler mHandler = new Handler() {
         @Override
-        public void dump (FileDescriptor fd, PrintWriter pw, String[] args) {
-            LOGI("[dump]fd:" + fd.getInt$() + ",subtitleUtils:" + subtitleUtils);
-            if (subtitleUtils != null) {
-                subtitleUtils.nativeDump (fd.getInt$() );
-            }
-        }
+        public void handleMessage (Message msg) {
+            LOGI("[handleMessage]msg.what:" + msg.what + ",msg.arg1:" + msg.arg1 + ",subShowState:" + subShowState);
 
-        private Handler mHandler = new Handler() {
-            @Override
-            public void handleMessage (Message msg) {
-                LOGI("[handleMessage]msg.what:" + msg.what + ",subShowState:" + subShowState);
-                switch (msg.what) {
-                    case SHOW_CONTENT:
-                        if (subShowState == SUB_ON) {
-                            checkOverlayOpen();
-                            int pos = msg.arg1;
-                            if (pos > 0) {
-                                if (subTitleView != null) {
-                                    subTitleView.tick (pos);
-                                }
-                            }
-                        }
-                        break;
-                    case OPEN:
-                        synchronized (mLock) {
-                            if (subShowState == SUB_OFF && subtitleUtils != null) {
-                                subID = subtitleUtils.getSubID (curSubId);
-                                subTitleView.startSubThread(); //open insub parse thread
-                                LOGI("[handleMessage] curSubId: " + curSubId + ",subID:" + subID);
-                                openFile (subID);
-                                subShowState = SUB_ON;
-                            }
-                        }
-                        break;
-                    case CLOSE:
-                        if (subTitleView != null) {
-                            LOGI("[handleMessage]closeSubtitle");
-                            subTitleView.stopSubThread(); //close insub parse thread
-                            subTitleView.closeSubtitle();
-                            subTitleView.setVisibility (View.VISIBLE);
-                            subTitleView.clear();
-                        }
-                        subShowState = SUB_OFF;
-                        /*if (mWm != null) {
-                            isOverlayOpen= false;
-                            if (mSubView != null) {
-                                mWm.removeView(mSubView);
-                            }
-                        }*/
-                        break;
-                    case INITSELECT:
-                        if (getSubTotal() > 0) {
-                            LOGI("[open] subShowState: " + subShowState);
-                            if (subShowState == SUB_OFF) {
-                                curOptSelect = 0;
-                            } else {
-                                curOptSelect = curSubId + 1; //skip close item, subtitle is open default
-                            }
-                            LOGI("[open] curOptSelect: " + curOptSelect);
-                        }
-                        break;
-                    case SET_TXT_COLOR:
-                        if (subTitleView != null) {
-                            int color = msg.arg1;
-                            subTitleView.setTextColor (color);
-                        }
-                        break;
-                    case SET_TXT_SIZE:
-                        if (subTitleView != null) {
-                            int size = msg.arg1;
-                            subTitleView.setTextSize (size);
-                        }
-                        break;
-                    case SET_TXT_STYLE:
-                        if (subTitleView != null) {
-                            int style = msg.arg1;
-                            subTitleView.setTextStyle (style);
-                        }
-                        break;
-                    case SET_GRAVITY:
-                        if (subTitleView != null) {
-                            int gravity = msg.arg1;
-                            subTitleView.setGravity (gravity);
-                        }
-                        break;
-                    case SET_POS_HEIGHT:
-                        if (subTitleView != null) {
-                            int height = msg.arg1;
-                            subTitleView.setPadding (
-                                subTitleView.getPaddingLeft(),
-                                subTitleView.getPaddingTop(),
-                                subTitleView.getPaddingRight(), height);
-                        }
-                        break;
-                    case HIDE:
-                        if (subTitleView != null) {
-                            //subTitleView.clear();
-                            subTitleView.setVisibility (View.GONE);
-                            subShowState = SUB_OFF;
-                        }
-                        break;
-                    case DISPLAY:
-                        if (subTitleView != null) {
-                            if (View.VISIBLE != subTitleView.getVisibility() ) {
-                                subTitleView.setVisibility (View.VISIBLE);
-                                subShowState = SUB_ON;
-                            }
-                        }
-                        break;
-                    case CLEAR:
-                        if (subTitleView != null) {
-                            subTitleView.clear();
-                        }
-                        break;
-                    case RESET_FOR_SEEK:
-                        if (subTitleView != null) {
-                            subTitleView.resetForSeek();
-                        }
-                        break;
-                    case OPT_SHOW:
-                        showOptionOverlay();
-                        break;
-                    case LOAD:
-                        LOGI("[handleMessage]loadSubtitleFile subShowState:" + subShowState + ",subTitleView:" + subTitleView + ",mLoadPath:" + mLoadPath);
-                        if (subShowState == SUB_OFF && subTitleView != null && mLoadPath != null) {
-                            LOGI("[handleMessage]loadSubtitleFile mLoadPath:" + mLoadPath);
-                            try {
-                                subTitleView.loadSubtitleFile (mLoadPath, setSublanguage() );
-                                subShowState = SUB_ON;
-                            } catch (Exception e) {
-                                LOGE("load:error");
-                                subTitleView = null;
-                                e.printStackTrace();
-                            }
-                        }
-                        break;
-                }
-            }
-        };
-
-        private List<Map<String, Object>> getListData() {
-            List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
-            boolean clsItmAdded = false;
-            int total = getSubTotal();
-            String trackStr = mContext.getResources().getString (R.string.opt_sub_track);
-            String closeStr = mContext.getResources().getString (R.string.opt_close);
-
-            LOGI("[getListData]total:" + total);
-            for (int i = 0; i < total; i++) {
-                if (!clsItmAdded) {
-                    //add close subtitle item
-                    Map<String, Object> mapCls = new HashMap<String, Object>();
-                    clsItmAdded = true;
-                    mapCls.put ("item_text", closeStr);
-                    LOGI("[getListData]map.put:" + closeStr + ",curOptSelect:" + curOptSelect);
-                    if (curOptSelect == 0) {
-                        mapCls.put ("item_img", R.drawable.item_img_sel);
-                    } else {
-                        mapCls.put ("item_img", R.drawable.item_img_unsel);
+            switch (msg.what) {
+                case SHOW_CONTENT:
+                    if (subShowState == SUB_ON) {
+                        addView();
+                        subTitleView.tick (msg.arg1);
                     }
-                    list.add (mapCls);
-                }
-                Map<String, Object> map = new HashMap<String, Object>();
-                String subTrackStr = trackStr + Integer.toString (i);
-                //Log.i(TAG,"[getListData]subTrackStr:"+subTrackStr);
-                map.put ("item_text", subTrackStr);
-                LOGI("[getListData]map.put[" + i + "]:" + subTrackStr + ",curOptSelect:" + curOptSelect);
+                    break;
 
-                if (curOptSelect == (i + 1) ) {
-                    map.put ("item_img", R.drawable.item_img_sel);
-                } else {
-                    map.put ("item_img", R.drawable.item_img_unsel);
-                }
-                list.add (map);
+                case OPEN:
+                    if (subShowState == SUB_ON) {
+                        removeView();
+                        subTitleView.stopSubThread(); //close insub parse thread
+                        subTitleView.closeSubtitle();
+                        subTitleView.clear();
+                    }
+
+                    subTitleView.startSubThread(); //open insub parse thread
+                    openFile((SubID)msg.obj);
+                    subTitleView.setVisibility(View.VISIBLE);
+                    subShowState = SUB_ON;
+                    break;
+
+                case CLOSE:
+                    if (subShowState == SUB_ON) {
+                        removeView();
+                        subTitleView.stopSubThread(); //close insub parse thread
+                        subTitleView.closeSubtitle();
+                        subTitleView.clear();
+                        subShowState = SUB_OFF;
+                    }
+                    break;
+
+                case SET_TXT_COLOR:
+                    subTitleView.setTextColor(msg.arg1);
+                    break;
+
+                case SET_TXT_SIZE:
+                    subTitleView.setTextSize(msg.arg1);
+                    break;
+
+                case SET_TXT_STYLE:
+                    subTitleView.setTextStyle(msg.arg1);
+                    break;
+
+                case SET_GRAVITY:
+                    subTitleView.setGravity(msg.arg1);
+                    break;
+
+                case SET_POS_HEIGHT:
+                    subTitleView.setPadding (
+                        subTitleView.getPaddingLeft(),
+                        subTitleView.getPaddingTop(),
+                        subTitleView.getPaddingRight(),
+                        msg.arg1);
+                    break;
+
+                case HIDE:
+                    if (View.VISIBLE == subTitleView.getVisibility()) {
+                        subTitleView.setVisibility (View.GONE);
+                        subShowState = SUB_OFF;
+                    }
+                    break;
+
+                case DISPLAY:
+                    if (View.VISIBLE != subTitleView.getVisibility()) {
+                        subTitleView.setVisibility (View.VISIBLE);
+                        subShowState = SUB_ON;
+                    }
+                    break;
+
+                case CLEAR:
+                    subTitleView.clear();
+                    break;
+
+                case RESET_FOR_SEEK:
+                    subTitleView.resetForSeek();
+                    break;
+
+                case OPT_SHOW:
+                    showOptionOverlay();
+                    break;
+
+                case LOAD:
+                    if (subShowState == SUB_ON) {
+                        removeView();
+                        subTitleView.stopSubThread(); //close insub parse thread
+                        subTitleView.closeSubtitle();
+                        subTitleView.clear();
+                    }
+
+                    try {
+                        subTitleView.loadSubtitleFile((String)msg.obj, setSublanguage());
+                        subShowState = SUB_ON;
+                    } catch (Exception e) {
+                        Log.e(TAG, "load:error");
+                        e.printStackTrace();
+                    }
+                    break;
+
+                default:
+                    Log.e(TAG, "[handleMessage]error msg.");
+                    break;
             }
-            return list;
         }
+    };
 
-        private void updateListDisplay() {
-            Map<String, Object> list_item;
-            for (int i = 0; i < lv.getAdapter().getCount(); i++) {
-                list_item = (Map<String, Object>) lv.getAdapter().getItem (i);
-                if (curOptSelect == i) {
-                    list_item.put ("item_img", R.drawable.item_img_sel);
-                } else {
-                    list_item.put ("item_img", R.drawable.item_img_unsel);
+    private void showOptionOverlay() {
+        LOGI("[showOptionOverlay]");
+
+        //show dialog
+        View view = View.inflate(mContext, R.layout.option, null);
+        AlertDialog.Builder builder = new AlertDialog.Builder (mContext);
+        builder.setView(view);
+        builder.setTitle(R.string.option_title_str);
+        mOptionDialog = builder.create();
+        mOptionDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+        mOptionDialog.show();
+
+        //adjust Attributes
+        LayoutParams lp = mOptionDialog.getWindow().getAttributes();
+        int w = mDisplay.getWidth();
+        int h = mDisplay.getHeight();
+        if (h > w) {
+            lp.width = (int) (w * 1.0);
+        } else {
+            lp.width = (int) (w * 0.5);
+        }
+        mOptionDialog.getWindow().setAttributes(lp);
+
+        mListView = (ListView) view.findViewById(R.id.list_view);
+        SimpleAdapter adapter = new SimpleAdapter(mContext,
+            getListData(),
+            R.layout.list_item,
+            new String[] {"item_text", "item_img"},
+            new int[] {R.id.item_text, R.id.item_img});
+        mListView.setAdapter(adapter);
+
+        /*set listener */
+        mListView.setOnItemClickListener (new OnItemClickListener() {
+            public void onItemClick (AdapterView<?> parent, View view, int pos, long id) {
+                LOGI("[option select]select subtitle " + (pos - 1) );
+                if (pos == 0) { //first is close subtitle showing
+                    sendHideMsg();
+                } else if (pos > 0) {
+                    mCurSubId = (pos - 1);
+                    sendOpenMsg(pos - 1);
                 }
+                mCurOptSelect = pos;
+                updateListDisplay();
+                mOptionDialog.dismiss();
             }
-            ( (BaseAdapter) lv.getAdapter() ).notifyDataSetChanged();
-        }
+        });
+    }
 
+    private List<Map<String, Object>> getListData() {
+        List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+        boolean clsItmAdded = false;
+        String trackStr = mContext.getResources().getString (R.string.opt_sub_track);
+        String closeStr = mContext.getResources().getString (R.string.opt_close);
+
+        for (int i = 0; i < mSubTotal; i++) {
+            if (!clsItmAdded) {
+                //add close subtitle item
+                Map<String, Object> mapCls = new HashMap<String, Object>();
+                clsItmAdded = true;
+                mapCls.put ("item_text", closeStr);
+                if (mCurOptSelect == 0) {
+                    mapCls.put("item_img", R.drawable.item_img_sel);
+                } else {
+                    mapCls.put("item_img", R.drawable.item_img_unsel);
+                }
+                list.add (mapCls);
+            }
+
+            Map<String, Object> map = new HashMap<String, Object>();
+            String subTrackStr = trackStr + Integer.toString(i);
+            map.put ("item_text", subTrackStr);
+            //LOGI("[getListData]map.put[" + i + "]:" + subTrackStr + ",mCurOptSelect:" + mCurOptSelect);
+
+            if (mCurOptSelect == (i + 1)) {
+                map.put("item_img", R.drawable.item_img_sel);
+            } else {
+                map.put("item_img", R.drawable.item_img_unsel);
+            }
+            list.add(map);
+        }
+        return list;
+    }
+
+    private void updateListDisplay() {
+        Map<String, Object> list_item;
+        for (int i = 0; i < mListView.getAdapter().getCount(); i++) {
+            list_item = (Map<String, Object>) mListView.getAdapter().getItem(i);
+            if (mCurOptSelect == i) {
+                list_item.put("item_img", R.drawable.item_img_sel);
+            } else {
+                list_item.put("item_img", R.drawable.item_img_unsel);
+            }
+        }
+        ((BaseAdapter) mListView.getAdapter()).notifyDataSetChanged();
+    }
 }
-
