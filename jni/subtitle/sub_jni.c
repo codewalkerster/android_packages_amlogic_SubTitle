@@ -556,14 +556,16 @@ void inter_subtitle_parser()
 #else
 void *inter_subtitle_parser()
 {
+    int inner_sub_total = get_subtitle_num();
+    int inner_sub_type = get_subtitle_subtype();
     //sub_thread = 1;
     while (sub_thread)
     {
         //LOGI("[inter_subtitle_parser]get_subtitle_num():%d\n", get_subtitle_num());
-        if (get_subtitle_num())
+        if (inner_sub_total > 0)
             get_inter_spu();
         subThreadSleeping = 1;
-        if (get_subtitle_subtype() == 1)    // For pgs sub, speed up decode freq
+        if (inner_sub_type == 1) // For pgs sub, speed up decode freq
             usleep(300000);
         else
             usleep(500000);
