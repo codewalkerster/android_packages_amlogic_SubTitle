@@ -1046,6 +1046,26 @@ void free_inter_spu_data()
     return;
 }
 
+void free_last_inter_spu_data()
+{
+    int tmp_pos = 0;
+    if (read_position > 0)
+    {
+        tmp_pos = read_position - 1;
+    }
+    else
+    {
+        tmp_pos = sublen - 1;
+    }
+
+    if (inter_subtitle_data[tmp_pos].data)
+    {
+        free(inter_subtitle_data[tmp_pos].data);
+        inter_subtitle_data[tmp_pos].data = NULL;
+    }
+    return;
+}
+
 char *get_inter_spu_data()
 {
     return inter_subtitle_data[read_position].data;
@@ -1398,7 +1418,7 @@ int close_subtitle()
     }
     restlen = 0;
     int i = 0;
-    for (i = 0; i < MAX_SUBTITLE_PACKET_WRITE; i++)
+    for (i = 0; i < sublen; i++)
     {
         if (inter_subtitle_data[i].data)
             free(inter_subtitle_data[i].data);

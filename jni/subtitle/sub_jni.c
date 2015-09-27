@@ -359,6 +359,7 @@ JNIEXPORT jobject JNICALL getrawdata(JNIEnv *env, jclass cl, jint msec)
                               get_inter_spu_height(), sub_size,
                               sub_start_pts, delay_pts, 0);
         LOGE("getrawdata: NewObject  finish");
+        free_last_inter_spu_data();
         add_read_position();
         if (!obj)
         {
@@ -390,6 +391,7 @@ JNIEXPORT jobject JNICALL getrawdata(JNIEnv *env, jclass cl, jint msec)
                               get_inter_spu_width(),
                               get_inter_spu_height(), sub_size,
                               start_time, delay_time, 0);
+        free_last_inter_spu_data();
         add_read_position();
         if (!obj)
         {
