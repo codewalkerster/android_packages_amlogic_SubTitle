@@ -48,6 +48,8 @@ typedef struct
     unsigned short top_pxd_addr;
     unsigned short bottom_pxd_addr;
 
+    unsigned int spu_origin_display_w; //for bitmap subtitle
+    unsigned int spu_origin_display_h;
     unsigned disp_colcon_addr;
     unsigned char display_pending;
     unsigned char displaying;

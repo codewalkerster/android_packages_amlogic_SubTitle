@@ -83,7 +83,7 @@ class InSubApi extends SubtitleApi {
                                 bf_show = Bitmap.createBitmap (inter_data.rawdata, inter_data.width,
                                                                inter_data.height, Config.ARGB_8888);
                                 Log.i ("getdata", "[Bitmap]start time:" + millisec + ",delay time:" + inter_data.sub_delay);
-                                return new SubData (bf_show, inter_data.sub_start, inter_data.sub_delay, inter_data.sub_size);
+                                return new SubData (bf_show, inter_data.sub_start, inter_data.sub_delay, inter_data.sub_size, inter_data.origin_width, inter_data.origin_height);
                             }
                             else {
                                 Log.i ("getdata", "[text]start time:" + inter_data.sub_start + ",delay time:" + inter_data.sub_delay);
@@ -95,7 +95,7 @@ class InSubApi extends SubtitleApi {
                                 Log.i ("getdata", "sub_size=0,[Bitmap]start time:" + millisec + ",delay time:" + inter_data.sub_delay);
                                 //bf_show = null;
                                 bf_show = Bitmap.createBitmap (1, 1, Config.ARGB_8888);
-                                return new SubData (bf_show, inter_data.sub_start, inter_data.sub_delay, inter_data.sub_size);
+                                return new SubData (bf_show, inter_data.sub_start, inter_data.sub_delay, inter_data.sub_size, 0, 0);
                             }
                             else {
                                 Log.i ("getdata", "sub_size=0,[text]start time:" + inter_data.sub_start + ",delay time:" + inter_data.sub_delay);

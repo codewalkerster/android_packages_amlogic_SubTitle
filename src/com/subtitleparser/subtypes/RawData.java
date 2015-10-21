@@ -12,8 +12,8 @@ public class RawData {
         public RawData (int[] data, int t, int w, int h, int delay, String st) { // ([BILjava/lang/String;)V
             rawdata = data; type = t; width = w; height = h; sub_delay = delay; codec = st; subtitlestring = null;
         }
-        public RawData (int[] data, int t, int w, int h, int size, int start, int delay, String st) { // ([BILjava/lang/String;)V
-            rawdata = data; type = t; width = w; height = h; sub_size = size; sub_start = start; sub_delay = delay; codec = st; subtitlestring = null;
+        public RawData (int[] data, int t, int w, int h, int o_w, int o_h, int size, int start, int delay, String st) { // ([BILjava/lang/String;)V
+            rawdata = data; type = t; width = w; height = h; origin_width=o_w; origin_height=o_h; sub_size = size; sub_start = start; sub_delay = delay; codec = st; subtitlestring = null;
         }
 
         public RawData(byte[] data,int t,int size,int start,int delay,String st){
@@ -44,6 +44,8 @@ public class RawData {
         int type;
         int width;
         int height;
+        int origin_width;
+        int origin_height;
         int sub_size;
         int sub_start;    //ms
         int sub_delay;    //ms

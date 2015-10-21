@@ -1378,6 +1378,7 @@ static void save_display_set(DVBSubContext *ctx, AML_SPUVAR *spu)
     uint32_t *pbuf = NULL;
     char filename[32];
     static int fileno_index = 0;
+    DVBSubDisplayDefinition *display_def = ctx->display_definition;
     x_pos = -1;
     y_pos = -1;
     width = 0;
@@ -1434,6 +1435,10 @@ static void save_display_set(DVBSubContext *ctx, AML_SPUVAR *spu)
         spu->spu_height = height;
         spu->spu_start_x = x_pos;
         spu->spu_start_y = y_pos;
+        if (display_def && display_def->width !=0 && display_def->height !=0) {
+            spu->spu_origin_display_w = display_def->width;
+            spu->spu_origin_display_h = display_def->height;
+        }
         for (display = ctx->display_list; display;
                 display = display->next)
         {
@@ -1554,6 +1559,8 @@ static void dvbsub_parse_display_definition_segment(const uint8_t *buf,
     display_def->y = 0;
     display_def->width = bytestream_get_be16(&buf) + 1;
     display_def->height = bytestream_get_be16(&buf) + 1;
+    LOGI("-[%s],display_def->width=%d,height=%d,info_byte=%d,buf_size=%d--\n",__FUNCTION__,
+        display_def->width,display_def->height,info_byte,buf_size);
     if (buf_size < 13)
         return;
     if (info_byte & 1 << 3) // display_window_flag
@@ -1683,6 +1690,9 @@ int dvbsub_decode(AML_SPUVAR *spu, const uint8_t *psrc, const int size)
     spu->spu_height = 0;
     spu->spu_start_x = 0;
     spu->spu_start_y = 0;
+    //default spu display in windows width and height
+    spu->spu_origin_display_w = 720;
+    spu->spu_origin_display_h = 576;
 #if 0
     LOGI("DVB sub packet:\n");
     for (i = 0; i < buf_size; i++)

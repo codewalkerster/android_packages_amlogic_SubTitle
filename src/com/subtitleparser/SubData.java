@@ -12,8 +12,8 @@ public class SubData {
         public SubData (String s, int start , int end, int size) {
             substr = s; starttime = start; endtime = end; subSize = size;
         }
-        public SubData (Bitmap bit, int start, int end, int size) {
-            bitmap = bit; starttime = start; endtime = end; subSize = size;
+        public SubData (Bitmap bit, int start, int end, int size, int o_w, int o_h) {
+            bitmap = bit; starttime = start; endtime = end; subSize = size; originW=o_w; originH=o_h;
         }
         public int gettype() {
             if (bitmap != null) {
@@ -42,8 +42,19 @@ public class SubData {
             return subSize;
         }
 
+        public int getOriginW()
+        {
+            return originW;
+        }
+
+        public int getOriginH()
+        {
+            return originH;
+        }
         private String substr = null;
         private Bitmap bitmap = null;
+        private int originW=0;
+        private int originH=0;
         private int starttime = 0;
         private int endtime = 0;
         private int subSize = -1;

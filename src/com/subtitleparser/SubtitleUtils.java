@@ -169,9 +169,9 @@ public class SubtitleUtils {
         }
 
         public SubID getSubID (int index) {
-            if (subfile == null) {
-                return null ;
-            }
+            //if (subfile == null) {
+                //return null ;
+            //}
             if (index < getInSubTotal() ) {
                 return new SubID ("INSUB", index);
             } else if (index < getSubTotal() ) {

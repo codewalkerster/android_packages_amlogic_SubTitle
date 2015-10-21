@@ -247,7 +247,7 @@ JNIEXPORT jobject JNICALL getrawdata(JNIEnv *env, jclass cl, jint msec)
         return NULL;
     }
     jmethodID constrforpgs = (*env)->GetMethodID(env, cls, "<init>",
-                             "([IIIIIIILjava/lang/String;)V");
+                             "([IIIIIIIIILjava/lang/String;)V");
     if (!constrforpgs)
     {
         LOGE("com/subtitleparser/subtypes/RawData: failed to get  constructor method's ID");
@@ -356,7 +356,7 @@ JNIEXPORT jobject JNICALL getrawdata(JNIEnv *env, jclass cl, jint msec)
         jobject obj =
             (*env)->NewObject(env, cls, constrforpgs, array, 1,
                               get_inter_spu_width(),
-                              get_inter_spu_height(), sub_size,
+                              get_inter_spu_height(), 0, 0, sub_size,
                               sub_start_pts, delay_pts, 0);
         LOGE("getrawdata: NewObject  finish");
         free_last_inter_spu_data();
@@ -389,7 +389,7 @@ JNIEXPORT jobject JNICALL getrawdata(JNIEnv *env, jclass cl, jint msec)
         jobject obj =
             (*env)->NewObject(env, cls, constrforpgs, array, 1,
                               get_inter_spu_width(),
-                              get_inter_spu_height(), sub_size,
+                              get_inter_spu_height(), get_inter_spu_origin_width(), get_inter_spu_origin_height(), sub_size,
                               start_time, delay_time, 0);
         free_last_inter_spu_data();
         add_read_position();

@@ -48,6 +48,14 @@
 #endif
 #endif
 
+#ifndef av_unused
+#if defined(__GNUC__)
+#    define av_unused __attribute__((unused))
+#else
+#    define av_unused
+#endif
+#endif
+
 #ifndef AV_RB16
 #define AV_RB16(x)                           \
     ((((const uint8_t*)(x))[0] << 8) |          \
@@ -530,7 +538,7 @@ static inline uint32_t bytestream_get_be16(const uint8_t **ptr)
 {
     uint32_t tmp;
     tmp = (*ptr)[1] | ((*ptr)[0] << 8);
-    *ptr += 3;
+    *ptr += 2;
     return tmp;
 }
 
