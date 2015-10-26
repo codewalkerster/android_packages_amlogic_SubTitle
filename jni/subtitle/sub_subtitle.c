@@ -901,7 +901,7 @@ int write_subtitle_file(AML_SPUVAR *spu)
 
 int read_subtitle_file()
 {
-    LOGI("subtitle data address is %x\n\n",(int)inter_subtitle_data[file_position].data);
+    LOGI("subtitle data address is %p\n", inter_subtitle_data[file_position].data);
     return 0;
 }
 
